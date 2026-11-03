@@ -93,7 +93,7 @@ const NOME_DO_RESTAURANTE = "Cardápio";
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const URL_DO_CARDAPIO = URL_BASE + "saas-cardapio";
 const URL_DO_PEDIDO = URL_BASE + "saas-pedido";
-const URL_DA_SESSAO = "https://n8n.automatikai.cloud/webhook/abrir";
+const URL_DA_SESSAO = URL_BASE + "saas-abrir";
 // =======================================
 
 const $ = id => document.getElementById(id);
@@ -232,8 +232,9 @@ $("p-enviar").addEventListener("click", async () => {
     const r = await fetch(URL_DO_PEDIDO, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({r: REST, mesa, nome, observacoes: limpa($("p-obs").value), itens: itens.map(i => ({nome: i.nome, qtd: i.qtd}))})
+      body: JSON.stringify({r: REST, mesa, sessao: SESSAO, nome, observacoes: limpa($("p-obs").value), itens: itens.map(i => ({nome: i.nome, qtd: i.qtd}))})
     });
+    if (r.status === 403) { encerrada(); return; }
     if (r.status === 404) { msg.textContent = "Restaurante não encontrado."; return; }
     if (r.status === 400) { msg.textContent = "Algum item não está mais disponível. Recarregue a página e tente de novo."; return; }
     if(!r.ok) throw new Error("HTTP " + r.status);
@@ -269,7 +270,7 @@ let SESSAO = "";
 async function abrirSessao(){
   if (!MESA) return;
   try{
-    const r = await fetch(URL_DA_SESSAO + "?mesa=" + encodeURIComponent(MESA), {cache:"no-store"});
+    const r = await fetch(URL_DA_SESSAO + "?r=" + encodeURIComponent(REST) + "&mesa=" + encodeURIComponent(MESA), {cache:"no-store"});
     if(!r.ok) throw new Error("HTTP " + r.status);
     const d = await r.json();
     if(!d.sessao) throw new Error("sem sessao");
@@ -287,6 +288,7 @@ function encerrada(){
   if ($("painel").open) $("painel").close();
 }
 
+abrirSessao();
 carregar();
 </script>
 </body>
