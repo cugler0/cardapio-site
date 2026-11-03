@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Meu bar</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:860px;margin:0 auto;padding:22px 16px 60px}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:22px}
+h1{margin:0;font-size:1.6rem}
+.sub{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+h2{margin:30px 0 12px;font-size:1rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+a.tile{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;color:var(--ink);text-decoration:none}
+a.tile:hover{border-color:var(--accent)}
+a.tile strong{display:block;font-size:1.1rem;margin-bottom:4px}
+a.tile span{color:var(--muted);font-size:.9rem}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.linha{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+label{font-size:.85rem;color:var(--muted)}
+input{display:block;margin-top:4px;width:110px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.dica{margin:10px 0 0;color:var(--muted);font-size:.88rem}
+.links{margin-top:14px;display:grid;gap:8px}
+.lk{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.lk code{font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lk button{padding:6px 12px;font-size:.85rem;flex:none}
+.lk button.feito{background:var(--ok)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="topo">
+    <div><h1 id="nome">Meu bar</h1><p class="sub" id="end"></p></div>
+    <button class="sec" id="sair">Sair</button>
+  </div>
+
+  <h2>Dia a dia</h2>
+  <div class="grid">
+    <a class="tile" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span>Veja os pedidos chegando, avance o status e feche as contas.</span></a>
+    <a class="tile" id="t-painel" href="painel.html"><strong>Painel do cardápio</strong><span>Mude preços, ligue e desligue itens e adicione novos.</span></a>
+  </div>
+
+  <h2>Seus clientes</h2>
+  <div class="grid">
+    <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o cardápio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
+  </div>
+
+  <h2>Links das mesas</h2>
+  <div class="card">
+    <div class="linha">
+      <label>Quantas mesas?<input id="qtd" type="number" inputmode="numeric" min="1" max="100" value="10"></label>
+      <button id="gerar">Gerar links</button>
+    </div>
+    <p class="dica">Grave cada link na tag NFC da mesa correspondente, ou use no gerador de QR code.</p>
+    <div class="links" id="links"></div>
+  </div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let rest = "", nome = "";
+try{ rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
+if (!rest){ location.replace("entrar.html"); }
+
+$("nome").textContent = nome || rest;
+$("end").textContent = "Endereço: " + rest;
+$("t-pedidos").href = "pedidos.html?r=" + encodeURIComponent(rest);
+$("t-painel").href = "painel.html?r=" + encodeURIComponent(rest);
+$("t-cardapio").href = "cardapio-saas.html?r=" + encodeURIComponent(rest);
+
+$("sair").addEventListener("click", () => {
+  try{ sessionStorage.removeItem("rest"); sessionStorage.removeItem("chave"); sessionStorage.removeItem("nome"); }catch(e){}
+  location.href = "index.html";
+});
+
+$("gerar").addEventListener("click", () => {
+  const n = Math.max(1, Math.min(100, Number($("qtd").value) || 0));
+  const base = location.origin + "/cardapio-saas.html?r=" + encodeURIComponent(rest) + "&mesa=";
+  const caixa = $("links"); caixa.replaceChildren();
+  for (let i = 1; i <= n; i++){
+    const url = base + i;
+    const l = document.createElement("div"); l.className = "lk";
+    const c = document.createElement("code"); c.textContent = "Mesa " + i + " · " + url;
+    const b = document.createElement("button"); b.textContent = "Copiar";
+    b.addEventListener("click", async () => {
+      try{ await navigator.clipboard.writeText(url); b.textContent = "Copiado!"; b.classList.add("feito"); }
+      catch(e){ b.textContent = "Selecione e copie"; }
+      setTimeout(() => { b.textContent = "Copiar"; b.classList.remove("feito"); }, 1800);
+    });
+    l.append(c, b); caixa.append(l);
+  }
+});
+</script>
+</body>
+</html>

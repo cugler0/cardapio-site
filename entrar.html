@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Entrar</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 15% -10%,rgba(255,74,61,.28),transparent 55%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{width:100%;max-width:420px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 22px}
+h1{margin:0 0 4px;font-size:1.6rem}
+.sub{margin:0 0 6px;color:var(--muted)}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:14px}
+input{width:100%;margin-top:4px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{width:100%;margin-top:18px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.st{min-height:1.3em;margin-top:12px;font-size:.92rem;color:var(--accent)}
+.volta{display:block;text-align:center;margin-top:16px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+  <form class="card" id="f" autocomplete="off">
+    <h1>Entrar</h1>
+    <p class="sub">Digite o endereço do seu bar e a chave de acesso.</p>
+    <label>Endereço do bar<input id="rest" autocapitalize="none" placeholder="ex.: pizzahug" required></label>
+    <label>Chave de acesso<input id="chave" type="password" required></label>
+    <p id="st" class="st" role="status"></p>
+    <button id="ok" type="submit">Entrar</button>
+    <a class="volta" href="index.html">Voltar</a>
+  </form>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const $ = id => document.getElementById(id);
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+
+$("rest").value = limpaSlug(new URLSearchParams(location.search).get("r"));
+
+$("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const st = $("st"), btn = $("ok");
+  const r = limpaSlug($("rest").value), chave = $("chave").value.trim();
+  if (!r || !chave){ st.textContent = "Preencha os dois campos."; return; }
+  btn.disabled = true; st.style.color = "var(--muted)"; st.textContent = "Entrando…";
+  try{
+    const resp = await fetch(URL_BASE + "saas-admin-listar", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({r, chave})
+    });
+    if (resp.status === 401){ st.style.color = "var(--accent)"; st.textContent = "Endereço ou chave incorretos."; return; }
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    const d = await resp.json();
+    try{
+      sessionStorage.setItem("rest", r);
+      sessionStorage.setItem("chave", chave);
+      sessionStorage.setItem("nome", (d.restaurante && d.restaurante.nome) || r);
+    }catch(err){}
+    location.href = "app.html";
+  }catch(err){
+    st.style.color = "var(--accent)"; st.textContent = "Não foi possível conectar. Tente de novo.";
+  }finally{
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
