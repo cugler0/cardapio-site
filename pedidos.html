@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pedidos</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#ffb000;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.4}
+main{max-width:1300px;margin:0 auto;padding:16px 14px 60px}
+h1{margin:0;font-size:1.5rem}
+.sub{margin:2px 0 0;color:var(--muted);font-size:.9rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:10px}
+input{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+button:disabled{opacity:.6;cursor:wait}
+.st{font-size:.9rem;min-height:1.2em}
+.st.erro{color:var(--accent)}
+.rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pulso{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px}
+.pulso.off{background:var(--accent)}
+.colunas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.colunas{grid-template-columns:1fr}}
+.col h2{margin:0 0 10px;font-size:1rem;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between}
+.col.novo h2{color:var(--accent)}
+.col.preparando h2{color:var(--warn)}
+.col.entregue h2{color:var(--ok)}
+.vazio{color:var(--muted);font-size:.9rem;padding:10px 0}
+.ped{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.col.preparando .ped{border-left-color:var(--warn)}
+.col.entregue .ped{border-left-color:var(--ok);opacity:.75}
+.ped.destaque{animation:pisca 1.2s ease-in-out 3}
+@keyframes pisca{50%{background:#3a1a1c}}
+.cab{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.mesa{font-size:1.3rem;font-weight:700}
+.hora{color:var(--muted);font-size:.85rem}
+.quem{color:var(--muted);font-size:.9rem}
+.itens{margin:8px 0;padding:0;list-style:none}
+.itens li{padding:2px 0}
+.obs{background:#2a1d10;border:1px solid #5a3d12;border-radius:8px;padding:6px 8px;margin:6px 0;font-size:.92rem}
+.tot{font-weight:600;margin-top:6px}
+.ped button{margin-top:10px;width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="card" style="max-width:460px;margin:40px auto">
+    <h1>Pedidos</h1>
+    <p class="sub">Entre para acompanhar os pedidos em tempo real.</p>
+    <label>Restaurante (endereço do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
+    <div class="rodape"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="topo">
+      <div>
+        <h1 id="a-nome"></h1>
+        <p class="sub"><span id="a-pulso" class="pulso"></span><span id="a-status">Conectando…</span></p>
+      </div>
+      <div class="acoes">
+        <button class="sec" id="a-som">Som: ligado</button>
+        <button class="sec" id="a-sair">Sair</button>
+      </div>
+    </div>
+    <div class="colunas">
+      <div class="col novo"><h2>Novos <span id="n-novo">0</span></h2><div id="c-novo"></div></div>
+      <div class="col preparando"><h2>Preparando <span id="n-preparando">0</span></h2><div id="c-preparando"></div></div>
+      <div class="col entregue"><h2>Entregues <span id="n-entregue">0</span></h2><div id="c-entregue"></div></div>
+    </div>
+  </section>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const INTERVALO_MS = 5000;
+const $ = id => document.getElementById(id);
+const reais = n => Number(n).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+
+let REST = "", CHAVE = "", conhecidos = null, somLigado = true, ocupado = false, timer = null, ctx = null, wake = null;
+
+async function api(caminho, corpo){
+  const r = await fetch(URL_BASE + caminho, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})
+  });
+  let dados = null;
+  try{ dados = await r.json(); }catch(e){}
+  return {status: r.status, dados};
+}
+
+function bip(){
+  if (!somLigado || !ctx) return;
+  try{
+    [0, 0.25, 0.5].forEach(t => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + t + 0.2);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.22);
+    });
+  }catch(e){}
+}
+
+function avisar(novos){
+  bip();
+  try{
+    if ("Notification" in window && Notification.permission === "granted"){
+      const p = novos[0];
+      new Notification("Novo pedido - Mesa " + p.mesa, {body: novos.length > 1 ? novos.length + " pedidos novos" : "Toque para ver"});
+    }
+  }catch(e){}
+}
+
+function cartao(p, destaque){
+  const d = document.createElement("div");
+  d.className = "ped" + (destaque ? " destaque" : "");
+  const cab = document.createElement("div"); cab.className = "cab";
+  const mesa = document.createElement("span"); mesa.className = "mesa"; mesa.textContent = "Mesa " + p.mesa;
+  const hora = document.createElement("span"); hora.className = "hora";
+  hora.textContent = new Date(p.criado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  cab.append(mesa, hora); d.append(cab);
+
+  if (p.nome){ const q = document.createElement("div"); q.className = "quem"; q.textContent = p.nome; d.append(q); }
+
+  const ul = document.createElement("ul"); ul.className = "itens";
+  for (const it of (Array.isArray(p.itens) ? p.itens : [])){
+    const li = document.createElement("li"); li.textContent = it.qtd + "x " + it.nome; ul.append(li);
+  }
+  d.append(ul);
+
+  if (p.observacoes){ const o = document.createElement("div"); o.className = "obs"; o.textContent = "Obs: " + p.observacoes; d.append(o); }
+
+  const t = document.createElement("div"); t.className = "tot"; t.textContent = "Total " + reais(p.total); d.append(t);
+
+  const proximo = p.status === "novo" ? ["preparando", "Começar a preparar"] : p.status === "preparando" ? ["entregue", "Marcar como entregue"] : null;
+  if (proximo){
+    const b = document.createElement("button"); b.textContent = proximo[1];
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try{
+        const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: proximo[0]});
+        if (status === 401) return sair();
+        if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+        await atualizar();
+      }catch(e){
+        b.disabled = false; b.textContent = "Erro. Tente de novo";
+      }
+    });
+    d.append(b);
+  }
+  return d;
+}
+
+function desenhar(pedidos, novosIds){
+  const col = {novo: [], preparando: [], entregue: []};
+  for (const p of pedidos) (col[p.status] || col.novo).push(p);
+  for (const s of ["novo", "preparando", "entregue"]){
+    const lista = s === "entregue" ? col[s].slice(0, 15) : col[s];
+    const caixa = $("c-" + s);
+    caixa.replaceChildren();
+    if (!lista.length){
+      const v = document.createElement("div"); v.className = "vazio"; v.textContent = "Nenhum pedido"; caixa.append(v);
+    }
+    for (const p of lista) caixa.append(cartao(p, novosIds.has(p.id)));
+    $("n-" + s).textContent = col[s].length;
+  }
+  document.title = (col.novo.length ? "(" + col.novo.length + ") " : "") + "Pedidos";
+}
+
+async function atualizar(){
+  if (ocupado) return;
+  ocupado = true;
+  try{
+    const {status, dados} = await api("saas-admin-pedidos", {});
+    if (status === 401) return sair();
+    if (status !== 200 || !dados) throw new Error("falha");
+    const pedidos = dados.pedidos || [];
+    const ids = new Set(pedidos.map(p => p.id));
+    const novosIds = new Set();
+    if (conhecidos){
+      for (const p of pedidos) if (!conhecidos.has(p.id)) novosIds.add(p.id);
+    }
+    const novosPedidos = pedidos.filter(p => novosIds.has(p.id) && p.status === "novo");
+    conhecidos = ids;
+    $("a-nome").textContent = dados.restaurante.nome;
+    desenhar(pedidos, novosIds);
+    if (novosPedidos.length) avisar(novosPedidos);
+    $("a-pulso").className = "pulso";
+    $("a-status").textContent = "Ao vivo · atualizado às " + new Date().toLocaleTimeString("pt-BR");
+  }catch(e){
+    $("a-pulso").className = "pulso off";
+    $("a-status").textContent = "Sem conexão. Tentando de novo…";
+  }finally{
+    ocupado = false;
+  }
+}
+
+async function manterTelaLigada(){
+  try{ if ("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && timer) { manterTelaLigada(); atualizar(); } });
+
+function sair(){
+  clearInterval(timer); timer = null; conhecidos = null;
+  try{ sessionStorage.removeItem("chave"); }catch(e){}
+  try{ if (wake) wake.release(); }catch(e){}
+  CHAVE = "";
+  $("app").hidden = true; $("login").hidden = false; $("l-chave").value = "";
+  $("l-st").className = "st erro"; $("l-st").textContent = "Acesso negado. Confira o restaurante e a chave.";
+}
+
+async function entrar(){
+  const st = $("l-st"), btn = $("l-entrar");
+  REST = limpaSlug($("l-rest").value);
+  CHAVE = $("l-chave").value.trim();
+  if (!REST || !CHAVE){ st.className = "st erro"; st.textContent = "Preencha os dois campos."; return; }
+  btn.disabled = true; st.className = "st"; st.textContent = "Entrando…";
+  try{
+    if (!ctx){ try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){} }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    try{ if ("Notification" in window && Notification.permission === "default") Notification.requestPermission(); }catch(e){}
+    const {status, dados} = await api("saas-admin-pedidos", {});
+    if (status === 401){ st.className = "st erro"; st.textContent = "Acesso negado. Confira o restaurante e a chave."; return; }
+    if (status !== 200 || !dados) throw new Error("falha");
+    try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
+    $("login").hidden = true; $("app").hidden = false; st.textContent = "";
+    conhecidos = null;
+    await atualizar();
+    clearInterval(timer);
+    timer = setInterval(atualizar, INTERVALO_MS);
+    manterTelaLigada();
+  }catch(e){
+    st.className = "st erro"; st.textContent = "Não foi possível conectar. Tente de novo.";
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+$("l-entrar").addEventListener("click", entrar);
+$("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+$("a-sair").addEventListener("click", () => { sair(); $("l-st").textContent = ""; });
+$("a-som").addEventListener("click", () => {
+  somLigado = !somLigado;
+  $("a-som").textContent = "Som: " + (somLigado ? "ligado" : "desligado");
+  if (somLigado) bip();
+});
+
+$("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
+try{
+  const c = sessionStorage.getItem("chave");
+  if (c && $("l-rest").value){ $("l-chave").value = c; }
+}catch(e){}
+</script>
+</body>
+</html>
