@@ -47,6 +47,10 @@ button:disabled{opacity:.6;cursor:wait}
 .obs{background:#2a1d10;border:1px solid #5a3d12;border-radius:8px;padding:6px 8px;margin:6px 0;font-size:.92rem}
 .tot{font-weight:600;margin-top:6px}
 .ped button{margin-top:10px;width:100%}
+.fecha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.fecha select{padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.fecha .st{margin-left:4px}
+.fecha .st.ok{color:var(--ok)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -70,6 +74,12 @@ button:disabled{opacity:.6;cursor:wait}
         <button class="sec" id="a-som">Som: ligado</button>
         <button class="sec" id="a-sair">Sair</button>
       </div>
+    </div>
+    <div class="fecha">
+      <strong>Fechar mesa</strong>
+      <select id="f-mesa" aria-label="Mesa"></select>
+      <button class="sec" id="f-btn">Fechar mesa</button>
+      <span id="f-st" class="st" role="status"></span>
     </div>
     <div class="colunas">
       <div class="col novo"><h2>Novos <span id="n-novo">0</span></h2><div id="c-novo"></div></div>
@@ -176,6 +186,10 @@ function desenhar(pedidos, novosIds){
     for (const p of lista) caixa.append(cartao(p, novosIds.has(p.id)));
     $("n-" + s).textContent = col[s].length;
   }
+  const sel = $("f-mesa"), atual = sel.value;
+  const mesas = [...new Set(pedidos.map(p => String(p.mesa)))].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
+  sel.replaceChildren(...mesas.map(m => { const o = document.createElement("option"); o.value = m; o.textContent = "Mesa " + m; return o; }));
+  if (mesas.includes(atual)) sel.value = atual;
   document.title = (col.novo.length ? "(" + col.novo.length + ") " : "") + "Pedidos";
 }
 
@@ -206,6 +220,24 @@ async function atualizar(){
     ocupado = false;
   }
 }
+
+$("f-btn").addEventListener("click", async () => {
+  const mesa = $("f-mesa").value, st = $("f-st"), btn = $("f-btn");
+  if (!mesa) { st.className = "st erro"; st.textContent = "Nenhuma mesa na lista."; return; }
+  if (!confirm("Fechar a Mesa " + mesa + "? O celular dos clientes deixa de aceitar pedidos.")) return;
+  btn.disabled = true; st.className = "st"; st.textContent = "Fechando…";
+  try{
+    const {status, dados} = await api("saas-admin-fechar", {mesa});
+    if (status === 401) return sair();
+    if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+    st.className = "st ok";
+    st.textContent = dados.atualizado ? "Mesa " + mesa + " fechada." : "Mesa " + mesa + " já estava fechada.";
+  }catch(e){
+    st.className = "st erro"; st.textContent = "Não foi possível fechar. Tente de novo.";
+  }finally{
+    btn.disabled = false;
+  }
+});
 
 async function manterTelaLigada(){
   try{ if ("wakeLock" in navigator) wake = await navigator.wakeLock.request("screen"); }catch(e){}
