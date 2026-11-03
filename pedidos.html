@@ -51,6 +51,15 @@ button:disabled{opacity:.6;cursor:wait}
 .fecha select{padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 .fecha .st{margin-left:4px}
 .fecha .st.ok{color:var(--ok)}
+.contas{margin:0 0 16px}
+.contas h2{margin:0 0 10px;font-size:1rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink)}
+.contas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.conta{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.conta .m{font-weight:700;font-size:1.1rem}
+.pessoa{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.pessoa .v{font-weight:600;white-space:nowrap}
+.pessoa button{padding:6px 10px;font-size:.85rem}
+.conta .tm{display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--line);font-weight:700}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -81,6 +90,7 @@ button:disabled{opacity:.6;cursor:wait}
       <button class="sec" id="f-btn">Fechar mesa</button>
       <span id="f-st" class="st" role="status"></span>
     </div>
+    <div class="contas"><h2>Contas abertas</h2><div id="contas" class="contas-grid"></div><p id="c-st" class="st" role="status"></p></div>
     <div class="colunas">
       <div class="col novo"><h2>Novos <span id="n-novo">0</span></h2><div id="c-novo"></div></div>
       <div class="col preparando"><h2>Preparando <span id="n-preparando">0</span></h2><div id="c-preparando"></div></div>
@@ -95,7 +105,7 @@ const $ = id => document.getElementById(id);
 const reais = n => Number(n).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
 const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
 
-let REST = "", CHAVE = "", conhecidos = null, somLigado = true, ocupado = false, timer = null, ctx = null, wake = null;
+let ULTIMOS = [], REST = "", CHAVE = "", conhecidos = null, somLigado = true, ocupado = false, timer = null, ctx = null, wake = null;
 
 async function api(caminho, corpo){
   const r = await fetch(URL_BASE + caminho, {
@@ -190,7 +200,70 @@ function desenhar(pedidos, novosIds){
   const mesas = [...new Set(pedidos.map(p => String(p.mesa)))].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
   sel.replaceChildren(...mesas.map(m => { const o = document.createElement("option"); o.value = m; o.textContent = "Mesa " + m; return o; }));
   if (mesas.includes(atual)) sel.value = atual;
+  desenharContas(pedidos);
   document.title = (col.novo.length ? "(" + col.novo.length + ") " : "") + "Pedidos";
+}
+
+function contasAbertas(pedidos){
+  const mesas = new Map();
+  for (const p of pedidos){
+    if (p.paga) continue;
+    const m = String(p.mesa);
+    if (!mesas.has(m)) mesas.set(m, new Map());
+    const nome = p.nome || "";
+    mesas.get(m).set(nome, (mesas.get(m).get(nome) || 0) + Number(p.total));
+  }
+  return mesas;
+}
+
+function desenharContas(pedidos){
+  const caixa = $("contas");
+  const mesas = contasAbertas(pedidos);
+  caixa.replaceChildren();
+  if (!mesas.size){
+    const v = document.createElement("div"); v.className = "vazio"; v.textContent = "Nenhuma conta aberta"; caixa.append(v); return;
+  }
+  const ordem = [...mesas.keys()].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
+  for (const m of ordem){
+    const c = document.createElement("div"); c.className = "conta";
+    const t = document.createElement("div"); t.className = "m"; t.textContent = "Mesa " + m; c.append(t);
+    let soma = 0;
+    for (const [nome, valor] of mesas.get(m)){
+      soma += valor;
+      const l = document.createElement("div"); l.className = "pessoa";
+      const n = document.createElement("span"); n.textContent = nome || "(sem nome)";
+      const v = document.createElement("span"); v.className = "v"; v.textContent = reais(valor);
+      const dir = document.createElement("span"); dir.style.display = "flex"; dir.style.gap = "8px"; dir.style.alignItems = "center";
+      dir.append(v);
+      if (nome){
+        const b = document.createElement("button"); b.textContent = "Fechar conta";
+        b.addEventListener("click", () => fecharConta(m, nome, valor, b));
+        dir.append(b);
+      }
+      l.append(n, dir); c.append(l);
+    }
+    const tm = document.createElement("div"); tm.className = "tm";
+    const a = document.createElement("span"); a.textContent = "Total da mesa";
+    const b2 = document.createElement("span"); b2.textContent = reais(soma);
+    tm.append(a, b2); c.append(tm);
+    caixa.append(c);
+  }
+}
+
+async function fecharConta(mesa, nome, valor, btn){
+  const st = $("c-st");
+  if (!confirm("Fechar a conta de " + nome + " (Mesa " + mesa + ")? Total " + reais(valor) + ".")) return;
+  btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "…";
+  try{
+    const {status, dados} = await api("saas-admin-conta", {mesa, nome});
+    if (status === 401) return sair();
+    if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+    st.className = "st ok"; st.textContent = "Conta de " + nome + " fechada (" + reais(valor) + ").";
+    await atualizar();
+  }catch(e){
+    btn.disabled = false;
+    st.className = "st erro"; st.textContent = "Não foi possível fechar a conta. Tente de novo.";
+  }
 }
 
 async function atualizar(){
@@ -201,6 +274,7 @@ async function atualizar(){
     if (status === 401) return sair();
     if (status !== 200 || !dados) throw new Error("falha");
     const pedidos = dados.pedidos || [];
+    ULTIMOS = pedidos;
     const ids = new Set(pedidos.map(p => p.id));
     const novosIds = new Set();
     if (conhecidos){
@@ -224,14 +298,24 @@ async function atualizar(){
 $("f-btn").addEventListener("click", async () => {
   const mesa = $("f-mesa").value, st = $("f-st"), btn = $("f-btn");
   if (!mesa) { st.className = "st erro"; st.textContent = "Nenhuma mesa na lista."; return; }
-  if (!confirm("Fechar a Mesa " + mesa + "? O celular dos clientes deixa de aceitar pedidos.")) return;
+  const abertas = contasAbertas(ULTIMOS).get(String(mesa)) || new Map();
+  let soma = 0; for (const v of abertas.values()) soma += v;
+  const aviso = abertas.size ? " Total em aberto: " + reais(soma) + " (" + abertas.size + (abertas.size === 1 ? " conta)." : " contas).") : "";
+  if (!confirm("Fechar a Mesa " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando…";
   try{
+    for (const nome of abertas.keys()){
+      if (!nome) continue;
+      const rc = await api("saas-admin-conta", {mesa, nome});
+      if (rc.status === 401) return sair();
+      if (!(rc.status === 200 && rc.dados && rc.dados.ok)) throw new Error("falha");
+    }
     const {status, dados} = await api("saas-admin-fechar", {mesa});
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     st.className = "st ok";
     st.textContent = dados.atualizado ? "Mesa " + mesa + " fechada." : "Mesa " + mesa + " já estava fechada.";
+    await atualizar();
   }catch(e){
     st.className = "st erro"; st.textContent = "Não foi possível fechar. Tente de novo.";
   }finally{
