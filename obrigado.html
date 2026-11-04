@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Obrigado</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 15% -10%,rgba(255,74,61,.28),transparent 55%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{width:100%;max-width:460px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 22px}
+h1{margin:0 0 6px;font-size:1.6rem}
+p{margin:0 0 10px;color:var(--muted)}
+.box{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.box small{display:block;color:var(--muted);font-size:.8rem;margin-bottom:2px}
+.box code{display:block;font-size:1.15rem;word-break:break-all;color:var(--ink)}
+.chave code{font-size:1.4rem;letter-spacing:.04em;color:var(--ok)}
+.aviso{padding:10px 12px;border:1px solid #5a3d12;background:#2a1d10;border-radius:10px;font-size:.9rem;color:var(--ink)}
+button,a.btn{display:block;width:100%;margin-top:12px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;text-align:center;text-decoration:none;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.espera{display:flex;align-items:center;gap:12px;color:var(--muted)}
+.spin{width:20px;height:20px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:g 1s linear infinite}
+@keyframes g{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div class="card">
+    <section id="espera">
+      <h1>Pagamento recebido</h1>
+      <div class="espera"><div class="spin" aria-hidden="true"></div><p id="msg" role="status">Estamos criando o seu bar. Isso leva alguns segundos.</p></div>
+    </section>
+
+    <section id="pronto" hidden>
+      <h1>Tudo pronto!</h1>
+      <p>O seu bar foi criado. Guarde estes dados, a chave de acesso &eacute; a sua senha.</p>
+      <div class="box"><small>Bar</small><code id="r-nome"></code></div>
+      <div class="box"><small>Endere&ccedil;o do bar</small><code id="r-slug"></code></div>
+      <div class="box chave"><small>Chave de acesso</small><code id="r-chave"></code></div>
+      <div class="aviso">Anote a chave agora e n&atilde;o a compartilhe. Quem tiver a chave consegue mexer no seu card&aacute;pio e nos seus pedidos.</div>
+      <button id="copiar">Copiar a chave</button>
+      <a class="btn sec" id="entrar" href="entrar.html">Entrar no meu bar</a>
+    </section>
+
+    <section id="erro" hidden>
+      <h1>Quase l&aacute;</h1>
+      <p id="erro-msg"></p>
+      <button id="de-novo" class="sec">Verificar de novo</button>
+    </section>
+  </div>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+const ID = (params.get("preapproval_id") || "").replace(/[^0-9a-f]/gi, "").slice(0, 32);
+if (location.search) history.replaceState(null, "", location.pathname);
+
+let tentativas = 0, chaveAtual = "";
+const MAX = 40, INTERVALO = 3000;
+
+function mostrar(qual){ for (const s of ["espera", "pronto", "erro"]) $(s).hidden = s !== qual; }
+
+async function consultar(){
+  if (ID.length !== 32){
+    $("erro-msg").textContent = "N\u00e3o encontramos o c\u00f3digo do pagamento neste endere\u00e7o. Se voc\u00ea acabou de pagar, procure o seu e-mail do Mercado Pago ou fale com a gente.";
+    $("de-novo").hidden = true; mostrar("erro"); return;
+  }
+  mostrar("espera");
+  try{
+    const r = await fetch(URL_BASE + "saas-obrigado", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({id: ID})
+    });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    if (d.pronto){
+      chaveAtual = d.chave || "";
+      $("r-nome").textContent = d.nome || "";
+      $("r-slug").textContent = d.slug || "";
+      $("r-chave").textContent = chaveAtual;
+      $("entrar").href = "entrar.html?r=" + encodeURIComponent(d.slug || "");
+      mostrar("pronto"); return;
+    }
+  }catch(e){}
+  tentativas++;
+  if (tentativas >= MAX){
+    $("erro-msg").textContent = "O seu pagamento ainda est\u00e1 sendo confirmado. Isso pode levar alguns minutos. Toque em verificar de novo daqui a pouco.";
+    $("de-novo").hidden = false; mostrar("erro"); return;
+  }
+  setTimeout(consultar, INTERVALO);
+}
+
+$("de-novo").addEventListener("click", () => { tentativas = 0; consultar(); });
+$("copiar").addEventListener("click", async () => {
+  const b = $("copiar");
+  try{ await navigator.clipboard.writeText(chaveAtual); b.textContent = "Copiado!"; }
+  catch(e){ b.textContent = "Selecione a chave e copie"; }
+  setTimeout(() => { b.textContent = "Copiar a chave"; }, 2000);
+});
+
+consultar();
+</script>
+</body>
+</html>
