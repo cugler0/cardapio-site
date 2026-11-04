@@ -29,13 +29,13 @@ button:disabled{opacity:.6;cursor:wait}
   <form class="card" id="f" autocomplete="off">
     <h1>Criar conta</h1>
     <p class="sub">Cadastre o seu bar e comece a receber pedidos pelo celular dos clientes.</p>
-    <div class="preco"><strong>R$ 79,90</strong> por mÃªs<br><span class="dica">CobranÃ§a mensal no cartÃ£o, cancele quando quiser.</span></div>
+    <div class="preco"><strong>R$ 79,90</strong> por m&#234;s<br><span class="dica">Cobran&#231;a mensal no cart&#227;o, cancele quando quiser.</span></div>
 
     <label>Nome do bar<input id="nome" maxlength="80" required></label>
-    <label>EndereÃ§o do bar
+    <label>Endere&#231;o do bar
       <input id="slug" maxlength="40" autocapitalize="none" required>
     </label>
-    <p class="dica">SÃ³ letras minÃºsculas, nÃºmeros e hÃ­fen. Vai aparecer nos links das mesas, por exemplo <b id="ex">meu-bar</b>.</p>
+    <p class="dica">S&#243; letras min&#250;sculas, n&#250;meros e h&#237;fen. Vai aparecer nos links das mesas, por exemplo <b id="ex">meu-bar</b>.</p>
     <label>Seu e-mail<input id="email" type="email" maxlength="120" required></label>
 
     <p id="st" class="st" role="status"></p>
@@ -46,7 +46,7 @@ button:disabled{opacity:.6;cursor:wait}
 <script>
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const $ = id => document.getElementById(id);
-const semAcento = t => t.normalize("NFD").replace(/[Ì€-Í¯]/g, "");
+const semAcento = t => t.normalize("NFD").replace(/[^\x00-\x7f]/g, "");
 const slugar = t => semAcento(String(t || "").toLowerCase()).replace(/[^0-9a-z]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
 let slugEditado = false;
@@ -57,8 +57,8 @@ $("f").addEventListener("submit", async e => {
   e.preventDefault();
   const st = $("st"), btn = $("ok");
   const nome = $("nome").value.trim(), slug = $("slug").value.trim(), email = $("email").value.trim();
-  if (slug.length < 2){ st.style.color = "var(--accent)"; st.textContent = "O endereÃ§o precisa ter pelo menos 2 caracteres."; return; }
-  btn.disabled = true; st.style.color = "var(--muted)"; st.textContent = "Preparando o pagamentoâ€¦";
+  if (slug.length < 2){ st.style.color = "var(--accent)"; st.textContent = "O endere\u00e7o precisa ter pelo menos 2 caracteres."; return; }
+  btn.disabled = true; st.style.color = "var(--muted)"; st.textContent = "Preparando o pagamento\u2026";
   try{
     const r = await fetch(URL_BASE + "saas-criar-conta", {
       method: "POST",
@@ -72,7 +72,7 @@ $("f").addEventListener("submit", async e => {
     if (!r.ok || !d || !d.init_point) throw new Error("falha");
     location.href = d.init_point;
   }catch(err){
-    st.style.color = "var(--accent)"; st.textContent = "NÃ£o foi possÃ­vel continuar. Tente de novo em instantes.";
+    st.style.color = "var(--accent)"; st.textContent = "N\u00e3o foi poss\u00edvel continuar. Tente de novo em instantes.";
   }finally{
     btn.disabled = false;
   }
