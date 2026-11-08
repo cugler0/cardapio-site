@@ -61,6 +61,26 @@ button:disabled{opacity:.6;cursor:wait}
 .pessoa button{padding:6px 10px;font-size:.85rem}
 .conta .tm{display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--line);font-weight:700}
 [hidden]{display:none!important}
+.abas{display:flex;gap:8px;margin:0 0 14px}
+.aba{display:flex;align-items:center;gap:8px;padding:10px 18px;background:transparent;border:1px solid var(--line);color:var(--ink)}
+.aba.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.badge{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--bg);color:var(--ink);font-size:.8rem;text-align:center}
+.aba.on .badge{background:#fff;color:var(--accent)}
+.aba:not(.on) .badge.tem{background:var(--accent);color:#fff}
+.colunas4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.colunas4{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.colunas4{grid-template-columns:1fr}}
+.col.saiu h2{color:#5cc8ff}
+.col.saiu .ped{border-left-color:#5cc8ff}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.04em;background:var(--accent);color:#fff}
+.tag.ret{background:#2b6cb0}
+.tel{color:var(--ink);font-size:.92rem}
+.end{margin:4px 0;font-size:.95rem}
+.pag{margin-top:6px;font-size:.92rem;color:var(--ink)}
+.pag b{color:var(--warn)}
+.pag b.ok{color:var(--ok)}
+.ped a.zap{display:block;margin-top:8px;padding:9px;border-radius:8px;background:#25d366;color:#04210f;text-align:center;font-weight:600;text-decoration:none}
+.ped a.zap:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
 a.voltar:hover{border-color:var(--accent)}
 a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -88,6 +108,11 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         <button class="sec" id="a-sair">Sair</button>
       </div>
     </div>
+    <div class="abas" role="tablist">
+      <button class="aba on" id="aba-mesas" data-aba="mesas" role="tab">Mesas <span class="badge" id="b-mesas">0</span></button>
+      <button class="aba" id="aba-delivery" data-aba="delivery" role="tab">Delivery <span class="badge" id="b-delivery">0</span></button>
+    </div>
+    <div id="vista-mesas">
     <div class="fecha">
       <strong>Fechar mesa</strong>
       <select id="f-mesa" aria-label="Mesa"></select>
@@ -99,6 +124,15 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <div class="col novo"><h2>Novos <span id="n-novo">0</span></h2><div id="c-novo"></div></div>
       <div class="col preparando"><h2>Preparando <span id="n-preparando">0</span></h2><div id="c-preparando"></div></div>
       <div class="col entregue"><h2>Entregues <span id="n-entregue">0</span></h2><div id="c-entregue"></div></div>
+    </div>
+    </div>
+    <div id="vista-delivery" hidden>
+      <div class="colunas4">
+        <div class="col novo"><h2>Novos <span id="nd-novo">0</span></h2><div id="d-novo"></div></div>
+        <div class="col preparando"><h2>Preparando <span id="nd-preparando">0</span></h2><div id="d-preparando"></div></div>
+        <div class="col saiu"><h2>A caminho / Pronto <span id="nd-saiu">0</span></h2><div id="d-saiu"></div></div>
+        <div class="col entregue"><h2>Conclu&#237;dos <span id="nd-entregue">0</span></h2><div id="d-entregue"></div></div>
+      </div>
     </div>
   </section>
 </main>
@@ -137,12 +171,15 @@ function bip(){
   }catch(e){}
 }
 
+const tipoDe = p => p.tipo || "mesa";
+const rotuloPedido = p => tipoDe(p) === "mesa" ? "Mesa " + p.mesa : (tipoDe(p) === "entrega" ? "Entrega" : "Retirada");
+
 function avisar(novos){
   bip();
   try{
     if ("Notification" in window && Notification.permission === "granted"){
       const p = novos[0];
-      new Notification("Novo pedido - Mesa " + p.mesa, {body: novos.length > 1 ? novos.length + " pedidos novos" : "Toque para ver"});
+      new Notification("Novo pedido - " + rotuloPedido(p), {body: novos.length > 1 ? novos.length + " pedidos novos" : "Toque para ver"});
     }
   }catch(e){}
 }
@@ -187,7 +224,132 @@ function cartao(p, destaque){
   return d;
 }
 
-function desenhar(pedidos, novosIds){
+async function mudarStatus(p, novo, b){
+  b.disabled = true;
+  try{
+    const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: novo});
+    if (status === 401) return sair();
+    if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+    await atualizar();
+  }catch(e){
+    b.disabled = false; b.textContent = "Erro. Tente de novo";
+  }
+}
+
+const PAGAMENTOS = {pix_antecipado: "Pix antecipado", pix_entrega: "Pix ao receber", cartao: "Cart\u00e3o ao receber", dinheiro: "Dinheiro"};
+
+function msgZap(p){
+  const primeiro = p.nome ? String(p.nome).trim().split(" ")[0] : "";
+  const ola = "Ol\u00e1" + (primeiro ? ", " + primeiro : "") + "! ";
+  if (p.status === "novo") return ola + "Recebemos o seu pedido e j\u00e1 vamos preparar.";
+  if (p.status === "preparando") return ola + "O seu pedido est\u00e1 sendo preparado.";
+  if (p.status === "saiu_entrega") return ola + "O seu pedido saiu para entrega!";
+  if (p.status === "pronto") return ola + "O seu pedido est\u00e1 pronto para retirada!";
+  return ola + "Obrigado pelo pedido!";
+}
+function linkZap(p){
+  let n = String(p.telefone || "").replace(/\D/g, "");
+  if (n.length < 10) return null;
+  if (n.length <= 11) n = "55" + n;
+  return "https://wa.me/" + n + "?text=" + encodeURIComponent(msgZap(p));
+}
+
+function proximoDelivery(p){
+  const ent = tipoDe(p) === "entrega";
+  if (p.status === "novo") return ["preparando", "Come\u00e7ar a preparar"];
+  if (p.status === "preparando") return ent ? ["saiu_entrega", "Saiu para entrega"] : ["pronto", "Pronto para retirar"];
+  if (p.status === "saiu_entrega") return ["entregue", "Marcar como entregue"];
+  if (p.status === "pronto") return ["entregue", "Marcar como retirado"];
+  return null;
+}
+
+function cartaoDelivery(p, destaque){
+  const ent = tipoDe(p) === "entrega";
+  const d = document.createElement("div");
+  d.className = "ped" + (destaque ? " destaque" : "");
+  const cab = document.createElement("div"); cab.className = "cab";
+  const tag = document.createElement("span"); tag.className = "tag" + (ent ? "" : " ret"); tag.textContent = ent ? "ENTREGA" : "RETIRADA";
+  const hora = document.createElement("span"); hora.className = "hora";
+  hora.textContent = new Date(p.criado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  cab.append(tag, hora); d.append(cab);
+
+  const q = document.createElement("div"); q.className = "mesa"; q.style.fontSize = "1.1rem"; q.style.marginTop = "6px";
+  q.textContent = p.nome || "(sem nome)"; d.append(q);
+  if (p.telefone){ const t = document.createElement("div"); t.className = "tel"; t.textContent = p.telefone; d.append(t); }
+  if (ent){
+    const e = document.createElement("div"); e.className = "end";
+    e.textContent = (p.endereco || "") + (p.bairro ? " - " + p.bairro : ""); d.append(e);
+  }
+
+  const ul = document.createElement("ul"); ul.className = "itens";
+  for (const it of (Array.isArray(p.itens) ? p.itens : [])){
+    const li = document.createElement("li"); li.textContent = it.qtd + "x " + it.nome; ul.append(li);
+  }
+  d.append(ul);
+  if (p.observacoes){ const o = document.createElement("div"); o.className = "obs"; o.textContent = "Obs: " + p.observacoes; d.append(o); }
+
+  const taxa = Number(p.taxa_entrega || 0);
+  const t = document.createElement("div"); t.className = "tot";
+  t.textContent = "Total " + reais(p.total) + (taxa > 0 ? " (com taxa de " + reais(taxa) + ")" : ""); d.append(t);
+
+  const pg = document.createElement("div"); pg.className = "pag";
+  pg.append(PAGAMENTOS[p.pagamento] || "Pagamento n\u00e3o informado");
+  if (p.pagamento === "pix_antecipado"){
+    const s = document.createElement("b"); s.className = p.pago_confirmado ? "ok" : "";
+    s.textContent = p.pago_confirmado ? " \u00b7 pago" : " \u00b7 aguardando confirma\u00e7\u00e3o";
+    pg.append(s);
+  }
+  if (p.pagamento === "dinheiro" && p.troco_para) pg.append(" \u00b7 troco para " + reais(p.troco_para));
+  d.append(pg);
+
+  const prox = proximoDelivery(p);
+  if (prox){
+    const b = document.createElement("button"); b.textContent = prox[1];
+    b.addEventListener("click", () => mudarStatus(p, prox[0], b));
+    d.append(b);
+  }
+  const href = linkZap(p);
+  if (href){
+    const a = document.createElement("a"); a.className = "zap"; a.href = href; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = "Avisar o cliente no WhatsApp"; d.append(a);
+  }
+  return d;
+}
+
+function desenharDelivery(pedidos, novosIds){
+  const col = {novo: [], preparando: [], saiu: [], entregue: []};
+  for (const p of pedidos){
+    const k = (p.status === "saiu_entrega" || p.status === "pronto") ? "saiu" : (col[p.status] ? p.status : "novo");
+    col[k].push(p);
+  }
+  for (const s of ["novo", "preparando", "saiu", "entregue"]){
+    const lista = s === "entregue" ? col[s].slice(0, 15) : col[s];
+    const caixa = $("d-" + s);
+    caixa.replaceChildren();
+    if (!lista.length){
+      const v = document.createElement("div"); v.className = "vazio"; v.textContent = "Nenhum pedido"; caixa.append(v);
+    }
+    for (const p of lista) caixa.append(cartaoDelivery(p, novosIds.has(p.id)));
+    $("nd-" + s).textContent = col[s].length;
+  }
+  return col.novo.length;
+}
+
+function mostrarAba(nome){
+  const del = nome === "delivery";
+  $("vista-mesas").hidden = del;
+  $("vista-delivery").hidden = !del;
+  $("aba-mesas").classList.toggle("on", !del);
+  $("aba-delivery").classList.toggle("on", del);
+  try{ sessionStorage.setItem("aba", del ? "delivery" : "mesas"); }catch(e){}
+}
+$("aba-mesas").addEventListener("click", () => mostrarAba("mesas"));
+$("aba-delivery").addEventListener("click", () => mostrarAba("delivery"));
+
+function desenhar(todos, novosIds){
+  const pedidos = todos.filter(p => tipoDe(p) === "mesa");
+  const entregas = todos.filter(p => tipoDe(p) !== "mesa");
+  const novosDel = desenharDelivery(entregas, novosIds);
   const col = {novo: [], preparando: [], entregue: []};
   for (const p of pedidos) (col[p.status] || col.novo).push(p);
   for (const s of ["novo", "preparando", "entregue"]){
@@ -205,13 +367,18 @@ function desenhar(pedidos, novosIds){
   sel.replaceChildren(...mesas.map(m => { const o = document.createElement("option"); o.value = m; o.textContent = "Mesa " + m; return o; }));
   if (mesas.includes(atual)) sel.value = atual;
   desenharContas(pedidos);
-  document.title = (col.novo.length ? "(" + col.novo.length + ") " : "") + "Pedidos";
+  $("b-mesas").textContent = col.novo.length;
+  $("b-delivery").textContent = novosDel;
+  $("b-mesas").classList.toggle("tem", col.novo.length > 0);
+  $("b-delivery").classList.toggle("tem", novosDel > 0);
+  const totalNovos = col.novo.length + novosDel;
+  document.title = (totalNovos ? "(" + totalNovos + ") " : "") + "Pedidos";
 }
 
 function contasAbertas(pedidos){
   const mesas = new Map();
   for (const p of pedidos){
-    if (p.paga) continue;
+    if (p.paga || tipoDe(p) !== "mesa") continue;
     const m = String(p.mesa);
     if (!mesas.has(m)) mesas.set(m, new Map());
     const nome = p.nome || "";
@@ -357,6 +524,7 @@ async function entrar(){
     try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
     $("login").hidden = true; $("app").hidden = false; st.textContent = "";
     conhecidos = null;
+    try{ mostrarAba(sessionStorage.getItem("aba") === "delivery" ? "delivery" : "mesas"); }catch(e){}
     await atualizar();
     clearInterval(timer);
     timer = setInterval(atualizar, INTERVALO_MS);
