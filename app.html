@@ -45,12 +45,13 @@ input{display:block;margin-top:4px;width:110px;padding:10px;border-radius:8px;bo
   <h2>Dia a dia</h2>
   <div class="grid">
     <a class="tile" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span>Veja os pedidos chegando, avance o status e feche as contas.</span></a>
-    <a class="tile" id="t-painel" href="painel.html"><strong>Painel do cardápio</strong><span>Mude preços, ligue e desligue itens e adicione novos.</span></a>
+    <a class="tile" id="t-painel" href="painel.html"><strong>Painel do card&#225;pio</strong><span>Mude pre&#231;os, ligue e desligue itens e adicione novos.</span></a>
+    <a class="tile" id="t-delivery" href="delivery.html"><strong>Delivery</strong><span>Bairros, taxas, Pix e o link para pedidos de entrega.</span></a>
   </div>
 
   <h2>Seus clientes</h2>
   <div class="grid">
-    <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o cardápio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
+    <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o card&#225;pio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
   </div>
 
   <h2>Links das mesas</h2>
@@ -70,9 +71,10 @@ try{ rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem(
 if (!rest){ location.replace("entrar.html"); }
 
 $("nome").textContent = nome || rest;
-$("end").textContent = "Endereço: " + rest;
+$("end").textContent = "Endere\u00e7o: " + rest;
 $("t-pedidos").href = "pedidos.html?r=" + encodeURIComponent(rest);
 $("t-painel").href = "painel.html?r=" + encodeURIComponent(rest);
+$("t-delivery").href = "delivery.html?r=" + encodeURIComponent(rest);
 $("t-cardapio").href = "cardapio-saas.html?r=" + encodeURIComponent(rest);
 
 $("sair").addEventListener("click", () => {
@@ -87,7 +89,7 @@ $("gerar").addEventListener("click", () => {
   for (let i = 1; i <= n; i++){
     const url = base + i;
     const l = document.createElement("div"); l.className = "lk";
-    const c = document.createElement("code"); c.textContent = "Mesa " + i + " · " + url;
+    const c = document.createElement("code"); c.textContent = "Mesa " + i + " \u00b7 " + url;
     const b = document.createElement("button"); b.textContent = "Copiar";
     b.addEventListener("click", async () => {
       try{ await navigator.clipboard.writeText(url); b.textContent = "Copiado!"; b.classList.add("feito"); }

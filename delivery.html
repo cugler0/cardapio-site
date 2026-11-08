@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Delivery</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#ffb000;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:24px 16px 80px}
+h1{margin:0 0 4px;font-size:1.6rem}
+h2{margin:28px 0 10px;font-size:1.05rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.sub{margin:0 0 6px;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
+input,select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:560px){.g2{grid-template-columns:1fr}}
+.chk{display:flex;align-items:center;gap:10px;margin:0;color:var(--ink);font-size:1rem}
+.chk input{width:22px;height:22px;margin:0}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+button:disabled{opacity:.6;cursor:wait}
+.rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.st{font-size:.9rem;min-height:1.2em}
+.st.ok{color:var(--ok)}
+.st.erro{color:var(--accent)}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}
+a.voltar:hover{border-color:var(--accent)}
+.aviso{padding:12px 14px;border:1px solid #5a3d12;background:#2a1d10;border-radius:12px;margin-bottom:12px}
+.aviso a{color:#25d366;font-weight:600}
+.bairro{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
+.bairro:first-of-type{border-top:0}
+.bairro .acoes{align-items:center}
+.bairro .chk{font-size:.85rem;color:var(--muted)}
+.bairro .chk input{width:20px;height:20px}
+@media (max-width:620px){.bairro{grid-template-columns:1fr 1fr}.bairro .acoes{grid-column:1/-1}}
+.lk{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:10px}
+.lk code{font-size:.82rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lk button{padding:6px 12px;font-size:.85rem;flex:none}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="card" style="max-width:460px;margin:40px auto">
+    <h1>Delivery</h1>
+    <p class="sub">Entre para configurar entrega, taxas e Pix.</p>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
+    <div class="rodape"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="topo">
+      <div><h1 id="a-nome"></h1><p class="sub">Configura&#231;&#227;o do delivery</p></div>
+      <div class="acoes"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
+    </div>
+
+    <div class="aviso" id="aviso-plano" hidden>O seu plano atual n&#227;o inclui delivery. Para liberar entrega, retirada e pagamento por Pix,
+      <a id="zap-plano" target="_blank" rel="noopener" href="#">fale com a gente no WhatsApp</a>.</div>
+
+    <h2>Delivery</h2>
+    <div class="card">
+      <label class="chk"><input type="checkbox" id="ativo"> Receber pedidos de entrega e retirada</label>
+      <div class="g2">
+        <label>Pedido m&#237;nimo para entrega (R$)<input id="minimo" inputmode="decimal" placeholder="0,00"></label>
+        <label>WhatsApp do estabelecimento<input id="zap" type="tel" inputmode="tel" placeholder="(67) 99999-9999"></label>
+      </div>
+    </div>
+
+    <h2>Pix</h2>
+    <div class="card">
+      <p class="sub">O cliente paga direto na sua chave e voc&#234; confirma no painel de pedidos.</p>
+      <div class="g2">
+        <label>Tipo da chave
+          <select id="pix-tipo">
+            <option value="cpf">CPF</option>
+            <option value="cnpj">CNPJ</option>
+            <option value="tel">Telefone</option>
+            <option value="email">E-mail</option>
+            <option value="aleatoria">Chave aleat&#243;ria</option>
+          </select>
+        </label>
+        <label>Chave Pix<input id="pix-chave" autocomplete="off" autocapitalize="none"></label>
+        <label>Nome do recebedor<input id="pix-nome" maxlength="25" autocomplete="off"></label>
+        <label>Cidade<input id="pix-cidade" maxlength="15" autocomplete="off"></label>
+      </div>
+    </div>
+    <div class="rodape"><span id="c-st" class="st" role="status"></span><button id="c-salvar">Salvar configura&#231;&#227;o</button></div>
+
+    <h2>Bairros e taxas</h2>
+    <div class="card" id="bairros"></div>
+    <div class="card">
+      <strong>Novo bairro</strong>
+      <div class="bairro" id="novo"></div>
+    </div>
+
+    <h2>Link para pedidos de entrega</h2>
+    <div class="card">
+      <p class="sub">Coloque no Instagram, no WhatsApp ou no Google. Quem abrir esse link pede por entrega ou retirada.</p>
+      <div class="lk"><code id="link"></code><button id="copiar">Copiar</button></div>
+    </div>
+  </section>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const CONTATO = "https://wa.me/5512997621359?text=" + encodeURIComponent("Ol\u00e1! Quero liberar o delivery no meu MenuEasy.");
+const $ = id => document.getElementById(id);
+let REST = "", CHAVE = "";
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+
+async function api(caminho, corpo){
+  const r = await fetch(URL_BASE + caminho, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})
+  });
+  let dados = null;
+  try{ dados = await r.json(); }catch(e){}
+  return {status: r.status, dados};
+}
+const msg = (el, texto, ok) => { el.className = "st " + (ok ? "ok" : "erro"); el.textContent = texto; };
+const neutro = (el, texto) => { el.className = "st"; el.textContent = texto; };
+
+// ---- Pix: detectar e normalizar o tipo da chave ----
+function detectar(c){
+  c = String(c || "").trim();
+  if (!c) return "cpf";
+  if (c.startsWith("+55")) return "tel";
+  if (c.includes("@")) return "email";
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(c)) return "aleatoria";
+  const d = c.replace(/\D/g, "");
+  if (d.length === 14) return "cnpj";
+  if (d.length === 11) return "cpf";
+  return "aleatoria";
+}
+function normalizar(tipo, v){
+  v = String(v || "").trim();
+  if (!v) return "";
+  if (tipo === "tel"){ let d = v.replace(/\D/g, ""); if (!d.startsWith("55") || d.length < 12) d = "55" + d; return "+" + d; }
+  if (tipo === "cpf" || tipo === "cnpj") return v.replace(/\D/g, "");
+  return v.toLowerCase();
+}
+
+// ---- Bairros ----
+function linhaBairro(b, aoMudar){
+  const box = document.createElement("div"); box.className = "bairro";
+  const nome = document.createElement("input"); nome.value = b.nome || ""; nome.maxLength = 60; nome.placeholder = "Bairro";
+  const taxa = document.createElement("input"); taxa.value = b.taxa != null ? String(b.taxa).replace(".", ",") : ""; taxa.inputMode = "decimal"; taxa.placeholder = "0,00";
+  const ln = document.createElement("label"); ln.append("Bairro", nome);
+  const lt = document.createElement("label"); lt.append("Taxa (R$)", taxa);
+  ln.style.marginTop = "0"; lt.style.marginTop = "0";
+  const ac = document.createElement("div"); ac.className = "acoes";
+  const lc = document.createElement("label"); lc.className = "chk";
+  const ativo = document.createElement("input"); ativo.type = "checkbox"; ativo.checked = b.ativo !== false;
+  lc.append(ativo, "Atende");
+  const salvar = document.createElement("button"); salvar.textContent = b.id ? "Salvar" : "Adicionar";
+  const st = document.createElement("span"); st.className = "st"; st.setAttribute("role", "status");
+  ac.append(lc, salvar);
+  if (b.id){
+    const rem = document.createElement("button"); rem.className = "sec"; rem.textContent = "Remover";
+    rem.addEventListener("click", async () => {
+      if (!confirm("Remover o bairro " + b.nome + "?")) return;
+      rem.disabled = true;
+      const {status, dados} = await api("saas-admin-bairro", {acao: "remover", id: b.id});
+      if (status === 401) return sair();
+      if (status === 200 && dados && dados.ok) aoMudar(); else { rem.disabled = false; msg(st, "N\u00e3o foi poss\u00edvel remover.", false); }
+    });
+    ac.append(rem);
+  }
+  ac.append(st);
+  salvar.addEventListener("click", async () => {
+    const t = Number(String(taxa.value).replace(",", "."));
+    if (nome.value.trim().length < 2){ msg(st, "Digite o bairro.", false); return; }
+    if (!Number.isFinite(t) || t < 0){ msg(st, "Taxa inv\u00e1lida.", false); return; }
+    salvar.disabled = true; neutro(st, "Salvando\u2026");
+    try{
+      const {status, dados} = await api("saas-admin-bairro", {id: b.id, nome: nome.value, taxa: t, ativo: ativo.checked});
+      if (status === 401) return sair();
+      if (status === 200 && dados && dados.ok){
+        if (b.id) msg(st, "Salvo!", true); else aoMudar();
+      } else msg(st, (dados && dados.erro) || "N\u00e3o foi poss\u00edvel salvar.", false);
+    }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); }
+    finally{ salvar.disabled = false; }
+  });
+  box.append(ln, lt, ac);
+  return box;
+}
+
+function desenhar(d){
+  $("a-nome").textContent = d.nome || REST;
+  const temPlano = d.plano === "delivery";
+  $("aviso-plano").hidden = temPlano;
+  $("zap-plano").href = CONTATO;
+  $("ativo").checked = d.delivery_ativo && temPlano;
+  $("ativo").disabled = !temPlano;
+  $("minimo").value = d.pedido_minimo ? String(d.pedido_minimo).replace(".", ",") : "";
+  $("zap").value = d.whatsapp || "";
+  $("pix-tipo").value = detectar(d.pix_chave);
+  $("pix-chave").value = d.pix_chave || "";
+  $("pix-nome").value = d.pix_nome || "";
+  $("pix-cidade").value = d.pix_cidade || "";
+  const caixa = $("bairros"); caixa.replaceChildren();
+  if (!d.bairros.length){ const v = document.createElement("p"); v.className = "sub"; v.textContent = "Nenhum bairro cadastrado ainda. Adicione abaixo."; caixa.append(v); }
+  for (const b of d.bairros) caixa.append(linhaBairro(b, recarregar));
+  $("novo").replaceWith(Object.assign(linhaBairro({}, recarregar), {id: "novo"}));
+  $("link").textContent = location.origin + "/cardapio-saas.html?r=" + REST;
+}
+
+async function carregar(){
+  const {status, dados} = await api("saas-admin-delivery", {});
+  if (status === 401) throw new Error("negado");
+  if (status !== 200 || !dados) throw new Error("falha");
+  desenhar(dados);
+}
+async function recarregar(){ try{ await carregar(); }catch(e){ if (e.message === "negado") sair(); } }
+
+$("c-salvar").addEventListener("click", async () => {
+  const st = $("c-st"), btn = $("c-salvar");
+  const tipo = $("pix-tipo").value;
+  const chave = normalizar(tipo, $("pix-chave").value);
+  const minimo = String($("minimo").value).trim().replace(",", ".");
+  btn.disabled = true; neutro(st, "Salvando\u2026");
+  try{
+    const {status, dados} = await api("saas-admin-delivery-salvar", {
+      delivery_ativo: $("ativo").checked, pedido_minimo: minimo === "" ? 0 : Number(minimo),
+      whatsapp: $("zap").value, pix_chave: chave, pix_nome: $("pix-nome").value, pix_cidade: $("pix-cidade").value
+    });
+    if (status === 401) return sair();
+    if (status === 200 && dados && dados.ok){ $("pix-chave").value = chave; msg(st, "Configura\u00e7\u00e3o salva!", true); }
+    else msg(st, (dados && dados.erro) || "N\u00e3o foi poss\u00edvel salvar.", false);
+  }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); }
+  finally{ btn.disabled = false; }
+});
+
+$("copiar").addEventListener("click", async () => {
+  const b = $("copiar");
+  try{ await navigator.clipboard.writeText($("link").textContent); b.textContent = "Copiado!"; }
+  catch(e){ b.textContent = "Selecione e copie"; }
+  setTimeout(() => { b.textContent = "Copiar"; }, 1800);
+});
+
+function sair(){
+  try{ sessionStorage.removeItem("chave"); }catch(e){}
+  CHAVE = "";
+  $("app").hidden = true; $("login").hidden = false; $("l-chave").value = "";
+  msg($("l-st"), "Acesso negado. Confira o restaurante e a chave.", false);
+}
+async function entrar(){
+  const st = $("l-st"), btn = $("l-entrar");
+  REST = limpaSlug($("l-rest").value);
+  CHAVE = $("l-chave").value.trim();
+  if (!REST || !CHAVE){ msg(st, "Preencha os dois campos.", false); return; }
+  btn.disabled = true; neutro(st, "Entrando\u2026");
+  try{
+    await carregar();
+    try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
+    $("login").hidden = true; $("app").hidden = false; st.textContent = "";
+  }catch(e){
+    msg(st, e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "N\u00e3o foi poss\u00edvel conectar. Tente de novo.", false);
+  }finally{ btn.disabled = false; }
+}
+$("l-entrar").addEventListener("click", entrar);
+$("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+$("a-sair").addEventListener("click", () => { sair(); $("l-st").textContent = ""; });
+
+$("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
+try{
+  const c = sessionStorage.getItem("chave");
+  if (c && $("l-rest").value){ $("l-chave").value = c; entrar(); }
+}catch(e){}
+</script>
+</body>
+</html>
