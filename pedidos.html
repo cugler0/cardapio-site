@@ -302,6 +302,23 @@ function cartaoDelivery(p, destaque){
   if (p.pagamento === "dinheiro" && p.troco_para) pg.append(" \u00b7 troco para " + reais(p.troco_para));
   d.append(pg);
 
+  if (p.pagamento === "pix_antecipado" && !p.pago_confirmado){
+    const bp = document.createElement("button"); bp.className = "sec"; bp.textContent = "Confirmar Pix recebido";
+    bp.addEventListener("click", async () => {
+      if (!confirm("Confirmar que o Pix de " + reais(p.total) + " (" + (p.nome || "cliente") + ") caiu na sua conta?")) return;
+      bp.disabled = true;
+      try{
+        const {status, dados} = await api("saas-admin-pago", {pedido_id: p.id});
+        if (status === 401) return sair();
+        if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+        await atualizar();
+      }catch(e){
+        bp.disabled = false; bp.textContent = "Erro. Tente de novo";
+      }
+    });
+    d.append(bp);
+  }
+
   const prox = proximoDelivery(p);
   if (prox){
     const b = document.createElement("button"); b.textContent = prox[1];
