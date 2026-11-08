@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Painel do cardápio</title>
+<title>Painel do card&#225;pio</title>
 <style>
 :root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
 *{box-sizing:border-box}
@@ -32,22 +32,25 @@ button:disabled{opacity:.6;cursor:wait}
 .off{opacity:.6}
 .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 [hidden]{display:none!important}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
+a.voltar:hover{border-color:var(--accent)}
+a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
 <main>
   <section id="login" class="card">
-    <h1>Painel do cardápio</h1>
-    <p class="sub">Entre para editar itens e preços.</p>
-    <label>Restaurante (endereço do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <h1>Painel do card&#225;pio</h1>
+    <p class="sub">Entre para editar itens e pre&#231;os.</p>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
     <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
     <div class="rodape"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
   </section>
 
   <section id="app" hidden>
     <div class="topo">
-      <div><h1 id="a-nome"></h1><p class="sub">Mudou o preço? Edite e toque em Salvar no item.</p></div>
-      <button class="sec" id="a-sair">Sair</button>
+      <div><h1 id="a-nome"></h1><p class="sub">Mudou o pre&#231;o? Edite e toque em Salvar no item.</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
     </div>
 
     <h2>Novo item</h2>
@@ -87,7 +90,7 @@ function input(tipo, valor, extra){
   return i;
 }
 
-// Monta o formulário de um item (existente ou novo)
+// Monta o formul\u00e1rio de um item (existente ou novo)
 function formItem(item, aoSalvar, textoBotao){
   const box = document.createElement("div");
   const nome = input("text", item.nome, {maxLength: 80});
@@ -97,9 +100,9 @@ function formItem(item, aoSalvar, textoBotao){
   cat.setAttribute("list", "cats");
 
   const g = document.createElement("div"); g.className = "grid";
-  g.append(campo("Nome", nome), campo("Preço (R$)", preco));
+  g.append(campo("Nome", nome), campo("Pre\u00e7o (R$)", preco));
   const g2 = document.createElement("div"); g2.className = "grid3";
-  g2.append(campo("Descrição", desc), campo("Categoria", cat));
+  g2.append(campo("Descri\u00e7\u00e3o", desc), campo("Categoria", cat));
   box.append(g, g2);
 
   const rod = document.createElement("div"); rod.className = "rodape";
@@ -107,7 +110,7 @@ function formItem(item, aoSalvar, textoBotao){
   if (item.id){
     const l = document.createElement("label"); l.className = "chk";
     disp = input("checkbox", ""); disp.checked = !!item.disponivel;
-    l.append(disp, "Disponível no cardápio");
+    l.append(disp, "Dispon\u00edvel no card\u00e1pio");
     l.addEventListener("change", () => box.classList.toggle("off", !disp.checked));
     rod.append(l);
     box.classList.toggle("off", !item.disponivel);
@@ -123,8 +126,8 @@ function formItem(item, aoSalvar, textoBotao){
     const p = Number(String(preco.value).replace(",", "."));
     if (nome.value.trim().length < 2){ st.className = "st erro"; st.textContent = "Digite o nome."; return; }
     if (!cat.value.trim()){ st.className = "st erro"; st.textContent = "Digite a categoria."; return; }
-    if (!Number.isFinite(p) || p < 0){ st.className = "st erro"; st.textContent = "Preço inválido."; return; }
-    btn.disabled = true; st.className = "st"; st.textContent = "Salvando…";
+    if (!Number.isFinite(p) || p < 0){ st.className = "st erro"; st.textContent = "Pre\u00e7o inv\u00e1lido."; return; }
+    btn.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
     try{
       const dados = {
         id: item.id, nome: nome.value, descricao: desc.value,
@@ -132,9 +135,9 @@ function formItem(item, aoSalvar, textoBotao){
       };
       const ok = await aoSalvar(dados);
       st.className = ok ? "st ok" : "st erro";
-      st.textContent = ok ? "Salvo!" : "Não foi possível salvar.";
+      st.textContent = ok ? "Salvo!" : "N\u00e3o foi poss\u00edvel salvar.";
     }catch(e){
-      st.className = "st erro"; st.textContent = "Sem conexão. Tente de novo.";
+      st.className = "st erro"; st.textContent = "Sem conex\u00e3o. Tente de novo.";
     }finally{
       btn.disabled = false;
     }
@@ -196,14 +199,14 @@ async function entrar(){
   REST = limpaSlug($("l-rest").value);
   CHAVE = $("l-chave").value.trim();
   if (!REST || !CHAVE){ st.className = "st erro"; st.textContent = "Preencha os dois campos."; return; }
-  btn.disabled = true; st.className = "st"; st.textContent = "Entrando…";
+  btn.disabled = true; st.className = "st"; st.textContent = "Entrando\u2026";
   try{
     await carregar();
     try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
     $("login").hidden = true; $("app").hidden = false; st.textContent = "";
   }catch(e){
     st.className = "st erro";
-    st.textContent = e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "Não foi possível conectar. Tente de novo.";
+    st.textContent = e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "N\u00e3o foi poss\u00edvel conectar. Tente de novo.";
   }finally{
     btn.disabled = false;
   }
@@ -213,7 +216,7 @@ $("l-entrar").addEventListener("click", entrar);
 $("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
 $("a-sair").addEventListener("click", () => { sair(); $("l-st").textContent = ""; });
 
-// Restaurante vem do link (?r=pizzahug) ou da última sessão desta aba
+// Restaurante vem do link (?r=pizzahug) ou da \u00faltima sess\u00e3o desta aba
 $("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
 try{
   const c = sessionStorage.getItem("chave");

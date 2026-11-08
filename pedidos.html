@@ -61,6 +61,9 @@ button:disabled{opacity:.6;cursor:wait}
 .pessoa button{padding:6px 10px;font-size:.85rem}
 .conta .tm{display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--line);font-weight:700}
 [hidden]{display:none!important}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
+a.voltar:hover{border-color:var(--accent)}
+a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -68,7 +71,7 @@ button:disabled{opacity:.6;cursor:wait}
   <section id="login" class="card" style="max-width:460px;margin:40px auto">
     <h1>Pedidos</h1>
     <p class="sub">Entre para acompanhar os pedidos em tempo real.</p>
-    <label>Restaurante (endereço do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
     <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
     <div class="rodape"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
   </section>
@@ -77,9 +80,10 @@ button:disabled{opacity:.6;cursor:wait}
     <div class="topo">
       <div>
         <h1 id="a-nome"></h1>
-        <p class="sub"><span id="a-pulso" class="pulso"></span><span id="a-status">Conectando…</span></p>
+        <p class="sub"><span id="a-pulso" class="pulso"></span><span id="a-status">Conectando&#8230;</span></p>
       </div>
       <div class="acoes">
+        <a class="voltar" href="app.html">&larr; Menu</a>
         <button class="sec" id="a-som">Som: ligado</button>
         <button class="sec" id="a-sair">Sair</button>
       </div>
@@ -164,7 +168,7 @@ function cartao(p, destaque){
 
   const t = document.createElement("div"); t.className = "tot"; t.textContent = "Total " + reais(p.total); d.append(t);
 
-  const proximo = p.status === "novo" ? ["preparando", "Começar a preparar"] : p.status === "preparando" ? ["entregue", "Marcar como entregue"] : null;
+  const proximo = p.status === "novo" ? ["preparando", "Come\u00e7ar a preparar"] : p.status === "preparando" ? ["entregue", "Marcar como entregue"] : null;
   if (proximo){
     const b = document.createElement("button"); b.textContent = proximo[1];
     b.addEventListener("click", async () => {
@@ -253,7 +257,7 @@ function desenharContas(pedidos){
 async function fecharConta(mesa, nome, valor, btn){
   const st = $("c-st");
   if (!confirm("Fechar a conta de " + nome + " (Mesa " + mesa + ")? Total " + reais(valor) + ".")) return;
-  btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "…";
+  btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "\u2026";
   try{
     const {status, dados} = await api("saas-admin-conta", {mesa, nome});
     if (status === 401) return sair();
@@ -262,7 +266,7 @@ async function fecharConta(mesa, nome, valor, btn){
     await atualizar();
   }catch(e){
     btn.disabled = false;
-    st.className = "st erro"; st.textContent = "Não foi possível fechar a conta. Tente de novo.";
+    st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel fechar a conta. Tente de novo.";
   }
 }
 
@@ -286,10 +290,10 @@ async function atualizar(){
     desenhar(pedidos, novosIds);
     if (novosPedidos.length) avisar(novosPedidos);
     $("a-pulso").className = "pulso";
-    $("a-status").textContent = "Ao vivo · atualizado às " + new Date().toLocaleTimeString("pt-BR");
+    $("a-status").textContent = "Ao vivo \u00b7 atualizado \u00e0s " + new Date().toLocaleTimeString("pt-BR");
   }catch(e){
     $("a-pulso").className = "pulso off";
-    $("a-status").textContent = "Sem conexão. Tentando de novo…";
+    $("a-status").textContent = "Sem conex\u00e3o. Tentando de novo\u2026";
   }finally{
     ocupado = false;
   }
@@ -302,7 +306,7 @@ $("f-btn").addEventListener("click", async () => {
   let soma = 0; for (const v of abertas.values()) soma += v;
   const aviso = abertas.size ? " Total em aberto: " + reais(soma) + " (" + abertas.size + (abertas.size === 1 ? " conta)." : " contas).") : "";
   if (!confirm("Fechar a Mesa " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
-  btn.disabled = true; st.className = "st"; st.textContent = "Fechando…";
+  btn.disabled = true; st.className = "st"; st.textContent = "Fechando\u2026";
   try{
     for (const nome of abertas.keys()){
       if (!nome) continue;
@@ -314,10 +318,10 @@ $("f-btn").addEventListener("click", async () => {
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     st.className = "st ok";
-    st.textContent = dados.atualizado ? "Mesa " + mesa + " fechada." : "Mesa " + mesa + " já estava fechada.";
+    st.textContent = dados.atualizado ? "Mesa " + mesa + " fechada." : "Mesa " + mesa + " j\u00e1 estava fechada.";
     await atualizar();
   }catch(e){
-    st.className = "st erro"; st.textContent = "Não foi possível fechar. Tente de novo.";
+    st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel fechar. Tente de novo.";
   }finally{
     btn.disabled = false;
   }
@@ -342,7 +346,7 @@ async function entrar(){
   REST = limpaSlug($("l-rest").value);
   CHAVE = $("l-chave").value.trim();
   if (!REST || !CHAVE){ st.className = "st erro"; st.textContent = "Preencha os dois campos."; return; }
-  btn.disabled = true; st.className = "st"; st.textContent = "Entrando…";
+  btn.disabled = true; st.className = "st"; st.textContent = "Entrando\u2026";
   try{
     if (!ctx){ try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){} }
     if (ctx && ctx.state === "suspended") ctx.resume();
@@ -358,7 +362,7 @@ async function entrar(){
     timer = setInterval(atualizar, INTERVALO_MS);
     manterTelaLigada();
   }catch(e){
-    st.className = "st erro"; st.textContent = "Não foi possível conectar. Tente de novo.";
+    st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel conectar. Tente de novo.";
   }finally{
     btn.disabled = false;
   }
