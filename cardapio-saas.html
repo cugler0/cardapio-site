@@ -133,6 +133,7 @@ select:focus-visible{outline:2px solid var(--accent)}
       <button class="cheio" id="pix-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
       <p class="msg" style="padding:10px 0 0">Depois de pagar, o estabelecimento confirma o seu pedido.</p>
     </div>
+    <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:8px">Acompanhar meu pedido</a>
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
   </div>
 </dialog>
@@ -407,6 +408,9 @@ function mostrarFim(resp){
   $("form-pedido").hidden = true;
   $("fim").hidden = false;
   $("fim-msg").textContent = "Recebemos o seu pedido. O estabelecimento vai confirmar em instantes.";
+  const tk = resp && resp.token ? String(resp.token).replace(/[^0-9a-f]/gi, "") : "";
+  $("fim-acomp").hidden = !tk;
+  if (tk) $("fim-acomp").href = "acompanhar.html?t=" + tk;
   const pix = resp && resp.pix && resp.pix.copia_cola ? resp.pix : null;
   $("pix-box").hidden = !pix;
   if (!pix) return;
