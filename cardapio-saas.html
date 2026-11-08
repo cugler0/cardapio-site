@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cardápio</title>
+<title>Card&#225;pio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -54,6 +54,13 @@ textarea{resize:vertical}
 input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}
 #p-msg{padding:10px 0 0}
 .sem-mesa .qtd{display:none}
+select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0d0b0c;color:var(--ink);font:inherit}
+select:focus-visible{outline:2px solid var(--accent)}
+.tipos{display:flex;gap:10px;margin-top:6px}
+.tipo{flex:1;margin:0;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px}
+.tipo input{width:auto;margin:0}
+.tipo:has(input:checked){border-color:var(--accent);background:rgba(255,74,61,.12)}
+[hidden]{display:none!important}
 .sem-mesa #barra{display:none!important}
 .esq{display:flex;align-items:center;gap:12px;min-width:0}
 .foto{width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none;border:1px solid var(--line);background:#1b1415}
@@ -68,28 +75,51 @@ input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}
   <header class="topo">
     <svg class="emblema" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 3 60 14V38C60 54 47 65 32 70 17 65 4 54 4 38V14Z" fill="#1a0f10" stroke="#ff4a3d" stroke-width="3"/><path d="M36 16 22 40H31L27 58 44 32H34Z" fill="#ffb000"/></svg>
     <div>
-      <h1 id="titulo">Cardápio</h1>
-      <p class="sub" id="sub">Preços atualizados em tempo real.</p>
+      <h1 id="titulo">Card&#225;pio</h1>
+      <p class="sub" id="sub">Pre&#231;os atualizados em tempo real.</p>
     </div>
   </header>
   <nav id="menu" aria-label="Categorias"></nav>
-  <div id="conteudo"><p class="msg">Carregando o cardápio…</p></div>
+  <div id="conteudo"><p class="msg">Carregando o card&#225;pio&#8230;</p></div>
 </main>
 <div id="barra"><div><strong id="b-qtd"></strong> &middot; <span id="b-total"></span></div><button id="b-ver">Ver pedido</button></div>
 <dialog id="painel">
   <h2>Seu pedido</h2>
   <div id="p-lista"></div>
+  <div class="linha" id="l-sub" hidden><span>Subtotal</span><span id="p-sub"></span></div>
+  <div class="linha" id="l-taxa" hidden><span>Taxa de entrega</span><span id="p-taxa"></span></div>
   <div class="linha"><strong>Total</strong><strong id="p-total"></strong></div>
-  <label>Mesa<input id="p-mesa" inputmode="numeric" maxlength="10"></label>
-  <label>Seu nome (para separar a sua conta)<input id="p-nome" maxlength="40" autocomplete="given-name" placeholder="Ex.: João"></label>
-  <label>Observações (opcional)<textarea id="p-obs" maxlength="200" rows="3" placeholder="Ex.: 4 copos, sem gelo"></textarea></label>
+  <div id="bloco-mesa"><label>Mesa<input id="p-mesa" inputmode="numeric" maxlength="10"></label></div>
+  <div id="bloco-deliv" hidden>
+    <div class="tipos" role="radiogroup" aria-label="Como receber">
+      <label class="tipo"><input type="radio" name="p-tipo" value="entrega" checked> Entrega</label>
+      <label class="tipo"><input type="radio" name="p-tipo" value="retirada"> Retirada</label>
+    </div>
+    <label>Telefone (WhatsApp)<input id="p-tel" type="tel" inputmode="tel" maxlength="20" autocomplete="tel" placeholder="(67) 99999-9999"></label>
+    <div id="bloco-end">
+      <label>Endere&#231;o<input id="p-end" maxlength="200" autocomplete="street-address" placeholder="Rua, n&#250;mero, complemento"></label>
+      <label>Bairro<select id="p-bairro"></select></label>
+    </div>
+    <label>Pagamento
+      <select id="p-pag">
+        <option value="">Escolha como vai pagar</option>
+        <option value="pix_antecipado">Pix agora (antes de receber)</option>
+        <option value="pix_entrega">Pix ao receber</option>
+        <option value="cartao">Cart&#227;o ao receber</option>
+        <option value="dinheiro">Dinheiro</option>
+      </select>
+    </label>
+    <div id="bloco-troco" hidden><label>Troco para quanto? (opcional)<input id="p-troco" inputmode="decimal" maxlength="10" placeholder="Ex.: 100"></label></div>
+  </div>
+  <label><span id="rot-nome">Seu nome (para separar a sua conta)</span><input id="p-nome" maxlength="40" autocomplete="given-name" placeholder="Ex.: Jo&#227;o"></label>
+  <label>Observa&#231;&#245;es (opcional)<textarea id="p-obs" maxlength="200" rows="3" placeholder="Ex.: 4 copos, sem gelo"></textarea></label>
   <p id="p-msg" class="msg" role="status"></p>
   <button class="cheio" id="p-enviar">Enviar pedido</button>
-  <button id="p-fechar">Voltar ao cardápio</button>
+  <button id="p-fechar">Voltar ao card&#225;pio</button>
 </dialog>
 <script>
-// ===== CONFIGURAÇÃO (só mexa aqui) =====
-const NOME_DO_RESTAURANTE = "Cardápio";
+// ===== CONFIGURA\u00c7\u00c3O (s\u00f3 mexa aqui) =====
+const NOME_DO_RESTAURANTE = "Card\u00e1pio";
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const URL_DO_CARDAPIO = URL_BASE + "saas-cardapio";
 const URL_DO_PEDIDO = URL_BASE + "saas-pedido";
@@ -111,9 +141,11 @@ try{
   if (MESA) sessionStorage.setItem("mesa", MESA);
   else MESA = (sessionStorage.getItem("mesa") || "").replace(/[^0-9A-Za-z]/g, "").slice(0, 10);
 }catch(e){}
-if (location.search) history.replaceState(null, "", location.pathname); // esconde ?mesa=N da barra de endereço
+if (location.search) history.replaceState(null, "", location.pathname); // esconde ?mesa=N da barra de endere\u00e7o
+let MODO = MESA ? "mesa" : "";
+let DELIVERY = {ativo: false, pedido_minimo: 0, bairros: []};
 if (!MESA) { document.body.classList.add("sem-mesa"); $("sub").textContent = "Para fazer pedidos, aproxime o celular da plaquinha da sua mesa."; }
-if (MESA) $("sub").textContent = "Mesa " + MESA + " \u00b7 Preços atualizados em tempo real.";
+if (MESA) $("sub").textContent = "Mesa " + MESA + " \u00b7 Pre\u00e7os atualizados em tempo real.";
 
 const limpa = v => String(v ?? "").trim();
 const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
@@ -158,6 +190,13 @@ async function carregar(){
     const dados = (resposta.itens || []).sort((a, b) => a.ordem - b.ordem);
     $("titulo").textContent = resposta.restaurante.nome;
     document.title = resposta.restaurante.nome;
+    const dv = resposta.delivery || {};
+    DELIVERY = {ativo: !!dv.ativo, pedido_minimo: Number(dv.pedido_minimo) || 0, bairros: Array.isArray(dv.bairros) ? dv.bairros : []};
+    if (!MESA && DELIVERY.ativo){
+      MODO = "delivery";
+      document.body.classList.remove("sem-mesa");
+      $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada. Pre\u00e7os atualizados em tempo real.";
+    }
 
     const grupos = new Map();
     let n = 0;
@@ -171,7 +210,7 @@ async function carregar(){
       if(!grupos.has(cat)) grupos.set(cat, []);
       grupos.get(cat).push({id, nome, desc: limpa(linha.descricao), foto: limpa(linha.foto), preco: catalogo[id].preco});
     }
-    if(!grupos.size){ caixa.innerHTML = '<p class="msg">Nenhum item disponível no momento.</p>'; return; }
+    if(!grupos.size){ caixa.innerHTML = '<p class="msg">Nenhum item dispon\u00edvel no momento.</p>'; return; }
 
     let html = "", links = "", i = 0;
     for(const [cat, itens] of grupos){
@@ -191,7 +230,7 @@ async function carregar(){
     menu.innerHTML = links;
     caixa.innerHTML = html;
   }catch(e){
-    caixa.innerHTML = '<p class="msg">Não foi possível carregar o cardápio. Verifique a internet e tente de novo.</p><button id="de-novo">Tentar de novo</button>';
+    caixa.innerHTML = '<p class="msg">N\u00e3o foi poss\u00edvel carregar o card\u00e1pio. Verifique a internet e tente de novo.</p><button id="de-novo">Tentar de novo</button>';
     $("de-novo").addEventListener("click", carregar);
   }
 }
@@ -207,65 +246,147 @@ function abrirPainel(){
     linhas += '<div class="linha"><span>' + q + 'x ' + escapa(catalogo[id].nome) + '</span><span>' + reais(q * catalogo[id].preco) + '</span></div>';
   }
   $("p-lista").innerHTML = linhas;
-  $("p-total").textContent = reais(resumo().total);
+  const delivery = MODO === "delivery";
+  $("bloco-mesa").hidden = delivery;
+  $("bloco-deliv").hidden = !delivery;
+  $("rot-nome").textContent = delivery ? "Seu nome" : "Seu nome (para separar a sua conta)";
   $("p-mesa").value = MESA;
   $("p-mesa").readOnly = !!MESA;
-  try{ $("p-nome").value = sessionStorage.getItem("nome") || $("p-nome").value; }catch(e){}
+  try{ $("p-nome").value = sessionStorage.getItem("nome") || localStorage.getItem("nome") || $("p-nome").value; }catch(e){}
+  if (delivery){
+    const sel = $("p-bairro");
+    if (sel.options.length === 0){
+      const o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Escolha o bairro"; sel.append(o0);
+      for (const b of DELIVERY.bairros){
+        const o = document.createElement("option"); o.value = b.nome;
+        o.textContent = b.nome + " - " + reais(b.taxa); sel.append(o);
+      }
+    }
+    const rEnt = document.querySelector('input[name="p-tipo"][value="entrega"]');
+    const rRet = document.querySelector('input[name="p-tipo"][value="retirada"]');
+    if (!DELIVERY.bairros.length){ rEnt.disabled = true; rRet.checked = true; }
+    try{
+      if (!$("p-tel").value) $("p-tel").value = localStorage.getItem("tel") || "";
+      if (!$("p-end").value) $("p-end").value = localStorage.getItem("end") || "";
+    }catch(e){}
+  }
   $("p-msg").textContent = "";
+  atualizarDeliv();
   $("p-enviar").hidden = false;
   $("painel").showModal();
 }
+
+function tipoAtual(){
+  const r = document.querySelector('input[name="p-tipo"]:checked');
+  return r ? r.value : "entrega";
+}
+function taxaAtual(){
+  if (MODO !== "delivery" || tipoAtual() !== "entrega") return 0;
+  const b = DELIVERY.bairros.find(x => x.nome === $("p-bairro").value);
+  return b ? Number(b.taxa) || 0 : 0;
+}
+function atualizarDeliv(){
+  const sub = resumo().total;
+  const delivery = MODO === "delivery";
+  $("l-sub").hidden = !delivery;
+  $("l-taxa").hidden = !delivery || tipoAtual() !== "entrega";
+  if (!delivery){ $("p-total").textContent = reais(sub); return; }
+  const entrega = tipoAtual() === "entrega";
+  $("bloco-end").hidden = !entrega;
+  $("bloco-troco").hidden = $("p-pag").value !== "dinheiro";
+  const taxa = taxaAtual();
+  $("p-sub").textContent = reais(sub);
+  $("p-taxa").textContent = reais(taxa);
+  $("p-total").textContent = reais(sub + taxa);
+  const min = DELIVERY.pedido_minimo;
+  $("p-msg").textContent = (entrega && min > 0 && sub < min) ? "Pedido m\u00ednimo para entrega: " + reais(min) + "." : "";
+}
+$("bloco-deliv").addEventListener("change", atualizarDeliv);
 $("b-ver").addEventListener("click", abrirPainel);
 $("p-fechar").addEventListener("click", () => $("painel").close());
 
 $("p-enviar").addEventListener("click", async () => {
   const msg = $("p-msg"), btn = $("p-enviar");
   if (expirado()) return expirou();
-  const mesa = limpa($("p-mesa").value);
-  if (!mesa){ msg.textContent = "Digite o número da sua mesa."; return; }
+  const delivery = MODO === "delivery";
   const nome = limpa($("p-nome").value);
-  if (nome.length < 2){ msg.textContent = "Digite seu nome para separar a sua conta."; return; }
   if (!carrinho.size) return;
-  const itens = [...carrinho].map(([id, q]) => ({nome: catalogo[id].nome, categoria: catalogo[id].categoria, qtd: q, preco: catalogo[id].preco}));
-  btn.disabled = true; msg.textContent = "Enviando…";
+  const itens = [...carrinho].map(([id, q]) => ({nome: catalogo[id].nome, qtd: q}));
+  let corpo;
+  let tel = "";
+  let endereco = "";
+  if (delivery){
+    const tipo = tipoAtual();
+    if (nome.length < 2){ msg.textContent = "Digite o seu nome."; return; }
+    tel = limpa($("p-tel").value).replace(/\D/g, "");
+    if (tel.length < 10){ msg.textContent = "Digite o telefone com DDD."; return; }
+    let bairro = "";
+    if (tipo === "entrega"){
+      endereco = limpa($("p-end").value);
+      if (endereco.length < 5){ msg.textContent = "Digite o endere\u00e7o de entrega."; return; }
+      bairro = $("p-bairro").value;
+      if (!bairro){ msg.textContent = "Escolha o bairro."; return; }
+    }
+    const pag = $("p-pag").value;
+    if (!pag){ msg.textContent = "Escolha como vai pagar."; return; }
+    const troco = pag === "dinheiro" ? Number(limpa($("p-troco").value).replace(",", ".")) : 0;
+    corpo = {r: REST, tipo, nome, telefone: tel, endereco, bairro, pagamento: pag, observacoes: limpa($("p-obs").value), itens};
+    if (troco > 0) corpo.troco_para = troco;
+  } else {
+    const mesa = limpa($("p-mesa").value);
+    if (!mesa){ msg.textContent = "Digite o n\u00famero da sua mesa."; return; }
+    if (nome.length < 2){ msg.textContent = "Digite seu nome para separar a sua conta."; return; }
+    corpo = {r: REST, tipo: "mesa", mesa, sessao: SESSAO, nome, observacoes: limpa($("p-obs").value), itens};
+  }
+  btn.disabled = true; msg.textContent = "Enviando\u2026";
   try{
     const r = await fetch(URL_DO_PEDIDO, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({r: REST, mesa, sessao: SESSAO, nome, observacoes: limpa($("p-obs").value), itens: itens.map(i => ({nome: i.nome, qtd: i.qtd}))})
+      body: JSON.stringify(corpo)
     });
-    if (r.status === 403) { encerrada(); return; }
-    if (r.status === 404) { msg.textContent = "Restaurante não encontrado."; return; }
-    if (r.status === 400) { msg.textContent = "Algum item não está mais disponível. Recarregue a página e tente de novo."; return; }
+    if (r.status === 403) {
+      if (delivery) { msg.textContent = "O delivery n\u00e3o est\u00e1 dispon\u00edvel no momento."; return; }
+      encerrada(); return;
+    }
+    if (r.status === 404) { msg.textContent = "Restaurante n\u00e3o encontrado."; return; }
+    if (r.status === 400) {
+      let d = null; try{ d = await r.json(); }catch(err){}
+      msg.textContent = (delivery && d && typeof d.erro === "string" && d.erro) ? d.erro : "Algum item n\u00e3o est\u00e1 mais dispon\u00edvel. Recarregue a p\u00e1gina e tente de novo.";
+      return;
+    }
     if(!r.ok) throw new Error("HTTP " + r.status);
-    msg.textContent = "Pedido enviado! Já avisamos o atendimento.";
+    msg.textContent = delivery ? "Pedido enviado! O estabelecimento vai confirmar em instantes." : "Pedido enviado! J\u00e1 avisamos o atendimento.";
     carrinho.clear();
     $("p-obs").value = "";
-    try{ sessionStorage.setItem("nome", nome); }catch(e){}
+    try{
+      sessionStorage.setItem("nome", nome);
+      if (delivery){ localStorage.setItem("nome", nome); localStorage.setItem("tel", tel); if (endereco) localStorage.setItem("end", endereco); }
+    }catch(e){}
     document.querySelectorAll("[data-q]").forEach(el => el.textContent = "0");
     atualizar();
     btn.hidden = true;
   }catch(e){
-    msg.textContent = "Não foi possível enviar. Tente de novo ou chame o garçom.";
+    msg.textContent = "N\u00e3o foi poss\u00edvel enviar. Tente de novo ou chame o gar\u00e7om.";
   }finally{
     btn.disabled = false;
   }
 });
 
-// ===== Validade da sessão: a página só aceita pedidos por um tempo depois de aberta =====
+// ===== Validade da sess\u00e3o: a p\u00e1gina s\u00f3 aceita pedidos por um tempo depois de aberta =====
 const ABERTO_EM = Date.now();
 const VALIDADE_MS = 2 * 60 * 60 * 1000; // 2 horas
-function expirado(){ return Date.now() - ABERTO_EM > VALIDADE_MS; }
+function expirado(){ return !!MESA && Date.now() - ABERTO_EM > VALIDADE_MS; }
 function expirou(){
   carrinho.clear();
   atualizar();
   document.body.classList.add("sem-mesa");
-  $("sub").textContent = "Sessão encerrada. Aproxime o celular da plaquinha da mesa para pedir de novo.";
+  $("sub").textContent = "Sess\u00e3o encerrada. Aproxime o celular da plaquinha da mesa para pedir de novo.";
   if ($("painel").open) $("painel").close();
 }
 setInterval(() => { if (MESA && expirado()) expirou(); }, 60000);
 
-// ===== Sessão da mesa: cada leitura da tag abre uma sessão; o /fechar do garçom encerra =====
+// ===== Sess\u00e3o da mesa: cada leitura da tag abre uma sess\u00e3o; o /fechar do gar\u00e7om encerra =====
 let SESSAO = "";
 async function abrirSessao(){
   if (!MESA) return;
@@ -277,7 +398,7 @@ async function abrirSessao(){
     SESSAO = d.sessao;
   }catch(e){
     document.body.classList.add("sem-mesa");
-    $("sub").textContent = "Não foi possível abrir a mesa. Aproxime o celular da plaquinha de novo.";
+    $("sub").textContent = "N\u00e3o foi poss\u00edvel abrir a mesa. Aproxime o celular da plaquinha de novo.";
   }
 }
 function encerrada(){
