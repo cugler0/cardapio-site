@@ -163,6 +163,7 @@ try{
 let MESA = (new URLSearchParams(location.search).get("mesa") || "").replace(/[^0-9A-Za-z]/g, "").slice(0, 10);
 try{
   if (MESA) sessionStorage.setItem("mesa", MESA);
+  else if (new URLSearchParams(location.search).get("r")) sessionStorage.removeItem("mesa"); // link sem mesa = delivery, esquece a mesa antiga
   else MESA = (sessionStorage.getItem("mesa") || "").replace(/[^0-9A-Za-z]/g, "").slice(0, 10);
 }catch(e){}
 if (location.search) history.replaceState(null, "", location.pathname); // esconde ?mesa=N da barra de endere\u00e7o
@@ -216,6 +217,11 @@ async function carregar(){
     document.title = resposta.restaurante.nome;
     const dv = resposta.delivery || {};
     DELIVERY = {ativo: !!dv.ativo, pedido_minimo: Number(dv.pedido_minimo) || 0, bairros: Array.isArray(dv.bairros) ? dv.bairros : []};
+    if (resposta.pedidos === false){
+      MODO = "";
+      document.body.classList.add("sem-mesa");
+      $("sub").textContent = "Card\u00e1pio para consulta.";
+    }
     if (!MESA && DELIVERY.ativo){
       MODO = "delivery";
       document.body.classList.remove("sem-mesa");
@@ -373,6 +379,8 @@ $("p-enviar").addEventListener("click", async () => {
       body: JSON.stringify(corpo)
     });
     if (r.status === 403) {
+      let d403 = null; try{ d403 = await r.json(); }catch(err){}
+      if (d403 && d403.erro === "plano") { msg.textContent = "Este estabelecimento n\u00e3o est\u00e1 aceitando pedidos pelo celular."; return; }
       if (delivery) { msg.textContent = "O delivery n\u00e3o est\u00e1 dispon\u00edvel no momento."; return; }
       encerrada(); return;
     }
