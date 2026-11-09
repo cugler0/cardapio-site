@@ -109,12 +109,12 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       </div>
     </div>
     <div class="abas" role="tablist">
-      <button class="aba on" id="aba-mesas" data-aba="mesas" role="tab">Mesas <span class="badge" id="b-mesas">0</span></button>
+      <button class="aba on" id="aba-mesas" data-aba="mesas" role="tab"><span id="t-aba">Mesas</span> <span class="badge" id="b-mesas">0</span></button>
       <button class="aba" id="aba-delivery" data-aba="delivery" role="tab">Delivery <span class="badge" id="b-delivery">0</span></button>
     </div>
     <div id="vista-mesas">
     <div class="fecha">
-      <strong>Fechar mesa</strong>
+      <strong id="t-fechar">Fechar mesa</strong>
       <select id="f-mesa" aria-label="Mesa"></select>
       <button class="sec" id="f-btn">Fechar mesa</button>
       <span id="f-st" class="st" role="status"></span>
@@ -143,6 +143,8 @@ const $ = id => document.getElementById(id);
 const reais = n => Number(n).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
 const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
 
+let ROT = "Mesa"; const fem = () => /o$/i.test(ROT) ? "o" : "a";
+try{ ROT = sessionStorage.getItem("rot") || "Mesa"; }catch(e){}
 let ULTIMOS = [], REST = "", CHAVE = "", conhecidos = null, somLigado = true, ocupado = false, timer = null, ctx = null, wake = null;
 
 async function api(caminho, corpo){
@@ -172,7 +174,7 @@ function bip(){
 }
 
 const tipoDe = p => p.tipo || "mesa";
-const rotuloPedido = p => tipoDe(p) === "mesa" ? "Mesa " + p.mesa : (tipoDe(p) === "entrega" ? "Entrega" : "Retirada");
+const rotuloPedido = p => tipoDe(p) === "mesa" ? ROT + " " + p.mesa : (tipoDe(p) === "entrega" ? "Entrega" : "Retirada");
 
 function avisar(novos){
   bip();
@@ -188,7 +190,7 @@ function cartao(p, destaque){
   const d = document.createElement("div");
   d.className = "ped" + (destaque ? " destaque" : "");
   const cab = document.createElement("div"); cab.className = "cab";
-  const mesa = document.createElement("span"); mesa.className = "mesa"; mesa.textContent = "Mesa " + p.mesa;
+  const mesa = document.createElement("span"); mesa.className = "mesa"; mesa.textContent = tipoDe(p) === "mesa" ? ROT + " " + p.mesa : String(p.mesa);
   const hora = document.createElement("span"); hora.className = "hora";
   hora.textContent = new Date(p.criado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
   cab.append(mesa, hora); d.append(cab);
@@ -381,7 +383,7 @@ function desenhar(todos, novosIds){
   }
   const sel = $("f-mesa"), atual = sel.value;
   const mesas = [...new Set(pedidos.map(p => String(p.mesa)))].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
-  sel.replaceChildren(...mesas.map(m => { const o = document.createElement("option"); o.value = m; o.textContent = "Mesa " + m; return o; }));
+  sel.replaceChildren(...mesas.map(m => { const o = document.createElement("option"); o.value = m; o.textContent = ROT + " " + m; return o; }));
   if (mesas.includes(atual)) sel.value = atual;
   desenharContas(pedidos);
   $("b-mesas").textContent = col.novo.length;
@@ -414,7 +416,7 @@ function desenharContas(pedidos){
   const ordem = [...mesas.keys()].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
   for (const m of ordem){
     const c = document.createElement("div"); c.className = "conta";
-    const t = document.createElement("div"); t.className = "m"; t.textContent = "Mesa " + m; c.append(t);
+    const t = document.createElement("div"); t.className = "m"; t.textContent = ROT + " " + m; c.append(t);
     let soma = 0;
     for (const [nome, valor] of mesas.get(m)){
       soma += valor;
@@ -431,7 +433,7 @@ function desenharContas(pedidos){
       l.append(n, dir); c.append(l);
     }
     const tm = document.createElement("div"); tm.className = "tm";
-    const a = document.createElement("span"); a.textContent = "Total da mesa";
+    const a = document.createElement("span"); a.textContent = "Total d" + fem() + " " + ROT.toLowerCase();
     const b2 = document.createElement("span"); b2.textContent = reais(soma);
     tm.append(a, b2); c.append(tm);
     caixa.append(c);
@@ -440,7 +442,7 @@ function desenharContas(pedidos){
 
 async function fecharConta(mesa, nome, valor, btn){
   const st = $("c-st");
-  if (!confirm("Fechar a conta de " + nome + " (Mesa " + mesa + ")? Total " + reais(valor) + ".")) return;
+  if (!confirm("Fechar a conta de " + nome + " (" + ROT + " " + mesa + ")? Total " + reais(valor) + ".")) return;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "\u2026";
   try{
     const {status, dados} = await api("saas-admin-conta", {mesa, nome});
@@ -454,6 +456,22 @@ async function fecharConta(mesa, nome, valor, btn){
   }
 }
 
+function aplicarRotulo(){
+  $("t-aba").textContent = ROT + "s";
+  $("t-fechar").textContent = "Fechar " + ROT.toLowerCase();
+  $("f-btn").textContent = "Fechar " + ROT.toLowerCase();
+  $("f-mesa").setAttribute("aria-label", ROT);
+}
+async function carregarRotulo(){
+  try{
+    const {status, dados} = await api("saas-admin-plano", {});
+    if (status === 200 && dados && dados.rotulo_local){
+      ROT = dados.rotulo_local;
+      try{ sessionStorage.setItem("rot", ROT); }catch(e){}
+    }
+  }catch(e){}
+  aplicarRotulo();
+}
 async function atualizar(){
   if (ocupado) return;
   ocupado = true;
@@ -485,11 +503,11 @@ async function atualizar(){
 
 $("f-btn").addEventListener("click", async () => {
   const mesa = $("f-mesa").value, st = $("f-st"), btn = $("f-btn");
-  if (!mesa) { st.className = "st erro"; st.textContent = "Nenhuma mesa na lista."; return; }
+  if (!mesa) { st.className = "st erro"; st.textContent = "Nenhum" + (fem()==="a" ? "a " : " ") + ROT.toLowerCase() + " na lista."; return; }
   const abertas = contasAbertas(ULTIMOS).get(String(mesa)) || new Map();
   let soma = 0; for (const v of abertas.values()) soma += v;
   const aviso = abertas.size ? " Total em aberto: " + reais(soma) + " (" + abertas.size + (abertas.size === 1 ? " conta)." : " contas).") : "";
-  if (!confirm("Fechar a Mesa " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
+  if (!confirm("Fechar " + (fem()==="o" ? "o " : "a ") + ROT + " " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando\u2026";
   try{
     for (const nome of abertas.keys()){
@@ -502,7 +520,7 @@ $("f-btn").addEventListener("click", async () => {
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     st.className = "st ok";
-    st.textContent = dados.atualizado ? "Mesa " + mesa + " fechada." : "Mesa " + mesa + " j\u00e1 estava fechada.";
+    st.textContent = dados.atualizado ? ROT + " " + mesa + " fechad" + fem() + "." : ROT + " " + mesa + " j\u00e1 estava fechad" + fem() + ".";
     await atualizar();
   }catch(e){
     st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel fechar. Tente de novo.";
@@ -541,6 +559,7 @@ async function entrar(){
     try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
     $("login").hidden = true; $("app").hidden = false; st.textContent = "";
     conhecidos = null;
+    await carregarRotulo();
     try{ mostrarAba(sessionStorage.getItem("aba") === "delivery" ? "delivery" : "mesas"); }catch(e){}
     await atualizar();
     clearInterval(timer);

@@ -55,20 +55,20 @@ input{display:block;margin-top:4px;width:110px;padding:10px;border-radius:8px;bo
     <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o card&#225;pio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
   </div>
 
-  <h2>Links das mesas</h2>
+  <h2 id="h-links">Links das mesas</h2>
   <div class="card">
     <div class="linha">
-      <label>Quantas mesas?<input id="qtd" type="number" inputmode="numeric" min="1" max="100" value="10"></label>
+      <label><span id="l-qtd">Quantas mesas?</span><input id="qtd" type="number" inputmode="numeric" min="1" max="100" value="10"></label>
       <button id="gerar">Gerar links</button>
     </div>
-    <p class="dica">Grave cada link na tag NFC da mesa correspondente, ou use no gerador de QR code.</p>
+    <p class="dica">Grave cada link na tag NFC correspondente, ou use no gerador de QR code.</p>
     <div class="links" id="links"></div>
   </div>
 </main>
 <script>
 const $ = id => document.getElementById(id);
-let rest = "", nome = "";
-try{ rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
+let rest = "", nome = "", ROT = "Mesa";
+try{ ROT = sessionStorage.getItem("rot") || "Mesa"; rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
 if (!rest){ location.replace("entrar.html"); }
 
 $("nome").textContent = nome || rest;
@@ -79,8 +79,24 @@ $("t-delivery").href = "delivery.html?r=" + encodeURIComponent(rest);
 $("t-plano").href = "plano.html?r=" + encodeURIComponent(rest);
 $("t-cardapio").href = "cardapio-saas.html?r=" + encodeURIComponent(rest);
 
+function aplicarRotulo(){
+  const p = ROT.toLowerCase();
+  $("h-links").textContent = "Links d" + (/o$/i.test(ROT) ? "os " : "as ") + p + "s";
+  $("l-qtd").textContent = "Quantos" .replace("Quantos", /o$/i.test(ROT) ? "Quantos " : "Quantas ") + p + "s?";
+}
+aplicarRotulo();
+(async () => {
+  try{
+    const chave = sessionStorage.getItem("chave") || "";
+    if (!rest || !chave) return;
+    const r = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({r: rest, chave})});
+    const d = await r.json();
+    if (d && d.rotulo_local){ ROT = d.rotulo_local; sessionStorage.setItem("rot", ROT); aplicarRotulo(); }
+  }catch(e){}
+})();
+
 $("sair").addEventListener("click", () => {
-  try{ sessionStorage.removeItem("rest"); sessionStorage.removeItem("chave"); sessionStorage.removeItem("nome"); }catch(e){}
+  try{ sessionStorage.removeItem("rest"); sessionStorage.removeItem("chave"); sessionStorage.removeItem("nome"); sessionStorage.removeItem("rot"); }catch(e){}
   location.href = "index.html";
 });
 
@@ -91,7 +107,7 @@ $("gerar").addEventListener("click", () => {
   for (let i = 1; i <= n; i++){
     const url = base + i;
     const l = document.createElement("div"); l.className = "lk";
-    const c = document.createElement("code"); c.textContent = "Mesa " + i + " \u00b7 " + url;
+    const c = document.createElement("code"); c.textContent = ROT + " " + i + " \u00b7 " + url;
     const b = document.createElement("button"); b.textContent = "Copiar";
     b.addEventListener("click", async () => {
       try{ await navigator.clipboard.writeText(url); b.textContent = "Copiado!"; b.classList.add("feito"); }
