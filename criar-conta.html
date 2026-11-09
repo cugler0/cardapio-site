@@ -5,71 +5,154 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Criar conta</title>
 <style>
-:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--surface:#171112}
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
 *{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(ellipse at 15% -10%,rgba(255,74,61,.28),transparent 55%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
-main{width:100%;max-width:440px}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 22px}
+body{margin:0;min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px 60px;background:radial-gradient(ellipse at 15% -10%,rgba(255,74,61,.28),transparent 55%),var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{width:100%;max-width:520px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 22px;margin-bottom:14px}
 h1{margin:0 0 4px;font-size:1.6rem}
+h2{margin:22px 0 8px;font-size:.95rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
 .sub{margin:0 0 6px;color:var(--muted)}
-.preco{margin:14px 0 4px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
-.preco strong{font-size:1.3rem}
-label{display:block;font-size:.85rem;color:var(--muted);margin-top:14px}
-input{width:100%;margin-top:4px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
-input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.planos{display:grid;gap:10px}
+.plano{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;background:var(--bg)}
+.plano:has(input:checked){border-color:var(--accent);background:rgba(255,74,61,.1)}
+.plano input{margin-top:4px;width:18px;height:18px;flex:none}
+.plano strong{display:flex;justify-content:space-between;gap:10px}
+.plano small{display:block;color:var(--muted);font-size:.85rem}
+.mais{padding:12px 14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.9rem}
+.mais a{color:#25d366;font-weight:600}
+label.f{display:block;font-size:.85rem;color:var(--muted);margin-top:14px}
+input[type=text],input[type=email],select{width:100%;margin-top:4px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dica{margin:4px 0 0;color:var(--muted);font-size:.82rem}
-button{width:100%;margin-top:18px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button,a.btn{display:block;width:100%;margin-top:18px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;text-align:center;text-decoration:none;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
 button:disabled{opacity:.6;cursor:wait}
 .st{min-height:1.3em;margin-top:12px;font-size:.92rem;color:var(--accent)}
 .volta{display:block;text-align:center;margin-top:16px;color:var(--muted);font-size:.9rem}
+.box{margin:12px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.box small{display:block;color:var(--muted);font-size:.8rem;margin-bottom:2px}
+.box code{display:block;font-size:1.1rem;word-break:break-all}
+.box.chave code{font-size:1.35rem;letter-spacing:.04em;color:var(--ok)}
+.aviso{padding:10px 12px;border:1px solid #5a3d12;background:#2a1d10;border-radius:10px;font-size:.9rem}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <main>
   <form class="card" id="f" autocomplete="off">
     <h1>Criar conta</h1>
-    <p class="sub">Cadastre o seu bar e comece a receber pedidos pelo celular dos clientes.</p>
-    <div class="preco"><strong>R$ 79,90</strong> por m&#234;s<br><span class="dica">Cobran&#231;a mensal no cart&#227;o, cancele quando quiser.</span></div>
+    <p class="sub">Cadastre o seu estabelecimento e comece pelo plano que combina com voc&#234;.</p>
 
-    <label>Nome do bar<input id="nome" maxlength="80" required></label>
-    <label>Endere&#231;o do bar
-      <input id="slug" maxlength="40" autocapitalize="none" required>
+    <h2>Plano</h2>
+    <div class="planos" id="planos">
+      <label class="plano"><input type="radio" name="plano" value="free"><span><strong>Gr&#225;tis <span>R$ 0</span></strong><small>Card&#225;pio digital completo, com itens e mesas. N&#227;o recebe pedidos.</small></span></label>
+      <label class="plano"><input type="radio" name="plano" value="basico" checked><span><strong>B&#225;sico <span>R$ 49,90/m&#234;s</span></strong><small>Tudo do Gr&#225;tis, mais pedidos pelo celular do cliente na mesa ou no quarto, com painel em tempo real.</small></span></label>
+      <label class="plano"><input type="radio" name="plano" value="basico_plus"><span><strong>B&#225;sico+ <span>R$ 79,90/m&#234;s</span></strong><small>Tudo do B&#225;sico, mais delivery e retirada, Pix e acompanhamento do pedido.</small></span></label>
+    </div>
+    <p class="mais" style="margin-top:10px">Quer atendimento autom&#225;tico com IA, pagamentos detectados sozinhos ou pedidos pelo WhatsApp? <a href="https://wa.me/5512997621359?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20os%20planos%20Profissional%20do%20MenuEasy." target="_blank" rel="noopener">Fale com a gente</a>.</p>
+
+    <h2>Seu estabelecimento</h2>
+    <label class="f">Nome<input id="nome" type="text" maxlength="80" required></label>
+    <label class="f">Tipo de lugar
+      <select id="tipo">
+        <option value="restaurante">Restaurante</option>
+        <option value="bar">Bar</option>
+        <option value="pizzaria">Pizzaria</option>
+        <option value="hamburgueria">Hamburgueria</option>
+        <option value="petiscaria">Petiscaria</option>
+        <option value="lanchonete">Lanchonete</option>
+        <option value="cafeteria">Cafeteria</option>
+        <option value="padaria">Padaria</option>
+        <option value="sorveteria">Sorveteria e a&#231;a&#237;</option>
+        <option value="churrascaria">Churrascaria</option>
+        <option value="pastelaria">Pastelaria</option>
+        <option value="quiosque">Quiosque ou barraca de praia</option>
+        <option value="balada">Casa de shows ou balada</option>
+        <option value="hotel">Hotel</option>
+        <option value="pousada">Pousada</option>
+        <option value="motel">Motel</option>
+        <option value="outro">Outro</option>
+      </select>
     </label>
-    <p class="dica">S&#243; letras min&#250;sculas, n&#250;meros e h&#237;fen. Vai aparecer nos links das mesas, por exemplo <b id="ex">meu-bar</b>.</p>
-    <label>Seu e-mail<input id="email" type="email" maxlength="120" required></label>
+    <label class="f" id="bloco-rotulo" hidden>Seus clientes pedem de onde?
+      <select id="rotulo"><option value="Mesa">Da mesa</option><option value="Quarto">Do quarto</option></select>
+    </label>
+    <label class="f">Endere&#231;o do estabelecimento (no link)
+      <input id="slug" type="text" maxlength="40" autocapitalize="none" required>
+    </label>
+    <p class="dica">S&#243; letras min&#250;sculas, n&#250;meros e h&#237;fen. Vai aparecer nos links, por exemplo <b id="ex">meu-bar</b>.</p>
+    <label class="f">Seu e-mail<input id="email" type="email" maxlength="120" required></label>
 
     <p id="st" class="st" role="status"></p>
     <button id="ok" type="submit">Continuar para o pagamento</button>
     <a class="volta" href="index.html">Voltar</a>
   </form>
+
+  <section class="card" id="pronto" hidden>
+    <h1>Tudo pronto!</h1>
+    <p class="sub">Sua conta gr&#225;tis foi criada. Guarde estes dados, a chave de acesso &#233; a sua senha.</p>
+    <div class="box"><small>Estabelecimento</small><code id="r-nome"></code></div>
+    <div class="box"><small>Endere&#231;o</small><code id="r-slug"></code></div>
+    <div class="box chave"><small>Chave de acesso</small><code id="r-chave"></code></div>
+    <div class="aviso">Anote a chave agora e n&#227;o a compartilhe. Quem tiver a chave consegue mexer no seu card&#225;pio.</div>
+    <button id="copiar" type="button">Copiar a chave</button>
+    <a class="btn" id="entrar" href="entrar.html" style="background:transparent;border:1px solid var(--line)">Entrar no meu painel</a>
+  </section>
 </main>
 <script>
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const $ = id => document.getElementById(id);
 const semAcento = t => t.normalize("NFD").replace(/[^\x00-\x7f]/g, "");
 const slugar = t => semAcento(String(t || "").toLowerCase()).replace(/[^0-9a-z]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+const planoAtual = () => document.querySelector('input[name="plano"]:checked').value;
 
 let slugEditado = false;
 $("nome").addEventListener("input", () => { if (!slugEditado) { $("slug").value = slugar($("nome").value); $("ex").textContent = $("slug").value || "meu-bar"; } });
 $("slug").addEventListener("input", () => { slugEditado = true; $("slug").value = $("slug").value.toLowerCase().replace(/[^0-9a-z-]/g, ""); $("ex").textContent = $("slug").value || "meu-bar"; });
+$("tipo").addEventListener("change", () => { $("bloco-rotulo").hidden = $("tipo").value !== "outro"; });
+$("planos").addEventListener("change", () => {
+  $("ok").textContent = planoAtual() === "free" ? "Criar conta gr\u00e1tis" : "Continuar para o pagamento";
+});
+
+let chave = "";
+$("copiar").addEventListener("click", async () => {
+  const b = $("copiar");
+  try{ await navigator.clipboard.writeText(chave); b.textContent = "Copiado!"; }
+  catch(e){ b.textContent = "Selecione a chave e copie"; }
+  setTimeout(() => { b.textContent = "Copiar a chave"; }, 2000);
+});
 
 $("f").addEventListener("submit", async e => {
   e.preventDefault();
   const st = $("st"), btn = $("ok");
   const nome = $("nome").value.trim(), slug = $("slug").value.trim(), email = $("email").value.trim();
+  const plano = planoAtual();
   if (slug.length < 2){ st.style.color = "var(--accent)"; st.textContent = "O endere\u00e7o precisa ter pelo menos 2 caracteres."; return; }
-  btn.disabled = true; st.style.color = "var(--muted)"; st.textContent = "Preparando o pagamento\u2026";
+  btn.disabled = true; st.style.color = "var(--muted)";
+  st.textContent = plano === "free" ? "Criando a sua conta\u2026" : "Preparando o pagamento\u2026";
   try{
     const r = await fetch(URL_BASE + "saas-criar-conta", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({nome, slug, email})
+      body: JSON.stringify({nome, slug, email, plano, tipo_estabelecimento: $("tipo").value, rotulo_local: $("rotulo").value})
     });
     let d = null; try{ d = await r.json(); }catch(err){}
     if (r.status === 409 || r.status === 400){
       st.style.color = "var(--accent)"; st.textContent = (d && d.erro) || "Confira os dados e tente de novo."; return;
     }
-    if (!r.ok || !d || !d.init_point) throw new Error("falha");
+    if (!r.ok || !d) throw new Error("falha");
+    if (d.gratis && d.chave){
+      chave = d.chave;
+      $("r-nome").textContent = d.nome || nome;
+      $("r-slug").textContent = d.slug || slug;
+      $("r-chave").textContent = chave;
+      $("entrar").href = "entrar.html?r=" + encodeURIComponent(d.slug || slug);
+      $("f").hidden = true; $("pronto").hidden = false;
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (!d.init_point) throw new Error("falha");
     location.href = d.init_point;
   }catch(err){
     st.style.color = "var(--accent)"; st.textContent = "N\u00e3o foi poss\u00edvel continuar. Tente de novo em instantes.";
