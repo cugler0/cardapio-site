@@ -195,7 +195,7 @@ function linhaBairro(b, aoMudar){
 
 function desenhar(d){
   $("a-nome").textContent = d.nome || REST;
-  const temPlano = d.plano === "delivery";
+  const temPlano = Number(d.nivel) >= 2;
   $("aviso-plano").hidden = temPlano;
   $("zap-plano").href = CONTATO;
   $("ativo").checked = d.delivery_ativo && temPlano;
