@@ -47,6 +47,10 @@ button:disabled{opacity:.6;cursor:wait}
 .obs{background:#2a1d10;border:1px solid #5a3d12;border-radius:8px;padding:6px 8px;margin:6px 0;font-size:.92rem}
 .tot{font-weight:600;margin-top:6px}
 .ped button{margin-top:10px;width:100%}
+.ped .mini{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+.ped .mini button{margin:0;width:auto;padding:3px 9px;font-size:.78rem;font-weight:500;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px}
+.ped .mini button:hover{color:var(--ink);border-color:var(--muted)}
+.ped .mini button.del:hover{color:var(--accent);border-color:var(--accent)}
 .fecha{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
 .fecha select{padding:9px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 .fecha .st{margin-left:4px}
@@ -223,6 +227,7 @@ function cartao(p, destaque){
     });
     d.append(b);
   }
+  d.append(miniAcoes(p));
   return d;
 }
 
@@ -254,6 +259,43 @@ function linkZap(p){
   if (n.length < 10) return null;
   if (n.length <= 11) n = "55" + n;
   return "https://wa.me/" + n + "?text=" + encodeURIComponent(msgZap(p));
+}
+
+function anterior(p){
+  const ent = tipoDe(p) === "entrega";
+  if (p.status === "preparando") return ["novo", "Voltar para Novo"];
+  if (p.status === "saiu_entrega" || p.status === "pronto") return ["preparando", "Voltar para Preparando"];
+  if (p.status === "entregue"){
+    if (tipoDe(p) === "mesa") return ["preparando", "Voltar para Preparando"];
+    return ent ? ["saiu_entrega", "Voltar para Saiu"] : ["pronto", "Voltar para Pronto"];
+  }
+  return null;
+}
+function miniAcoes(p){
+  const w = document.createElement("div"); w.className = "mini";
+  const ant = anterior(p);
+  if (ant){
+    const v = document.createElement("button"); v.type = "button"; v.textContent = "\u2190 " + ant[1];
+    v.title = "Desfazer o \u00faltimo avan\u00e7o deste pedido";
+    v.addEventListener("click", () => mudarStatus(p, ant[0], v));
+    w.append(v);
+  } else { w.append(document.createElement("span")); }
+  const x = document.createElement("button"); x.type = "button"; x.className = "del"; x.textContent = "Apagar"; x.title = "Apagar este pedido";
+  x.addEventListener("click", async () => {
+    const quem = p.nome ? " de " + p.nome : "";
+    if (!confirm("Apagar o pedido" + quem + " (" + reais(p.total) + ")? Isso n\u00e3o pode ser desfeito.")) return;
+    x.disabled = true;
+    try{
+      const {status, dados} = await api("saas-admin-apagar", {pedido_id: p.id});
+      if (status === 401) return sair();
+      if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
+      await atualizar();
+    }catch(e){
+      x.disabled = false; x.textContent = "Erro";
+    }
+  });
+  w.append(x);
+  return w;
 }
 
 function proximoDelivery(p){
@@ -332,6 +374,7 @@ function cartaoDelivery(p, destaque){
     const a = document.createElement("a"); a.className = "zap"; a.href = href; a.target = "_blank"; a.rel = "noopener";
     a.textContent = "Avisar o cliente no WhatsApp"; d.append(a);
   }
+  d.append(miniAcoes(p));
   return d;
 }
 
