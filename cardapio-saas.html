@@ -227,7 +227,11 @@ async function carregar(){
       document.body.classList.add("sem-mesa");
       $("sub").textContent = "Card\u00e1pio para consulta.";
     }
-    if (!MESA && DELIVERY.ativo){
+    if (!MESA && DELIVERY.ativo && dv.aberto === false){
+      MODO = "";
+      document.body.classList.add("sem-mesa");
+      $("sub").textContent = "Delivery fechado no momento. " + limpa(dv.aviso);
+    } else if (!MESA && DELIVERY.ativo){
       MODO = "delivery";
       document.body.classList.remove("sem-mesa");
       $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada. Pre\u00e7os atualizados em tempo real.";

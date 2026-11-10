@@ -32,6 +32,10 @@ button:disabled{opacity:.6;cursor:wait}
 .acoes{display:flex;gap:8px;flex-wrap:wrap}
 a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}
 a.voltar:hover{border-color:var(--accent)}
+.dia{display:grid;grid-template-columns:96px minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center;margin-top:8px}
+.dia input[type=time]{width:100%;margin:0}
+.dia .chk{margin:0}
+.dia input[type=time]{min-width:0;padding:8px 6px}
 .aviso{padding:12px 14px;border:1px solid #5a3d12;background:#2a1d10;border-radius:12px;margin-bottom:12px}
 .aviso a{color:#25d366;font-weight:600}
 .bairro{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end;padding:10px 0;border-top:1px solid var(--line)}
@@ -72,6 +76,14 @@ a.voltar:hover{border-color:var(--accent)}
         <label>Pedido m&#237;nimo para entrega (R$)<input id="minimo" inputmode="decimal" placeholder="0,00"></label>
         <label>WhatsApp do estabelecimento<input id="zap" type="tel" inputmode="tel" placeholder="(67) 99999-9999"></label>
       </div>
+    </div>
+
+    <h2>Hor&#225;rio do delivery</h2>
+    <div class="card">
+      <label class="chk"><input type="checkbox" id="pausar"> Pausar o delivery agora (fecha na hora, sem mexer nos hor&#225;rios)</label>
+      <label class="chk"><input type="checkbox" id="usa-horario"> Usar hor&#225;rio fixo de funcionamento</label>
+      <p class="sub" id="dica-horario">Desmarcado: o delivery fica aberto o dia todo enquanto estiver ligado.</p>
+      <div id="grade" hidden></div>
     </div>
 
     <h2>Pix</h2>
@@ -148,6 +160,33 @@ function normalizar(tipo, v){
   return v.toLowerCase();
 }
 
+// ---- Horario ----
+const DIAS = ["Domingo", "Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado"];
+function montarGrade(h){
+  const g = $("grade"); g.replaceChildren();
+  DIAS.forEach((nome, i) => {
+    const x = h && h[String(i)];
+    const l = document.createElement("div"); l.className = "dia"; l.dataset.d = String(i);
+    const lc = document.createElement("label"); lc.className = "chk";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!x; lc.append(cb, nome);
+    const a = document.createElement("input"); a.type = "time"; a.value = x ? x.abre : "18:00"; a.setAttribute("aria-label", "Abre " + nome);
+    const ate = document.createElement("span"); ate.textContent = "at\u00e9";
+    const f = document.createElement("input"); f.type = "time"; f.value = x ? x.fecha : "23:00"; f.setAttribute("aria-label", "Fecha " + nome);
+    l.append(lc, a, ate, f); g.append(l);
+  });
+}
+function lerGrade(){
+  if (!$("usa-horario").checked) return null;
+  const h = {};
+  for (const l of $("grade").children){
+    const cb = l.querySelector('input[type=checkbox]');
+    const t = l.querySelectorAll('input[type=time]');
+    if (cb.checked) h[l.dataset.d] = {abre: t[0].value, fecha: t[1].value};
+  }
+  return h;
+}
+$("usa-horario").addEventListener("change", () => { $("grade").hidden = !$("usa-horario").checked; });
+
 // ---- Bairros ----
 function linhaBairro(b, aoMudar){
   const box = document.createElement("div"); box.className = "bairro";
@@ -202,6 +241,10 @@ function desenhar(d){
   $("ativo").disabled = !temPlano;
   $("minimo").value = d.pedido_minimo ? String(d.pedido_minimo).replace(".", ",") : "";
   $("zap").value = d.whatsapp || "";
+  $("pausar").checked = !!d.delivery_pausado;
+  $("usa-horario").checked = !!(d.delivery_horarios && Object.keys(d.delivery_horarios).length);
+  $("grade").hidden = !$("usa-horario").checked;
+  montarGrade(d.delivery_horarios);
   $("pix-tipo").value = detectar(d.pix_chave);
   $("pix-chave").value = d.pix_chave || "";
   $("pix-nome").value = d.pix_nome || "";
@@ -229,7 +272,7 @@ $("c-salvar").addEventListener("click", async () => {
   btn.disabled = true; neutro(st, "Salvando\u2026");
   try{
     const {status, dados} = await api("saas-admin-delivery-salvar", {
-      delivery_ativo: $("ativo").checked, pedido_minimo: minimo === "" ? 0 : Number(minimo),
+      delivery_ativo: $("ativo").checked, delivery_pausado: $("pausar").checked, delivery_horarios: lerGrade(), pedido_minimo: minimo === "" ? 0 : Number(minimo),
       whatsapp: $("zap").value, pix_chave: chave, pix_nome: $("pix-nome").value, pix_cidade: $("pix-cidade").value
     });
     if (status === 401) return sair();
