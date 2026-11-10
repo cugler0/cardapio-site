@@ -80,6 +80,16 @@ a.voltar:hover{border-color:var(--accent)}
 
     <h2>Hor&#225;rio do delivery</h2>
     <div class="card">
+      <label>Fuso hor&#225;rio do estabelecimento
+        <select id="fuso">
+          <option value="America/Sao_Paulo">Bras&#237;lia (SP, RJ, MG, sul, nordeste e outros)</option>
+          <option value="America/Campo_Grande">Mato Grosso do Sul</option>
+          <option value="America/Cuiaba">Mato Grosso</option>
+          <option value="America/Manaus">Amazonas, Rond&#244;nia, Roraima</option>
+          <option value="America/Rio_Branco">Acre</option>
+          <option value="America/Noronha">Fernando de Noronha</option>
+        </select>
+      </label>
       <label class="chk"><input type="checkbox" id="pausar"> Pausar o delivery agora (fecha na hora, sem mexer nos hor&#225;rios)</label>
       <label class="chk"><input type="checkbox" id="usa-horario"> Usar hor&#225;rio fixo de funcionamento</label>
       <p class="sub" id="dica-horario">Desmarcado: o delivery fica aberto o dia todo enquanto estiver ligado.</p>
@@ -241,6 +251,7 @@ function desenhar(d){
   $("ativo").disabled = !temPlano;
   $("minimo").value = d.pedido_minimo ? String(d.pedido_minimo).replace(".", ",") : "";
   $("zap").value = d.whatsapp || "";
+  $("fuso").value = d.fuso || "America/Campo_Grande";
   $("pausar").checked = !!d.delivery_pausado;
   $("usa-horario").checked = !!(d.delivery_horarios && Object.keys(d.delivery_horarios).length);
   $("grade").hidden = !$("usa-horario").checked;
@@ -272,7 +283,7 @@ $("c-salvar").addEventListener("click", async () => {
   btn.disabled = true; neutro(st, "Salvando\u2026");
   try{
     const {status, dados} = await api("saas-admin-delivery-salvar", {
-      delivery_ativo: $("ativo").checked, delivery_pausado: $("pausar").checked, delivery_horarios: lerGrade(), pedido_minimo: minimo === "" ? 0 : Number(minimo),
+      delivery_ativo: $("ativo").checked, fuso: $("fuso").value, delivery_pausado: $("pausar").checked, delivery_horarios: lerGrade(), pedido_minimo: minimo === "" ? 0 : Number(minimo),
       whatsapp: $("zap").value, pix_chave: chave, pix_nome: $("pix-nome").value, pix_cidade: $("pix-cidade").value
     });
     if (status === 401) return sair();
