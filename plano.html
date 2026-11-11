@@ -53,6 +53,7 @@ a.zap{color:#25d366;font-weight:600}
     </div>
 
     <div id="c-ok" class="st" role="status"></div>
+    <div id="aviso-fim" class="card" hidden></div>
     <h2>Planos</h2>
     <div id="planos"></div>
 
@@ -66,10 +67,10 @@ a.zap{color:#25d366;font-weight:600}
 
     <div class="card" id="bloco-cancelar" hidden>
       <strong>Cancelar a assinatura</strong>
-      <p class="sub">Voc&#234; pode cancelar quando quiser. A cobran&#231;a para e o plano volta para o Gr&#225;tis.</p>
+      <p class="sub">Voc&#234; pode cancelar quando quiser. A cobran&#231;a para e o plano continua ativo at&#233; o fim do per&#237;odo que voc&#234; j&#225; pagou.</p>
       <button class="sec" id="c-abrir">Cancelar assinatura</button>
       <div id="c-confirma" hidden>
-        <p class="sub" style="margin-top:14px"><b>Tem certeza?</b> O plano volta para o Gr&#225;tis agora: os pedidos pelo celular deixam de funcionar e a cobran&#231;a &#233; cancelada. O seu card&#225;pio continua vis&#237;vel.</p>
+        <p class="sub" style="margin-top:14px"><b>Tem certeza?</b> A cobran&#231;a &#233; cancelada e o seu plano continua funcionando at&#233; o fim do per&#237;odo pago. Depois disso volta para o Gr&#225;tis: os pedidos pelo celular deixam de funcionar, mas o card&#225;pio continua vis&#237;vel.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><button id="c-sim">Sim, cancelar assinatura</button><button class="sec" id="c-nao">Voltar</button></div>
       </div>
       <div id="c-st" class="st" role="status"></div>
@@ -102,7 +103,14 @@ const msg = (el, t, ok) => { el.className = "st " + (ok ? "ok" : "erro"); el.tex
 
 function desenhar(d){
   $("a-nome").textContent = d.nome || REST;
-  $("bloco-cancelar").hidden = !(d.nivel >= 1 && d.nivel <= 2);
+  const fim = d.plano_ate ? new Date(d.plano_ate) : null;
+  d.fim = (fim && fim > new Date() && d.nivel >= 1) ? fim : null;
+  $("bloco-cancelar").hidden = !(d.nivel >= 1 && d.nivel <= 2) || !!d.fim;
+  const av = $("aviso-fim");
+  if (d.fim){
+    av.hidden = false;
+    av.textContent = "Assinatura cancelada. O seu plano continua ativo at\u00e9 " + d.fim.toLocaleDateString("pt-BR") + ". Depois dessa data ele volta para o Gr\u00e1tis e n\u00e3o haver\u00e1 nova cobran\u00e7a. Se mudar de ideia, assine de novo abaixo.";
+  } else { av.hidden = true; av.textContent = ""; }
   const caixa = $("planos"); caixa.replaceChildren();
   if (d.nivel >= 3){
     const c = document.createElement("div"); c.className = "card plano atual";
@@ -121,6 +129,10 @@ function desenhar(d){
     t.append(s, sm); c.append(t);
     if (p.nivel === d.nivel){
       const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = "Plano atual"; c.append(tag);
+      if (d.fim){
+        const b = document.createElement("button"); b.textContent = "Reativar";
+        b.addEventListener("click", () => abrirForm(p)); c.append(b);
+      }
     } else if (p.nivel > d.nivel){
       const b = document.createElement("button"); b.textContent = "Assinar";
       b.addEventListener("click", () => abrirForm(p)); c.append(b);
@@ -149,7 +161,7 @@ $("c-sim").addEventListener("click", async () => {
       $("c-confirma").hidden = true; $("c-abrir").hidden = false;
       await carregar();
       $("c-st").textContent = "";
-      msg($("c-ok"), "Assinatura cancelada. O plano voltou para o Gr\u00e1tis.", true);
+      msg($("c-ok"), "Assinatura cancelada. Veja abaixo at\u00e9 quando o plano continua ativo.", true);
       window.scrollTo({top: 0, behavior: "smooth"});
       return;
     }
