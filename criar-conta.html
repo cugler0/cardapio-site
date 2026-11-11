@@ -91,6 +91,13 @@ button:disabled{opacity:.6;cursor:wait}
     <a class="volta" href="index.html">Voltar</a>
   </form>
 
+  <section class="card" id="aguardando" hidden>
+    <h1>Confira o seu e-mail</h1>
+    <p class="sub">Enviamos um link de confirma&#231;&#227;o para <b id="a-email"></b>. Clique nele para ativar a sua conta gr&#225;tis e ver a sua chave de acesso.</p>
+    <div class="aviso">N&#227;o chegou? Olhe a caixa de spam. O link vale por 48 horas.</div>
+    <a class="btn" href="index.html" style="background:transparent;border:1px solid var(--line)">Voltar ao in&#237;cio</a>
+  </section>
+
   <section class="card" id="pronto" hidden>
     <h1>Tudo pronto!</h1>
     <p class="sub">Sua conta gr&#225;tis foi criada. Guarde estes dados, a chave de acesso &#233; a sua senha.</p>
@@ -154,6 +161,12 @@ $("f").addEventListener("submit", async e => {
       st.style.color = "var(--accent)"; st.textContent = (d && d.erro) || "Confira os dados e tente de novo."; return;
     }
     if (!r.ok || !d) throw new Error("falha");
+    if (d.gratis && d.confirmar){
+      $("a-email").textContent = d.email || email;
+      $("f").hidden = true; $("aguardando").hidden = false;
+      window.scrollTo(0, 0);
+      return;
+    }
     if (d.gratis && d.chave){
       chave = d.chave;
       $("r-nome").textContent = d.nome || nome;
