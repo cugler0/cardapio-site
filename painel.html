@@ -252,6 +252,7 @@ function desenhar(itens){
     const {foto_pendente, remover_foto, ...limpo} = d;
     const {status, dados} = await api("saas-admin-novo", {item: limpo});
     if (status === 401) { sair(); return false; }
+    if (status === 400 && dados && typeof dados.erro === "string"){ $("aviso-foto").textContent = dados.erro; return false; }
     if (!(status === 200 && dados && dados.ok)) return false;
     $("aviso-foto").textContent = "";
     if (foto_pendente){
