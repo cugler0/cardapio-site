@@ -52,6 +52,7 @@ a.zap{color:#25d366;font-weight:600}
       <div class="acoes"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
     </div>
 
+    <div id="c-ok" class="st" role="status"></div>
     <h2>Planos</h2>
     <div id="planos"></div>
 
@@ -63,7 +64,18 @@ a.zap{color:#25d366;font-weight:600}
       <div id="up-st" class="st" role="status"></div>
     </div>
 
-    <p class="sub" style="margin-top:22px">Quer cancelar a assinatura, ou saber mais sobre os planos com IA e WhatsApp? <a class="zap" id="zap" target="_blank" rel="noopener" href="#">Fale com a gente</a>.</p>
+    <div class="card" id="bloco-cancelar" hidden>
+      <strong>Cancelar a assinatura</strong>
+      <p class="sub">Voc&#234; pode cancelar quando quiser. A cobran&#231;a para e o plano volta para o Gr&#225;tis.</p>
+      <button class="sec" id="c-abrir">Cancelar assinatura</button>
+      <div id="c-confirma" hidden>
+        <p class="sub" style="margin-top:14px"><b>Tem certeza?</b> O plano volta para o Gr&#225;tis agora: os pedidos pelo celular deixam de funcionar e a cobran&#231;a &#233; cancelada. O seu card&#225;pio continua vis&#237;vel.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px"><button id="c-sim">Sim, cancelar assinatura</button><button class="sec" id="c-nao">Voltar</button></div>
+      </div>
+      <div id="c-st" class="st" role="status"></div>
+    </div>
+
+    <p class="sub" style="margin-top:22px">Quer saber mais sobre os planos com IA e WhatsApp? <a class="zap" id="zap" target="_blank" rel="noopener" href="#">Fale com a gente</a>.</p>
   </section>
 </main>
 <script>
@@ -90,6 +102,7 @@ const msg = (el, t, ok) => { el.className = "st " + (ok ? "ok" : "erro"); el.tex
 
 function desenhar(d){
   $("a-nome").textContent = d.nome || REST;
+  $("bloco-cancelar").hidden = !(d.nivel >= 1 && d.nivel <= 2);
   const caixa = $("planos"); caixa.replaceChildren();
   if (d.nivel >= 3){
     const c = document.createElement("div"); c.className = "card plano atual";
@@ -124,6 +137,26 @@ function abrirForm(p){
   $("form-up").hidden = false;
   $("form-up").scrollIntoView({behavior: "smooth", block: "center"});
 }
+$("c-abrir").addEventListener("click", () => { $("c-confirma").hidden = false; $("c-abrir").hidden = true; });
+$("c-nao").addEventListener("click", () => { $("c-confirma").hidden = true; $("c-abrir").hidden = false; });
+$("c-sim").addEventListener("click", async () => {
+  const st = $("c-st"), btn = $("c-sim");
+  btn.disabled = true; st.className = "st"; st.textContent = "Cancelando\u2026";
+  try{
+    const {status, dados} = await api("saas-admin-cancelar", {});
+    if (status === 401){ sair(); return; }
+    if (status === 200 && dados && dados.ok){
+      $("c-confirma").hidden = true; $("c-abrir").hidden = false;
+      await carregar();
+      $("c-st").textContent = "";
+      msg($("c-ok"), "Assinatura cancelada. O plano voltou para o Gr\u00e1tis.", true);
+      window.scrollTo({top: 0, behavior: "smooth"});
+      return;
+    }
+    msg(st, (dados && dados.erro) || "N\u00e3o foi poss\u00edvel cancelar. Tente de novo.", false);
+  }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); }
+  finally{ btn.disabled = false; }
+});
 $("up-cancelar").addEventListener("click", () => { $("form-up").hidden = true; ESCOLHIDO = null; });
 $("up-ir").addEventListener("click", async () => {
   const st = $("up-st"), btn = $("up-ir");
