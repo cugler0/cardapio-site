@@ -414,7 +414,7 @@ $("p-enviar").addEventListener("click", async () => {
     if (r.status === 404) { msg.textContent = "Restaurante n\u00e3o encontrado."; return; }
     if (r.status === 400) {
       let d = null; try{ d = await r.json(); }catch(err){}
-      msg.textContent = (delivery && d && typeof d.erro === "string" && d.erro) ? d.erro : "Algum item n\u00e3o est\u00e1 mais dispon\u00edvel. Recarregue a p\u00e1gina e tente de novo.";
+      msg.textContent = (d && typeof d.erro === "string" && d.erro && (delivery || /^Muitos/.test(d.erro))) ? d.erro : "Algum item n\u00e3o est\u00e1 mais dispon\u00edvel. Recarregue a p\u00e1gina e tente de novo.";
       return;
     }
     if(!r.ok) throw new Error("HTTP " + r.status);
