@@ -223,7 +223,9 @@ async function carregar(){
     if (MESA) $("sub").textContent = ROT + " " + MESA + " \u00b7 Pre\u00e7os atualizados em tempo real.";
     else if (resposta.pedidos !== false) $("sub").textContent = "Para fazer pedidos, aproxime o celular da plaquinha " + art() + " " + rot() + ".";
     const dv = resposta.delivery || {};
-    DELIVERY = {ativo: !!dv.ativo, pedido_minimo: Number(dv.pedido_minimo) || 0, bairros: Array.isArray(dv.bairros) ? dv.bairros : []};
+    DELIVERY = {ativo: !!dv.ativo, pedido_minimo: Number(dv.pedido_minimo) || 0, bairros: Array.isArray(dv.bairros) ? dv.bairros : [],
+      pagamentos: Array.isArray(dv.pagamentos) ? dv.pagamentos : ["pix_antecipado", "pix_entrega", "cartao", "dinheiro"]};
+    if (DELIVERY.ativo) [...$("p-pag").options].forEach(o => { if (o.value && !DELIVERY.pagamentos.includes(o.value)) o.remove(); });
     if (resposta.pedidos === false){
       MODO = "";
       document.body.classList.add("sem-mesa");

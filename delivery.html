@@ -78,6 +78,16 @@ a.voltar:hover{border-color:var(--accent)}
       </div>
     </div>
 
+    <h2>Formas de pagamento</h2>
+    <div class="card">
+      <p class="sub">Marque o que voc&#234; aceita no delivery. O cliente s&#243; v&#234; essas op&#231;&#245;es.</p>
+      <label class="chk"><input type="checkbox" class="pg" value="pix_antecipado"> Pix agora (antes de receber)</label>
+      <label class="chk"><input type="checkbox" class="pg" value="pix_entrega"> Pix ao receber</label>
+      <label class="chk"><input type="checkbox" class="pg" value="cartao"> Cart&#227;o ao receber (maquininha)</label>
+      <label class="chk"><input type="checkbox" class="pg" value="dinheiro"> Dinheiro</label>
+      <p class="sub" id="dica-pg" style="margin-top:10px">O Pix agora s&#243; aparece para o cliente se voc&#234; preencher a chave Pix abaixo.</p>
+    </div>
+
     <h2>Hor&#225;rio do delivery</h2>
     <div class="card">
       <label>Fuso hor&#225;rio do estabelecimento
@@ -251,6 +261,8 @@ function desenhar(d){
   $("ativo").disabled = !temPlano;
   $("minimo").value = d.pedido_minimo ? String(d.pedido_minimo).replace(".", ",") : "";
   $("zap").value = d.whatsapp || "";
+  const aceitos = Array.isArray(d.pagamentos) ? d.pagamentos : ["pix_antecipado","pix_entrega","cartao","dinheiro"];
+  document.querySelectorAll(".pg").forEach(c => { c.checked = aceitos.includes(c.value); });
   $("fuso").value = d.fuso || "America/Campo_Grande";
   $("pausar").checked = !!d.delivery_pausado;
   $("usa-horario").checked = !!(d.delivery_horarios && Object.keys(d.delivery_horarios).length);
@@ -283,7 +295,7 @@ $("c-salvar").addEventListener("click", async () => {
   btn.disabled = true; neutro(st, "Salvando\u2026");
   try{
     const {status, dados} = await api("saas-admin-delivery-salvar", {
-      delivery_ativo: $("ativo").checked, fuso: $("fuso").value, delivery_pausado: $("pausar").checked, delivery_horarios: lerGrade(), pedido_minimo: minimo === "" ? 0 : Number(minimo),
+      delivery_ativo: $("ativo").checked, pagamentos: [...document.querySelectorAll(".pg:checked")].map(c => c.value), fuso: $("fuso").value, delivery_pausado: $("pausar").checked, delivery_horarios: lerGrade(), pedido_minimo: minimo === "" ? 0 : Number(minimo),
       whatsapp: $("zap").value, pix_chave: chave, pix_nome: $("pix-nome").value, pix_cidade: $("pix-cidade").value
     });
     if (status === 401) return sair();
