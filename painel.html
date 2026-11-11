@@ -30,6 +30,12 @@ button:disabled{opacity:.6;cursor:wait}
 .st.ok{color:var(--ok)}
 .st.erro{color:var(--accent)}
 .off{opacity:.6}
+.foto-bloco{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.foto-bloco .prev{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg);flex:none}
+.foto-bloco .col{flex:1;min-width:190px}
+.foto-bloco input[type=file]{padding:8px;font-size:.85rem}
+.foto-bloco .dica{display:block;font-size:.8rem;color:var(--muted);margin-top:4px}
+button.mini{padding:6px 10px;font-size:.8rem;font-weight:500;margin-top:6px}
 .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 [hidden]{display:none!important}
 a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
@@ -53,6 +59,7 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
     </div>
 
+    <p id="aviso-foto" class="st erro" role="status"></p>
     <h2>Novo item</h2>
     <div class="card" id="novo"></div>
 
@@ -90,6 +97,36 @@ function input(tipo, valor, extra){
   return i;
 }
 
+// ---- Fotos: reduzidas no aparelho antes de enviar (bem leves) ----
+async function comprimir(arquivo){
+  const url = URL.createObjectURL(arquivo);
+  try{
+    const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => falha(new Error("img")); i.src = url; });
+    const MAX = 480;
+    const esc = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.naturalWidth * esc)); c.height = Math.max(1, Math.round(img.naturalHeight * esc));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    let q = 0.75, saida = "";
+    for (let t = 0; t < 6; t++){
+      saida = c.toDataURL("image/webp", q);
+      if (!saida.startsWith("data:image/webp")) saida = c.toDataURL("image/jpeg", q);
+      if (saida.length * 0.75 < 45000) break;
+      q -= 0.1;
+    }
+    if (saida.length * 0.75 > 120000) throw new Error("grande");
+    return saida;
+  } finally { URL.revokeObjectURL(url); }
+}
+const kb = dataUrl => Math.max(1, Math.round(dataUrl.length * 0.75 / 1024));
+const norm = t => String(t || "").trim().toLowerCase();
+async function tratarFoto(id, d){
+  const corpo = d.foto_pendente ? {id, acao: "enviar", imagem: d.foto_pendente} : {id, acao: "remover"};
+  const {status, dados} = await api("saas-admin-foto", corpo);
+  if (status === 401){ sair(); return false; }
+  return status === 200 && !!dados && dados.ok === true;
+}
+
 // Monta o formul\u00e1rio de um item (existente ou novo)
 function formItem(item, aoSalvar, textoBotao){
   const box = document.createElement("div");
@@ -104,6 +141,38 @@ function formItem(item, aoSalvar, textoBotao){
   const g2 = document.createElement("div"); g2.className = "grid3";
   g2.append(campo("Descri\u00e7\u00e3o", desc), campo("Categoria", cat));
   box.append(g, g2);
+
+  const fb = document.createElement("div"); fb.className = "foto-bloco";
+  const prev = document.createElement("img"); prev.className = "prev"; prev.alt = "Foto do item"; prev.width = 72; prev.height = 72;
+  const col = document.createElement("div"); col.className = "col";
+  const arq = document.createElement("input"); arq.type = "file"; arq.accept = "image/*"; arq.setAttribute("aria-label", "Foto do item");
+  const dica = document.createElement("span"); dica.className = "dica";
+  const rem = document.createElement("button"); rem.type = "button"; rem.className = "sec mini"; rem.textContent = "Remover foto";
+  col.append(arq, dica, rem); fb.append(prev, col); box.append(fb);
+  let pendente = null, removerFoto = false;
+  const temFoto = /^https?:\/\//i.test(item.foto || "");
+  function vistaFoto(src, texto){
+    prev.hidden = !src; if (src) prev.src = src;
+    rem.hidden = !src;
+    dica.textContent = texto;
+  }
+  vistaFoto(temFoto ? item.foto : "", temFoto ? "Foto atual. Escolha outra para trocar." : "Foto opcional. Ela \u00e9 reduzida automaticamente.");
+  arq.addEventListener("change", async () => {
+    const f = arq.files && arq.files[0];
+    if (!f) return;
+    dica.textContent = "Preparando a foto\u2026";
+    try{
+      pendente = await comprimir(f); removerFoto = false;
+      vistaFoto(pendente, "Foto pronta (" + kb(pendente) + " KB). Toque em " + textoBotao + " para enviar.");
+    }catch(e){
+      pendente = null; arq.value = "";
+      dica.textContent = "N\u00e3o foi poss\u00edvel usar essa imagem. Tente outra.";
+    }
+  });
+  rem.addEventListener("click", () => {
+    arq.value = ""; pendente = null; removerFoto = !!item.foto;
+    vistaFoto("", removerFoto ? "A foto ser\u00e1 removida quando voc\u00ea salvar." : "Foto opcional. Ela \u00e9 reduzida automaticamente.");
+  });
 
   const rod = document.createElement("div"); rod.className = "rodape";
   let disp = null;
@@ -131,9 +200,11 @@ function formItem(item, aoSalvar, textoBotao){
     try{
       const dados = {
         id: item.id, nome: nome.value, descricao: desc.value,
-        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true
+        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true,
+        foto_pendente: pendente, remover_foto: removerFoto && !pendente
       };
       const ok = await aoSalvar(dados);
+      if (ok){ pendente = null; removerFoto = false; arq.value = ""; }
       st.className = ok ? "st ok" : "st erro";
       st.textContent = ok ? "Salvo!" : "N\u00e3o foi poss\u00edvel salvar.";
     }catch(e){
@@ -161,9 +232,16 @@ function desenhar(itens){
     for (const it of its){
       const card = document.createElement("div"); card.className = "card";
       card.append(formItem(it, async d => {
-        const {status, dados} = await api("saas-admin-salvar", {item: d});
+        const {foto_pendente, remover_foto, ...limpo} = d;
+        const {status, dados} = await api("saas-admin-salvar", {item: limpo});
         if (status === 401) { sair(); return false; }
-        return status === 200 && dados && dados.ok;
+        if (!(status === 200 && dados && dados.ok)) return false;
+        if (foto_pendente || remover_foto){
+          const okFoto = await tratarFoto(d.id, d);
+          $("aviso-foto").textContent = okFoto ? "" : "O item foi salvo, mas a foto n\u00e3o foi enviada. Tente de novo com uma foto menor.";
+          if (okFoto) await carregar();
+        }
+        return true;
       }, "Salvar"));
       lista.append(card);
     }
@@ -171,10 +249,24 @@ function desenhar(itens){
 
   const novo = $("novo"); novo.replaceChildren();
   novo.append(formItem({}, async d => {
-    const {status, dados} = await api("saas-admin-novo", {item: d});
+    const {foto_pendente, remover_foto, ...limpo} = d;
+    const {status, dados} = await api("saas-admin-novo", {item: limpo});
     if (status === 401) { sair(); return false; }
-    if (status === 200 && dados && dados.ok){ await carregar(); return true; }
-    return false;
+    if (!(status === 200 && dados && dados.ok)) return false;
+    $("aviso-foto").textContent = "";
+    if (foto_pendente){
+      let id = dados.id || (dados.item && dados.item.id) || null;
+      if (!id){
+        const l = await api("saas-admin-listar", {});
+        const lista = (l.dados && l.dados.itens) || [];
+        const alvo = lista.filter(i => norm(i.nome) === norm(limpo.nome) && norm(i.categoria) === norm(limpo.categoria) && !i.foto).pop();
+        id = alvo && alvo.id;
+      }
+      const okFoto = id ? await tratarFoto(id, {foto_pendente}) : false;
+      if (!okFoto) $("aviso-foto").textContent = "O item foi criado, mas a foto n\u00e3o foi enviada. Abra o item e tente de novo.";
+    }
+    await carregar();
+    return true;
   }, "Adicionar"));
 }
 
