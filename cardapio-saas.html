@@ -82,7 +82,7 @@ select:focus-visible{outline:2px solid var(--accent)}
     <svg class="emblema" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 3 60 14V38C60 54 47 65 32 70 17 65 4 54 4 38V14Z" fill="#1a0f10" stroke="#ff4a3d" stroke-width="3"/><path d="M36 16 22 40H31L27 58 44 32H34Z" fill="#ffb000"/></svg>
     <div>
       <h1 id="titulo">Card&#225;pio</h1>
-      <p class="sub" id="sub">Pre&#231;os atualizados em tempo real.</p>
+      <p class="sub" id="sub"></p>
     </div>
   </header>
   <nav id="menu" aria-label="Categorias"></nav>
@@ -173,7 +173,7 @@ let ROT = "Mesa"; const rot = () => ROT.toLowerCase(); const art = () => /o$/i.t
 let MODO = MESA ? "mesa" : "";
 let DELIVERY = {ativo: false, pedido_minimo: 0, bairros: []};
 if (!MESA) { document.body.classList.add("sem-mesa"); $("sub").textContent = "Para fazer pedidos, aproxime o celular da plaquinha " + art() + " seu " + rot() + "."; }
-if (MESA) $("sub").textContent = ROT + " " + MESA + " \u00b7 Pre\u00e7os atualizados em tempo real.";
+if (MESA) $("sub").textContent = ROT + " " + MESA;
 
 const limpa = v => String(v ?? "").trim();
 const maiuscula = t => t.charAt(0).toUpperCase() + t.slice(1);
@@ -220,7 +220,7 @@ async function carregar(){
     document.title = resposta.restaurante.nome;
     ROT = limpa(resposta.restaurante.rotulo_local) || "Mesa";
     $("l-mesa").firstChild.nodeValue = ROT;
-    if (MESA) $("sub").textContent = ROT + " " + MESA + " \u00b7 Pre\u00e7os atualizados em tempo real.";
+    if (MESA) $("sub").textContent = ROT + " " + MESA;
     else if (resposta.pedidos !== false) $("sub").textContent = "Para fazer pedidos, aproxime o celular da plaquinha " + art() + " " + rot() + ".";
     const dv = resposta.delivery || {};
     DELIVERY = {ativo: !!dv.ativo, pedido_minimo: Number(dv.pedido_minimo) || 0, bairros: Array.isArray(dv.bairros) ? dv.bairros : [],
@@ -238,7 +238,7 @@ async function carregar(){
     } else if (!MESA && DELIVERY.ativo){
       MODO = "delivery";
       document.body.classList.remove("sem-mesa");
-      $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada. Pre\u00e7os atualizados em tempo real.";
+      $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada.";
     }
 
     const grupos = new Map();
