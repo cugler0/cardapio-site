@@ -102,7 +102,7 @@ async function comprimir(arquivo){
   const url = URL.createObjectURL(arquivo);
   try{
     const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => falha(new Error("img")); i.src = url; });
-    const MAX = 480;
+    const MAX = 300;
     const esc = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement("canvas");
     c.width = Math.max(1, Math.round(img.naturalWidth * esc)); c.height = Math.max(1, Math.round(img.naturalHeight * esc));
@@ -111,10 +111,10 @@ async function comprimir(arquivo){
     for (let t = 0; t < 6; t++){
       saida = c.toDataURL("image/webp", q);
       if (!saida.startsWith("data:image/webp")) saida = c.toDataURL("image/jpeg", q);
-      if (saida.length * 0.75 < 45000) break;
+      if (saida.length * 0.75 < 22000) break;
       q -= 0.1;
     }
-    if (saida.length * 0.75 > 120000) throw new Error("grande");
+    if (saida.length * 0.75 > 60000) throw new Error("grande");
     return saida;
   } finally { URL.revokeObjectURL(url); }
 }
