@@ -58,16 +58,18 @@ input{display:block;margin-top:4px;width:110px;padding:10px;border-radius:8px;bo
   <h2 id="h-links">Links das mesas</h2>
   <div class="card">
     <div class="linha">
-      <label><span id="l-qtd">Quantas mesas?</span><input id="qtd" type="number" inputmode="numeric" min="1" max="100" value="10"></label>
+      <label><span id="l-qtd">Quantas mesas?</span><input id="qtd" type="number" inputmode="numeric" min="1" max="500" value="10"></label>
       <button id="gerar">Gerar links</button>
     </div>
-    <p class="dica">Grave cada link na tag NFC correspondente, ou use no gerador de QR code.</p>
+    <p class="dica" id="dica-links">Grave cada link na tag NFC correspondente, ou use no gerador de QR code.</p>
     <div class="links" id="links"></div>
   </div>
 </main>
 <script>
 const $ = id => document.getElementById(id);
-let rest = "", nome = "", ROT = "Mesa";
+let rest = "", nome = "", ROT = "Mesa", NIVEL = -1;
+const LIMITES = [0, 40, 150, 500, 500]; // por plano: free, b\u00e1sico, b\u00e1sico+, profissional, profissional++
+const tetoDe = n => LIMITES[Math.max(0, Math.min(4, n))];
 try{ ROT = sessionStorage.getItem("rot") || "Mesa"; rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
 if (!rest){ location.replace("entrar.html"); }
 
@@ -79,19 +81,33 @@ $("t-delivery").href = "delivery.html?r=" + encodeURIComponent(rest);
 $("t-plano").href = "plano.html?r=" + encodeURIComponent(rest);
 $("t-cardapio").href = "cardapio-saas.html?r=" + encodeURIComponent(rest);
 
+function aplicarLimite(){
+  const p = ROT.toLowerCase(), ps = p + "s";
+  const max = tetoDe(NIVEL);
+  $("qtd").max = String(max || 1);
+  $("gerar").disabled = NIVEL === 0;
+  let dica = "Grave cada link na tag NFC correspondente, ou use no gerador de QR code.";
+  if (NIVEL === 0) dica = "Os pedidos pelo celular come\u00e7am no plano B\u00e1sico. Assine para gerar os links das " + ps + ".";
+  else if (NIVEL === 1) dica += " O plano B\u00e1sico permite at\u00e9 " + tetoDe(1) + " " + ps + ". O B\u00e1sico+ chega a " + tetoDe(2) + ".";
+  else if (NIVEL === 2) dica += " O plano B\u00e1sico+ permite at\u00e9 " + tetoDe(2) + " " + ps + ".";
+  $("dica-links").textContent = dica;
+}
 function aplicarRotulo(){
   const p = ROT.toLowerCase();
   $("h-links").textContent = "Links d" + (/o$/i.test(ROT) ? "os " : "as ") + p + "s";
   $("l-qtd").textContent = "Quantos" .replace("Quantos", /o$/i.test(ROT) ? "Quantos " : "Quantas ") + p + "s?";
 }
 aplicarRotulo();
+aplicarLimite();
 (async () => {
   try{
     const chave = sessionStorage.getItem("chave") || "";
     if (!rest || !chave) return;
     const r = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({r: rest, chave})});
     const d = await r.json();
-    if (d && d.rotulo_local){ ROT = d.rotulo_local; sessionStorage.setItem("rot", ROT); aplicarRotulo(); }
+    if (d && typeof d.nivel === "number") NIVEL = d.nivel;
+    if (d && d.rotulo_local){ ROT = d.rotulo_local; sessionStorage.setItem("rot", ROT); }
+    aplicarRotulo(); aplicarLimite();
   }catch(e){}
 })();
 
@@ -101,7 +117,10 @@ $("sair").addEventListener("click", () => {
 });
 
 $("gerar").addEventListener("click", () => {
-  const n = Math.max(1, Math.min(100, Number($("qtd").value) || 0));
+  const teto = tetoDe(NIVEL < 0 ? 1 : NIVEL);
+  if (NIVEL === 0) return;
+  const n = Math.max(1, Math.min(teto, Number($("qtd").value) || 0));
+  $("qtd").value = String(n);
   const base = location.origin + "/cardapio-saas.html?r=" + encodeURIComponent(rest) + "&mesa=";
   const caixa = $("links"); caixa.replaceChildren();
   for (let i = 1; i <= n; i++){
