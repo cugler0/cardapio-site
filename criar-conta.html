@@ -37,6 +37,7 @@ button:disabled{opacity:.6;cursor:wait}
 .aviso{padding:10px 12px;border:1px solid #5a3d12;background:#2a1d10;border-radius:10px;font-size:.9rem}
 [hidden]{display:none!important}
 </style>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
 <main>
@@ -84,6 +85,7 @@ button:disabled{opacity:.6;cursor:wait}
     <p class="dica">S&#243; letras min&#250;sculas, n&#250;meros e h&#237;fen. Vai aparecer nos links, por exemplo <b id="ex">meu-bar</b>.</p>
     <label class="f">Seu e-mail<input id="email" type="email" maxlength="120" required></label>
 
+    <div id="ts" style="margin-top:14px"></div>
     <p id="st" class="st" role="status"></p>
     <button id="ok" type="submit">Continuar para o pagamento</button>
     <a class="volta" href="index.html">Voltar</a>
@@ -107,6 +109,14 @@ const semAcento = t => t.normalize("NFD").replace(/[^\x00-\x7f]/g, "");
 const slugar = t => semAcento(String(t || "").toLowerCase()).replace(/[^0-9a-z]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 const planoAtual = () => document.querySelector('input[name="plano"]:checked').value;
 
+const TS_KEY = "0x4AAAAAAF8srzdkcuWqirXg";
+let tsId = null;
+(function montarTs(){
+  if (window.turnstile && tsId === null){ tsId = turnstile.render("#ts", {sitekey: TS_KEY, theme: "dark", language: "pt-br"}); return; }
+  setTimeout(montarTs, 400);
+})();
+const tsToken = () => { try{ return (window.turnstile && tsId !== null && turnstile.getResponse(tsId)) || ""; }catch(e){ return ""; } };
+const tsReset = () => { try{ if (window.turnstile && tsId !== null) turnstile.reset(tsId); }catch(e){} };
 let slugEditado = false;
 $("nome").addEventListener("input", () => { if (!slugEditado) { $("slug").value = slugar($("nome").value); $("ex").textContent = $("slug").value || "meu-bar"; } });
 $("slug").addEventListener("input", () => { slugEditado = true; $("slug").value = $("slug").value.toLowerCase().replace(/[^0-9a-z-]/g, ""); $("ex").textContent = $("slug").value || "meu-bar"; });
@@ -129,13 +139,15 @@ $("f").addEventListener("submit", async e => {
   const nome = $("nome").value.trim(), slug = $("slug").value.trim(), email = $("email").value.trim();
   const plano = planoAtual();
   if (slug.length < 2){ st.style.color = "var(--accent)"; st.textContent = "O endere\u00e7o precisa ter pelo menos 2 caracteres."; return; }
+  const tk = tsToken();
+  if (!tk){ st.style.color = "var(--accent)"; st.textContent = "Aguarde a verifica\u00e7\u00e3o de seguran\u00e7a e tente de novo."; return; }
   btn.disabled = true; st.style.color = "var(--muted)";
   st.textContent = plano === "free" ? "Criando a sua conta\u2026" : "Preparando o pagamento\u2026";
   try{
     const r = await fetch(URL_BASE + "saas-criar-conta", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({nome, slug, email, plano, tipo_estabelecimento: $("tipo").value, rotulo_local: $("rotulo").value})
+      body: JSON.stringify({nome, slug, email, plano, tipo_estabelecimento: $("tipo").value, rotulo_local: $("rotulo").value, turnstile: tk})
     });
     let d = null; try{ d = await r.json(); }catch(err){}
     if (r.status === 409 || r.status === 400){
@@ -157,6 +169,7 @@ $("f").addEventListener("submit", async e => {
   }catch(err){
     st.style.color = "var(--accent)"; st.textContent = "N\u00e3o foi poss\u00edvel continuar. Tente de novo em instantes.";
   }finally{
+    tsReset();
     btn.disabled = false;
   }
 });
