@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pagamento autom&#225;tico</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#ffb000;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:24px 16px 80px}
+h1{margin:0 0 4px;font-size:1.6rem}
+h2{margin:28px 0 10px;font-size:1.05rem;color:var(--accent);text-transform:uppercase;letter-spacing:.05em}
+.sub{margin:0 0 6px;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
+input{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+button:disabled{opacity:.6;cursor:wait}
+.rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
+.st{font-size:.9rem;min-height:1.2em}
+.st.ok{color:var(--ok)}
+.st.erro{color:var(--accent)}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}
+a.voltar:hover{border-color:var(--accent)}
+.aviso{padding:12px 14px;border:1px solid #5a3d12;background:#2a1d10;border-radius:12px;margin-bottom:12px}
+.aviso a{color:#25d366;font-weight:600}
+.estado{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.estado strong{display:block;font-size:1.15rem}
+.bola{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--muted);margin-right:8px}
+.on .bola{background:var(--ok)}
+.on strong{color:var(--ok)}
+ol{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:.92rem}
+ol li{margin:6px 0}
+ol b{color:var(--ink);font-weight:600}
+.card a{color:var(--ok)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="card" style="max-width:460px;margin:40px auto">
+    <h1>Pagamento autom&#225;tico</h1>
+    <p class="sub">Entre para conectar a sua conta do Mercado Pago.</p>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
+    <div class="rodape"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="topo">
+      <div><h1 id="a-nome"></h1><p class="sub">Pagamento autom&#225;tico por Pix</p></div>
+      <div class="acoes"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
+    </div>
+
+    <div class="aviso" id="aviso-plano" hidden>O seu plano atual n&#227;o inclui pagamento autom&#225;tico. Para liberar,
+      <a id="zap-plano" target="_blank" rel="noopener" href="#">fale com a gente no WhatsApp</a>.</div>
+
+    <h2>Mercado Pago</h2>
+    <div class="card">
+      <div class="estado" id="estado">
+        <div><strong><span class="bola"></span><span id="e-titulo">N&#227;o conectado</span></strong><span class="sub" id="e-detalhe"></span></div>
+        <button class="sec" id="desconectar" hidden>Desconectar</button>
+      </div>
+      <p class="st" id="d-st" role="status"></p>
+    </div>
+
+    <div class="card">
+      <p class="sub">Com a conta conectada, o Pix do delivery &#233; gerado na sua conta do Mercado Pago e o pedido fica como pago sozinho, sem voc&#234; conferir no painel. O dinheiro cai direto na sua conta.</p>
+      <label><span id="rot-token">Access Token do Mercado Pago</span>
+        <input id="token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="APP_USR-...">
+      </label>
+      <div class="rodape"><span id="c-st" class="st" role="status"></span><button id="conectar">Conectar</button></div>
+      <p class="sub" style="margin-top:10px">O token fica guardado com criptografia e n&#227;o &#233; mostrado de novo depois de salvo.</p>
+    </div>
+
+    <h2>Onde pegar o Access Token</h2>
+    <div class="card">
+      <ol>
+        <li>Entre no <b>painel de desenvolvedor do Mercado Pago</b> com a conta que vai receber os pagamentos.</li>
+        <li>Abra <b>Suas integra&#231;&#245;es</b> e crie uma aplica&#231;&#227;o (qualquer nome serve, por exemplo &quot;MenuEasy&quot;).</li>
+        <li>Dentro da aplica&#231;&#227;o, abra <b>Credenciais de produ&#231;&#227;o</b>.</li>
+        <li>Copie o <b>Access Token</b>, que come&#231;a com <b>APP_USR-</b>, e cole no campo acima.</li>
+      </ol>
+      <p class="sub" style="margin-top:12px">A conta do Mercado Pago precisa ter uma <b style="color:var(--ink)">chave Pix cadastrada</b> para gerar as cobran&#231;as. Mantenha tamb&#233;m a chave Pix preenchida na tela <a id="lk-delivery" href="delivery.html">Delivery</a>: ela &#233; usada se o Mercado Pago estiver fora do ar.</p>
+    </div>
+  </section>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const CONTATO = "https://wa.me/5512997621359?text=" + encodeURIComponent("Olá! Quero liberar o pagamento automático no meu MenuEasy.");
+const $ = id => document.getElementById(id);
+let REST = "", CHAVE = "";
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+
+async function api(corpo){
+  const r = await fetch(URL_BASE + "saas-admin-mp", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})
+  });
+  let dados = null;
+  try{ dados = await r.json(); }catch(e){}
+  return {status: r.status, dados};
+}
+const msg = (el, texto, ok) => { el.className = "st " + (ok ? "ok" : "erro"); el.textContent = texto; };
+const neutro = (el, texto) => { el.className = "st"; el.textContent = texto; };
+
+function desenhar(d){
+  $("a-nome").textContent = d.nome || REST;
+  const permitido = !!d.permitido;
+  $("aviso-plano").hidden = permitido;
+  $("zap-plano").href = CONTATO;
+  $("lk-delivery").href = "delivery.html?r=" + encodeURIComponent(REST);
+  const on = !!d.conectado;
+  $("estado").classList.toggle("on", on);
+  $("e-titulo").textContent = on ? "Conectado" : "Não conectado";
+  $("e-detalhe").textContent = on
+    ? (d.conta ? "Conta: " + d.conta : "Os pedidos com Pix agora são confirmados sozinhos.")
+    : "O Pix do delivery usa a chave do bar e você confirma no painel.";
+  $("desconectar").hidden = !on;
+  $("rot-token").textContent = on ? "Trocar o Access Token (opcional)" : "Access Token do Mercado Pago";
+  $("conectar").textContent = on ? "Trocar token" : "Conectar";
+  $("token").disabled = !permitido;
+  $("conectar").disabled = !permitido;
+}
+
+async function carregar(){
+  const {status, dados} = await api({});
+  if (status === 401) throw new Error("negado");
+  if (status !== 200 || !dados) throw new Error("falha");
+  desenhar(dados);
+}
+async function recarregar(){ try{ await carregar(); }catch(e){ if (e.message === "negado") sair(); } }
+
+$("conectar").addEventListener("click", async () => {
+  const st = $("c-st"), btn = $("conectar");
+  const token = $("token").value.trim();
+  $("d-st").textContent = "";
+  if (!token){ msg(st, "Cole o Access Token.", false); return; }
+  if (!/^(APP_USR|TEST)-/.test(token)){ msg(st, "Esse não parece o Access Token. Ele começa com APP_USR-.", false); return; }
+  btn.disabled = true; neutro(st, "Conferindo com o Mercado Pago…");
+  try{
+    const {status, dados} = await api({acao: "conectar", token});
+    if (status === 401) return sair();
+    if (status === 200 && dados && dados.ok){
+      $("token").value = "";
+      await recarregar();
+      msg(st, "Conta conectada!", true);
+    } else msg(st, (dados && dados.erro) || "Não foi possível conectar.", false);
+  }catch(e){ msg(st, "Sem conexão. Tente de novo.", false); }
+  finally{ btn.disabled = $("token").disabled; }
+});
+
+$("desconectar").addEventListener("click", async () => {
+  const st = $("d-st"), btn = $("desconectar");
+  if (!confirm("Desconectar o Mercado Pago? O Pix volta a ser confirmado por você no painel.")) return;
+  $("c-st").textContent = "";
+  btn.disabled = true; neutro(st, "Desconectando…");
+  try{
+    const {status, dados} = await api({acao: "desconectar"});
+    if (status === 401) return sair();
+    if (status === 200 && dados && dados.ok){ await recarregar(); msg(st, "Conta desconectada.", true); }
+    else msg(st, (dados && dados.erro) || "Não foi possível desconectar.", false);
+  }catch(e){ msg(st, "Sem conexão. Tente de novo.", false); }
+  finally{ btn.disabled = false; }
+});
+
+function sair(){
+  try{ sessionStorage.removeItem("chave"); }catch(e){}
+  CHAVE = "";
+  $("token").value = "";
+  $("app").hidden = true; $("login").hidden = false; $("l-chave").value = "";
+  msg($("l-st"), "Acesso negado. Confira o restaurante e a chave.", false);
+}
+async function entrar(){
+  const st = $("l-st"), btn = $("l-entrar");
+  REST = limpaSlug($("l-rest").value);
+  CHAVE = $("l-chave").value.trim();
+  if (!REST || !CHAVE){ msg(st, "Preencha os dois campos.", false); return; }
+  btn.disabled = true; neutro(st, "Entrando…");
+  try{
+    await carregar();
+    try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
+    $("login").hidden = true; $("app").hidden = false; st.textContent = "";
+  }catch(e){
+    msg(st, e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "Não foi possível conectar. Tente de novo.", false);
+  }finally{ btn.disabled = false; }
+}
+$("l-entrar").addEventListener("click", entrar);
+$("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+$("a-sair").addEventListener("click", () => { sair(); $("l-st").textContent = ""; });
+
+$("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
+try{
+  const c = sessionStorage.getItem("chave");
+  if (c && $("l-rest").value){ $("l-chave").value = c; entrar(); }
+}catch(e){}
+</script>
+</body>
+</html>
