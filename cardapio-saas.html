@@ -128,12 +128,15 @@ select:focus-visible{outline:2px solid var(--accent)}
   <div id="fim" hidden>
     <p id="fim-msg" class="ok" role="status"></p>
     <div id="pix-box" class="pix" hidden>
-      <div>Pague com Pix para confirmar o pedido</div>
-      <div class="valor" id="pix-valor"></div>
-      <img id="pix-qr" alt="QR code do Pix" width="200" height="200">
-      <label>Pix copia e cola<textarea id="pix-cod" rows="4" readonly></textarea></label>
-      <button class="cheio" id="pix-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
-      <p class="msg" style="padding:10px 0 0">Depois de pagar, o estabelecimento confirma o seu pedido.</p>
+      <div id="pix-pagar">
+        <div>Pague com Pix para confirmar o pedido</div>
+        <div class="valor" id="pix-valor"></div>
+        <img id="pix-qr" alt="QR code do Pix" width="200" height="200">
+        <label>Pix copia e cola<textarea id="pix-cod" rows="4" readonly></textarea></label>
+        <button class="cheio" id="pix-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
+      </div>
+      <p id="pix-nota" class="msg" role="status" style="padding:10px 0 0"></p>
+      <p id="pix-pago" class="ok" role="status" hidden style="font-size:1.15rem;font-weight:700;margin:6px 0">Pagamento confirmado!</p>
     </div>
     <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:8px">Acompanhar meu pedido</a>
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
@@ -150,6 +153,7 @@ const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const URL_DO_CARDAPIO = URL_BASE + "saas-cardapio";
 const URL_DO_PEDIDO = URL_BASE + "saas-pedido";
 const URL_DA_SESSAO = URL_BASE + "saas-abrir";
+const URL_DO_PIX_MP = URL_BASE + "saas-pix-mp";
 // =======================================
 
 const $ = id => document.getElementById(id);
@@ -447,15 +451,78 @@ function mostrarFim(resp){
   const tk = resp && resp.token ? String(resp.token).replace(/[^0-9a-f]/gi, "") : "";
   $("fim-acomp").hidden = !tk;
   if (tk) $("fim-acomp").href = "acompanhar.html?t=" + tk;
-  const pix = resp && resp.pix && resp.pix.copia_cola ? resp.pix : null;
-  $("pix-box").hidden = !pix;
-  if (!pix) return;
-  $("pix-valor").textContent = reais(resp.total);
-  $("pix-cod").value = pix.copia_cola;
+  pararPix();
+  $("pix-pagar").hidden = false;
+  $("pix-pago").hidden = true;
+  $("pix-box").hidden = true;
+  if (resp && resp.pix_mp && tk) pixMP(resp, tk);
+  else pixEstatico(resp);
+}
+
+// Desenha o QR e o copia e cola na tela
+function desenharPix(codigo, valor, nota){
+  $("pix-box").hidden = false;
+  $("pix-pagar").hidden = false;
+  $("pix-valor").textContent = reais(valor);
+  $("pix-cod").value = codigo;
+  $("pix-nota").textContent = nota;
+  $("pix-qr").hidden = false;
   try{
-    const q = qrcode(0, "M"); q.addData(pix.copia_cola); q.make();
+    const q = qrcode(0, "M"); q.addData(codigo); q.make();
     $("pix-qr").src = q.createDataURL(5, 0);
   }catch(e){ $("pix-qr").hidden = true; }
+}
+
+// Pix com a chave do bar: o dono confirma no painel
+function pixEstatico(resp){
+  const pix = resp && resp.pix && resp.pix.copia_cola ? resp.pix : null;
+  if (!pix){ $("pix-box").hidden = true; return; }
+  desenharPix(pix.copia_cola, resp.total, "Depois de pagar, o estabelecimento confirma o seu pedido.");
+}
+
+// Pix pelo Mercado Pago do bar: a confirma\u00e7\u00e3o \u00e9 autom\u00e1tica
+let pixTimer = null;
+function pararPix(){ if (pixTimer){ clearInterval(pixTimer); pixTimer = null; } }
+async function chamarPixMP(corpo){
+  const r = await fetch(URL_DO_PIX_MP, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(corpo)});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+function pixPago(){
+  pararPix();
+  $("pix-box").hidden = false;
+  $("pix-pagar").hidden = true;
+  $("pix-nota").textContent = "O estabelecimento j\u00e1 foi avisado.";
+  $("pix-pago").hidden = false;
+}
+async function pixMP(resp, tk){
+  $("pix-box").hidden = false;
+  $("pix-pagar").hidden = true;
+  $("pix-nota").textContent = "Gerando o Pix\u2026";
+  try{
+    const d = await chamarPixMP({t: tk});
+    if (d.pago) return pixPago();
+    if (!d.copia_cola) throw new Error("sem pix");
+    desenharPix(d.copia_cola, d.valor || resp.total, "Assim que voc\u00ea pagar, a confirma\u00e7\u00e3o aparece aqui sozinha.");
+  }catch(e){
+    // se o Mercado Pago falhar, cai no Pix com a chave do bar (quando houver)
+    $("pix-nota").textContent = "";
+    pixEstatico(resp);
+    if ($("pix-box").hidden){
+      $("pix-box").hidden = false;
+      $("pix-pagar").hidden = true;
+      $("pix-nota").textContent = "N\u00e3o foi poss\u00edvel gerar o Pix agora. Fale com o estabelecimento para combinar o pagamento.";
+    }
+    return;
+  }
+  let tentativas = 0;
+  pixTimer = setInterval(async () => {
+    if (++tentativas > 240) return pararPix(); // para de consultar depois de 20 minutos
+    try{
+      const s = await chamarPixMP({t: tk, consulta: true});
+      if (s.pago) pixPago();
+    }catch(e){}
+  }, 5000);
 }
 $("pix-copiar").addEventListener("click", async () => {
   const b = $("pix-copiar");
