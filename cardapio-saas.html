@@ -17,7 +17,7 @@
 .topo{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .topo .sub{margin:0}
 .emblema{width:64px;height:72px;flex:none;filter:drop-shadow(0 0 14px rgba(255,74,61,.65))}
-body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 12% -10%,rgba(255,74,61,.30),transparent 55%),radial-gradient(ellipse at 92% 0%,rgba(255,176,0,.18),transparent 50%),linear-gradient(rgba(13,11,12,.80),rgba(13,11,12,.86)),url("fundo.jpg") center top/clamp(560px,70vw,1000px) auto repeat}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 12% -10%,rgba(255,74,61,.30),transparent 55%),radial-gradient(ellipse at 92% 0%,rgba(255,176,0,.18),transparent 50%)}
 body{margin:0;background:var(--bg);position:relative;color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45}
 main{max-width:1400px;margin:0 auto;padding:28px 18px 120px}
 #conteudo{columns:3 320px;column-gap:18px}
@@ -42,7 +42,7 @@ button{margin-top:10px;padding:9px 16px;border:1px solid var(--accent);backgroun
 .qtd span{min-width:20px;text-align:center;font-weight:600}
 #barra{position:fixed;left:0;right:0;bottom:0;display:none;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(13,11,12,.97);border-top:2px solid var(--accent);z-index:5}
 #barra.on{display:flex}
-#barra button,.cheio{margin:0;background:var(--accent);color:#fff;border:0;font-weight:600}
+#barra button,.cheio{margin:0;background:var(--accent);color:#160504;border:0;font-weight:600}
 .cheio{width:100%;padding:12px}
 dialog{background:#171112;color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(480px,92vw);padding:20px}
 dialog::backdrop{background:rgba(0,0,0,.75)}
@@ -70,6 +70,8 @@ select:focus-visible{outline:2px solid var(--accent)}
 .esq{display:flex;align-items:center;gap:12px;min-width:0}
 .foto{width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none;border:1px solid var(--line);background:#1b1415}
 @media (max-width:420px){.foto{width:56px;height:56px}}
+footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted);line-height:1.5}footer.legal p{margin:0 0 6px;color:var(--muted)}footer.legal a{color:var(--muted);text-decoration:underline}footer.legal a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lembrar{display:flex;gap:10px;align-items:flex-start;color:var(--ink)}.lembrar input{width:20px;height:20px;flex:none;margin:2px 0 0;padding:0}.priv{margin:10px 0 0;font-size:.82rem;color:var(--muted)}.priv a{color:#7fe9ff}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
@@ -87,6 +89,7 @@ select:focus-visible{outline:2px solid var(--accent)}
   </header>
   <nav id="menu" aria-label="Categorias"></nav>
   <div id="conteudo"><p class="msg">Carregando o card&#225;pio&#8230;</p></div>
+<footer class="legal"><p>Seus dados s&#227;o usados s&#243; para este pedido. <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a> &middot; Card&#225;pio por MenuEasy</p></footer>
 </main>
 <div id="barra"><div><strong id="b-qtd"></strong> &middot; <span id="b-total"></span></div><button id="b-ver">Ver pedido</button></div>
 <dialog id="painel">
@@ -120,6 +123,8 @@ select:focus-visible{outline:2px solid var(--accent)}
   </div>
   <label><span id="rot-nome">Seu nome (para separar a sua conta)</span><input id="p-nome" maxlength="40" autocomplete="given-name" placeholder="Ex.: Jo&#227;o"></label>
   <label>Observa&#231;&#245;es (opcional)<textarea id="p-obs" maxlength="200" rows="3" placeholder="Ex.: 4 copos, sem gelo"></textarea></label>
+  <label class="lembrar" id="bloco-lembrar" hidden><input id="p-lembrar" type="checkbox"> <span>Lembrar meus dados neste aparelho para o pr&#243;ximo pedido</span></label>
+  <p class="priv">Seus dados v&#227;o apenas para o estabelecimento atender este pedido. <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a></p>
   <div id="ts-pedido" style="margin-top:10px" hidden></div>
   <p id="p-msg" class="msg" role="status"></p>
   <button class="cheio" id="p-enviar">Enviar pedido</button>
@@ -307,6 +312,8 @@ function abrirPainel(){
   if (delivery) tsMontar();
   $("bloco-mesa").hidden = delivery;
   $("bloco-deliv").hidden = !delivery;
+  $("bloco-lembrar").hidden = !delivery;
+  try{ if (delivery && (localStorage.getItem("tel") || localStorage.getItem("end"))) $("p-lembrar").checked = true; }catch(e){}
   $("rot-nome").textContent = delivery ? "Seu nome" : "Seu nome (para separar a sua conta)";
   $("p-mesa").value = MESA;
   $("p-mesa").readOnly = !!MESA;
@@ -429,7 +436,10 @@ $("p-enviar").addEventListener("click", async () => {
     $("p-obs").value = "";
     try{
       sessionStorage.setItem("nome", nome);
-      if (delivery){ localStorage.setItem("nome", nome); localStorage.setItem("tel", tel); if (endereco) localStorage.setItem("end", endereco); }
+      if (delivery){
+        if ($("p-lembrar").checked){ localStorage.setItem("nome", nome); localStorage.setItem("tel", tel); if (endereco) localStorage.setItem("end", endereco); }
+        else { localStorage.removeItem("nome"); localStorage.removeItem("tel"); localStorage.removeItem("end"); }
+      }
     }catch(e){}
     document.querySelectorAll("[data-q]").forEach(el => el.textContent = "0");
     atualizar();
