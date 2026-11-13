@@ -60,6 +60,22 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
       <div style="display:flex;gap:8px;flex-wrap:wrap"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
     </div>
 
+    <div class="card" id="logo-bloco">
+      <strong>Logo do estabelecimento</strong>
+      <p class="sub">Aparece ao lado do nome no card&#225;pio. Use uma imagem quadrada, de prefer&#234;ncia com fundo transparente. Ela &#233; reduzida automaticamente. Envie apenas uma imagem que voc&#234; tem o direito de usar.</p>
+      <div class="foto-bloco">
+        <img id="logo-prev" class="prev" alt="Logo atual" hidden>
+        <div class="col">
+          <label>Escolher imagem<input id="logo-arq" type="file" accept="image/*"></label>
+          <span class="dica" id="logo-dica">Nenhuma logo enviada.</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button id="logo-salvar" disabled>Salvar logo</button>
+        <button class="sec" id="logo-remover" type="button" hidden>Remover logo</button>
+      </div>
+      <p id="logo-st" class="st" role="status"></p>
+    </div>
     <p id="aviso-foto" class="st erro" role="status"></p>
     <h2>Novo item</h2>
     <div class="card" id="novo"></div>
@@ -100,11 +116,10 @@ function input(tipo, valor, extra){
 }
 
 // ---- Fotos: reduzidas no aparelho antes de enviar (bem leves) ----
-async function comprimir(arquivo){
+async function comprimir(arquivo, MAX = 300, alvo = 22000, limite = 60000){
   const url = URL.createObjectURL(arquivo);
   try{
     const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => falha(new Error("img")); i.src = url; });
-    const MAX = 300;
     const esc = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
     const c = document.createElement("canvas");
     c.width = Math.max(1, Math.round(img.naturalWidth * esc)); c.height = Math.max(1, Math.round(img.naturalHeight * esc));
@@ -113,10 +128,10 @@ async function comprimir(arquivo){
     for (let t = 0; t < 6; t++){
       saida = c.toDataURL("image/webp", q);
       if (!saida.startsWith("data:image/webp")) saida = c.toDataURL("image/jpeg", q);
-      if (saida.length * 0.75 < 22000) break;
+      if (saida.length * 0.75 < alvo) break;
       q -= 0.1;
     }
-    if (saida.length * 0.75 > 60000) throw new Error("grande");
+    if (saida.length * 0.75 > limite) throw new Error("grande");
     return saida;
   } finally { URL.revokeObjectURL(url); }
 }
@@ -273,11 +288,60 @@ function desenhar(itens){
   }, "Adicionar"));
 }
 
+// ---- Logo do estabelecimento ----
+let logoPendente = null;
+function mostrarLogo(url){
+  const tem = /^https:\/\//i.test(url || "");
+  const im = $("logo-prev");
+  if (tem){ im.src = url + (url.includes("?") ? "&" : "?") + "v=" + Date.now(); } else { im.removeAttribute("src"); }
+  im.hidden = !tem;
+  $("logo-remover").hidden = !tem;
+  $("logo-dica").textContent = tem ? "Logo atual. Escolha outra imagem para trocar." : "Nenhuma logo enviada.";
+}
+$("logo-arq").addEventListener("change", async () => {
+  const arq = $("logo-arq").files[0], st = $("logo-st");
+  logoPendente = null; $("logo-salvar").disabled = true; st.textContent = "";
+  if (!arq) return;
+  if (!/^image\//.test(arq.type)){ st.className = "st erro"; st.textContent = "Escolha um arquivo de imagem."; return; }
+  try{
+    logoPendente = await comprimir(arq, 192, 15000, 40000);
+    const im = $("logo-prev"); im.src = logoPendente; im.hidden = false;
+    $("logo-dica").textContent = "Pr\u00e9via (" + kb(logoPendente) + " KB). Toque em Salvar logo.";
+    $("logo-salvar").disabled = false;
+  }catch(e){
+    st.className = "st erro"; st.textContent = "N\u00e3o consegui preparar essa imagem. Tente outra, menor ou em outro formato.";
+  }
+});
+async function enviarLogo(corpo, okMsg){
+  const st = $("logo-st"), b1 = $("logo-salvar"), b2 = $("logo-remover");
+  b1.disabled = true; b2.disabled = true; st.className = "st"; st.textContent = "Enviando\u2026";
+  try{
+    const {status, dados} = await api("saas-admin-logo", corpo);
+    if (status === 401){ sair(); return; }
+    if (status === 200 && dados && dados.ok === true){
+      logoPendente = null; $("logo-arq").value = "";
+      mostrarLogo(corpo.acao === "enviar" ? dados.logo : "");
+      st.className = "st ok"; st.textContent = okMsg;
+    } else if (status === 404){
+      st.className = "st erro"; st.textContent = "A troca de logo ainda n\u00e3o est\u00e1 dispon\u00edvel no servidor.";
+    } else {
+      st.className = "st erro"; st.textContent = (dados && typeof dados.erro === "string" && dados.erro) || "N\u00e3o foi poss\u00edvel salvar. Tente de novo.";
+    }
+  }catch(e){
+    st.className = "st erro"; st.textContent = "Sem conex\u00e3o. Tente de novo.";
+  }finally{
+    b1.disabled = !logoPendente; b2.disabled = false;
+  }
+}
+$("logo-salvar").addEventListener("click", () => { if (logoPendente) enviarLogo({acao: "enviar", imagem: logoPendente}, "Logo salva. Ela j\u00e1 aparece no card\u00e1pio."); });
+$("logo-remover").addEventListener("click", () => enviarLogo({acao: "remover"}, "Logo removida."));
+
 async function carregar(){
   const {status, dados} = await api("saas-admin-listar", {});
   if (status === 401) throw new Error("negado");
   if (status !== 200 || !dados) throw new Error("falha");
   $("a-nome").textContent = dados.restaurante.nome;
+  mostrarLogo(dados.restaurante.logo);
   desenhar(dados.itens || []);
 }
 

@@ -11,7 +11,8 @@
 *{box-sizing:border-box}
 .topo{display:flex;align-items:center;gap:16px;margin-bottom:24px}
 .topo .sub{margin:0}
-.emblema{width:64px;height:72px;flex:none;filter:drop-shadow(0 0 14px rgba(255,74,61,.65))}
+.logo{width:64px;height:64px;flex:none;object-fit:cover;border-radius:14px;border:1px solid var(--line);background:#1b1415}
+.logo[hidden]{display:none}
 body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 12% -10%,rgba(255,74,61,.30),transparent 55%),radial-gradient(ellipse at 92% 0%,rgba(255,176,0,.18),transparent 50%)}
 body{margin:0;background:var(--bg);position:relative;color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45}
 main{max-width:1400px;margin:0 auto;padding:28px 18px 120px}
@@ -73,7 +74,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 <body>
 <main>
   <header class="topo">
-    <svg class="emblema" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 3 60 14V38C60 54 47 65 32 70 17 65 4 54 4 38V14Z" fill="#1a0f10" stroke="#ff4a3d" stroke-width="3"/><path d="M36 16 22 40H31L27 58 44 32H34Z" fill="#ffb000"/></svg>
+    <img id="logo" class="logo" width="64" height="64" alt="" hidden>
     <div>
       <h1 id="titulo">Card&#225;pio</h1>
       <p class="sub" id="sub"></p>
@@ -219,6 +220,13 @@ async function carregar(){
     const dados = (resposta.itens || []).sort((a, b) => a.ordem - b.ordem);
     $("titulo").textContent = resposta.restaurante.nome;
     document.title = resposta.restaurante.nome;
+    const lg = limpa(resposta.restaurante.logo);
+    if (/^https:\/\//i.test(lg)){
+      const im = $("logo");
+      im.alt = "Logo de " + resposta.restaurante.nome;
+      im.onerror = () => im.remove();
+      im.src = lg; im.hidden = false;
+    }
     ROT = limpa(resposta.restaurante.rotulo_local) || "Mesa";
     $("l-mesa").firstChild.nodeValue = ROT;
     if (MESA) $("sub").textContent = ROT + " " + MESA;
