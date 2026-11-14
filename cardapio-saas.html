@@ -4,105 +4,89 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Card&#225;pio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
-@font-face{font-family:"Bricolage Grotesque";src:url("fontes/bricolage-grotesque.woff2") format("woff2");font-weight:200 800;font-style:normal;font-display:swap}
-/* ===== CORES (troque --accent para mudar a cor de destaque) ===== */
-:root{color-scheme:light;--bg:#faf6f0;--ink:#2b1a16;--muted:#75655e;--line:#eadfd3;--accent:#cf4526;--accent-soft:#fbeae4;--surface:#fff;--price:#15803d;--sombra:0 1px 2px rgba(60,30,10,.05),0 6px 18px rgba(60,30,10,.07)}
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--surface:rgba(18,14,15,.86)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
-main{max-width:1400px;margin:0 auto;padding:22px 16px 130px}
-.topo{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-.logo{width:56px;height:56px;flex:none;object-fit:cover;border-radius:16px;background:var(--surface);box-shadow:var(--sombra)}
-.logo[hidden]{display:none}
-h1{font-size:1.7rem;line-height:1.15;margin:0 0 2px;font-weight:800;letter-spacing:-.01em}
-.sub{margin:0;color:var(--muted);font-size:.95rem}
-nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:10px 16px;margin:0 -16px 14px;position:sticky;top:0;background:rgba(250,246,240,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:1}
-nav::-webkit-scrollbar{display:none}
-nav a{flex:none;padding:8px 16px;border-radius:999px;color:var(--ink);text-decoration:none;font-size:.92rem;font-weight:600;background:var(--surface);box-shadow:0 1px 2px rgba(60,30,10,.08)}
-nav a:active{background:var(--accent-soft);color:var(--accent)}
+.gt{position:fixed;z-index:-1;width:150px;height:525px;pointer-events:none}
+.g1{left:-34px;bottom:-70px;transform:rotate(18deg)}
+.g2{right:-34px;bottom:-70px;transform:rotate(-18deg)}
+@media (max-width:700px){.gt{width:96px;height:336px}}
+.topo{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.topo .sub{margin:0}
+.emblema{width:64px;height:72px;flex:none;filter:drop-shadow(0 0 14px rgba(255,74,61,.65))}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(ellipse at 12% -10%,rgba(255,74,61,.30),transparent 55%),radial-gradient(ellipse at 92% 0%,rgba(255,176,0,.18),transparent 50%),linear-gradient(rgba(13,11,12,.80),rgba(13,11,12,.86)),url("fundo.jpg") center top/clamp(560px,70vw,1000px) auto repeat}
+body{margin:0;background:var(--bg);position:relative;color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45}
+main{max-width:1400px;margin:0 auto;padding:28px 18px 120px}
+#conteudo{columns:3 320px;column-gap:18px}
+h1{font-family:"Bebas Neue",Impact,sans-serif;font-size:3.4rem;letter-spacing:.05em;line-height:1;margin:0 0 6px;font-weight:400;text-transform:uppercase;text-shadow:0 0 22px rgba(255,74,61,.6)}
+.sub{margin:0 0 28px;color:var(--muted)}
+nav{display:flex;gap:8px;overflow-x:auto;padding:0 0 14px;margin:0 -18px 8px;padding-left:18px;position:sticky;top:0;background:rgba(13,11,12,.92);z-index:1}
+nav a{flex:none;padding:7px 14px;border:1px solid var(--line);border-radius:999px;color:var(--ink);text-decoration:none;font-size:.9rem;background:var(--surface)}
 nav a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#conteudo{columns:3 320px;column-gap:22px}
-section{margin:0 0 26px;break-inside:avoid;scroll-margin-top:64px}
-h2{font-size:1.25rem;font-weight:700;margin:0 0 4px;letter-spacing:-.01em}
-.item{display:grid;grid-template-columns:1fr auto;grid-template-areas:"txt foto" "dir foto";align-items:start;row-gap:10px;margin-top:10px;padding:14px;background:var(--surface);border-radius:18px;box-shadow:var(--sombra)}
-.esq{display:contents}
-.esq>div{grid-area:txt;min-width:0}
-.nome{font-weight:700;font-size:1.02rem}
-.desc{color:var(--muted);font-size:.9rem;margin-top:3px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-.foto{grid-area:foto;width:96px;height:96px;margin-left:14px;object-fit:cover;border-radius:14px;background:var(--bg)}
-@media (max-width:360px){.foto{width:80px;height:80px}}
-.dir{grid-area:dir;align-self:end;display:flex;justify-content:space-between;align-items:center;gap:12px}
-.preco{font-weight:700;font-size:1.05rem;color:var(--price);white-space:nowrap}
+section{margin:0 0 18px;break-inside:avoid;scroll-margin-top:60px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 6px}
+h2{font-family:"Bebas Neue",Impact,sans-serif;font-size:1.9rem;letter-spacing:.05em;text-transform:uppercase;margin:0 0 4px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-weight:400;color:var(--accent)}
+.item{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.nome{font-weight:600}
+.desc{color:var(--muted);font-size:.92rem;margin-top:2px}
+.preco{font-weight:600;white-space:nowrap}
 .msg{padding:28px 0;color:var(--muted)}
-button{margin-top:10px;padding:10px 16px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:12px;font:inherit;font-weight:600;cursor:pointer}
-button:disabled{opacity:.6}
-.qtd{display:flex;align-items:center;gap:10px}
-.qtd button{margin:0;width:36px;height:36px;padding:0;font-size:1.3rem;line-height:1;border-radius:50%;border-color:var(--line);color:var(--ink);background:var(--surface)}
-.qtd button[data-a="1"]{background:var(--accent);border-color:var(--accent);color:#fff}
-.qtd span{min-width:20px;text-align:center;font-weight:700}
-.sem-mesa .qtd{display:none}
-#barra{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto;display:none;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 10px 18px;background:var(--surface);border-radius:20px;box-shadow:0 2px 6px rgba(60,30,10,.10),0 12px 32px rgba(60,30,10,.18);z-index:5}
-#barra.on{display:flex}
-.sem-mesa #barra{display:none!important}
-#barra button,.cheio{margin:0;background:var(--accent);color:#fff;border:0;font-weight:700}
-#barra button{padding:12px 20px;border-radius:14px}
-.cheio{width:100%;padding:14px;border-radius:14px}
-dialog{background:var(--surface);color:var(--ink);border:0;border-radius:22px;width:min(480px,92vw);padding:20px;box-shadow:0 20px 60px rgba(40,20,10,.25)}
-dialog::backdrop{background:rgba(43,26,22,.45)}
-dialog h2{margin-bottom:10px;font-size:1.4rem}
-.linha{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
-label{display:block;margin-top:12px;font-size:.92rem;color:var(--muted)}
-input,textarea,select{width:100%;margin-top:4px;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
-textarea{resize:vertical}
-input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent)}
-#p-msg{padding:10px 0 0}
-#p-fechar,#fim-fechar{width:100%}
-.tipos{display:flex;gap:10px;margin-top:6px}
-.tipo{flex:1;margin:0;padding:11px;border:1px solid var(--line);border-radius:12px;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px}
-.tipo input{width:auto;margin:0;accent-color:var(--accent)}
-.tipo:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
-[hidden]{display:none!important}
-.pix{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--bg);text-align:center}
-.pix img{width:200px;height:200px;background:#fff;padding:8px;border-radius:12px}
-.pix textarea{margin-top:10px;font-size:.8rem;word-break:break-all;background:var(--surface)}
-.pix .valor{font-size:1.4rem;font-weight:700;margin:6px 0}
-.ok{color:var(--price)}
-footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted);line-height:1.5}footer.legal p{margin:0 0 6px;color:var(--muted)}footer.legal a{color:var(--muted);text-decoration:underline}footer.legal a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.lembrar{display:flex;gap:10px;align-items:flex-start;color:var(--ink)}.lembrar input{width:20px;height:20px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--accent)}.priv{margin:10px 0 0;font-size:.82rem;color:var(--muted)}.priv a{color:var(--accent)}
+button{margin-top:10px;padding:9px 16px;border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:8px;font:inherit;cursor:pointer}
 
-/* ===== Cabecalho: avaliacao, contatos, endereco, horario ===== */
-.acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
-.estrelas{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:999px;background:var(--surface);box-shadow:var(--sombra);color:var(--ink);text-decoration:none;font-weight:700;font-size:.95rem}
-.estrelas .st{color:#e8a013;font-size:1.05rem}
-.estrelas small{font-weight:500;color:var(--muted);font-size:.85rem}
-.redondo{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0;padding:0;border:0;border-radius:50%;background:var(--surface);box-shadow:var(--sombra);color:var(--accent);cursor:pointer}
-.redondo svg{width:20px;height:20px}
-.estrelas:focus-visible,.redondo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.meta{margin:0 0 4px;color:var(--muted);font-size:.92rem}
-.meta b{color:var(--ink);font-weight:600}
-.bola{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#c0392b}
-.bola.on{background:var(--price)}
-#i-txt{white-space:pre-line;margin:0 0 12px}
-#i-hor .linha.hoje{font-weight:700}
+.dir{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.qtd{display:flex;align-items:center;gap:10px}
+.qtd button{margin:0;width:36px;height:36px;padding:0;font-size:1.3rem;line-height:1;border-radius:50%}
+.qtd span{min-width:20px;text-align:center;font-weight:600}
+#barra{position:fixed;left:0;right:0;bottom:0;display:none;justify-content:space-between;align-items:center;gap:12px;padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));background:rgba(13,11,12,.97);border-top:2px solid var(--accent);z-index:5}
+#barra.on{display:flex}
+#barra button,.cheio{margin:0;background:var(--accent);color:#fff;border:0;font-weight:600}
+.cheio{width:100%;padding:12px}
+dialog{background:#171112;color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(480px,92vw);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+dialog h2{margin-bottom:10px}
+.linha{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+label{display:block;margin-top:12px;font-size:.92rem;color:var(--muted)}
+input,textarea{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0d0b0c;color:var(--ink);font:inherit}
+textarea{resize:vertical}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent)}
+#p-msg{padding:10px 0 0}
+.sem-mesa .qtd{display:none}
+select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:#0d0b0c;color:var(--ink);font:inherit}
+select:focus-visible{outline:2px solid var(--accent)}
+.tipos{display:flex;gap:10px;margin-top:6px}
+.tipo{flex:1;margin:0;padding:10px;border:1px solid var(--line);border-radius:8px;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px}
+.tipo input{width:auto;margin:0}
+.tipo:has(input:checked){border-color:var(--accent);background:rgba(255,74,61,.12)}
+[hidden]{display:none!important}
+.pix{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#0d0b0c;text-align:center}
+.pix img{width:200px;height:200px;background:#fff;padding:8px;border-radius:8px}
+.pix textarea{margin-top:10px;font-size:.8rem;word-break:break-all}
+.pix .valor{font-size:1.4rem;font-weight:700;margin:6px 0}
+.ok{color:#4cc38a}
+.sem-mesa #barra{display:none!important}
+.esq{display:flex;align-items:center;gap:12px;min-width:0}
+.foto{width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none;border:1px solid var(--line);background:#1b1415}
+@media (max-width:420px){.foto{width:56px;height:56px}}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gt" viewBox="0 0 120 420"><g fill="#ff4a3d" fill-opacity=".10" stroke="#fff" stroke-opacity=".22" stroke-width="2"><rect x="49" y="6" width="22" height="38" rx="5"/><rect x="55" y="44" width="10" height="172"/><path d="M60 200C25 190 12 215 22 245 8 265 8 320 40 345 55 358 65 358 80 345 112 320 112 265 98 245 108 215 95 190 60 200Z"/><rect x="42" y="252" width="36" height="9" rx="2"/><rect x="42" y="284" width="36" height="9" rx="2"/><rect x="44" y="322" width="32" height="6" rx="2"/></g></symbol></svg>
+<svg class="gt g1" aria-hidden="true"><use href="#gt"/></svg>
+<svg class="gt g2" aria-hidden="true"><use href="#gt"/></svg>
 <main>
   <header class="topo">
-    <img id="logo" class="logo" width="64" height="64" alt="" hidden>
+    <svg class="emblema" viewBox="0 0 64 72" aria-hidden="true"><path d="M32 3 60 14V38C60 54 47 65 32 70 17 65 4 54 4 38V14Z" fill="#1a0f10" stroke="#ff4a3d" stroke-width="3"/><path d="M36 16 22 40H31L27 58 44 32H34Z" fill="#ffb000"/></svg>
     <div>
       <h1 id="titulo">Card&#225;pio</h1>
       <p class="sub" id="sub"></p>
     </div>
   </header>
-  <div id="acoes" class="acoes" hidden></div>
-  <p id="func" class="meta" hidden></p>
-  <p id="ender" class="meta" hidden></p>
-  <p id="pmin" class="meta" hidden></p>
   <nav id="menu" aria-label="Categorias"></nav>
   <div id="conteudo"><p class="msg">Carregando o card&#225;pio&#8230;</p></div>
-<footer class="legal"><p>Seus dados s&#227;o usados s&#243; para este pedido. <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a> &middot; Card&#225;pio por LaMenu</p></footer>
 </main>
 <div id="barra"><div><strong id="b-qtd"></strong> &middot; <span id="b-total"></span></div><button id="b-ver">Ver pedido</button></div>
 <dialog id="painel">
@@ -136,8 +120,6 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
   </div>
   <label><span id="rot-nome">Seu nome (para separar a sua conta)</span><input id="p-nome" maxlength="40" autocomplete="given-name" placeholder="Ex.: Jo&#227;o"></label>
   <label>Observa&#231;&#245;es (opcional)<textarea id="p-obs" maxlength="200" rows="3" placeholder="Ex.: 4 copos, sem gelo"></textarea></label>
-  <label class="lembrar" id="bloco-lembrar" hidden><input id="p-lembrar" type="checkbox"> <span>Lembrar meus dados neste aparelho para o pr&#243;ximo pedido</span></label>
-  <p class="priv">Seus dados v&#227;o apenas para o estabelecimento atender este pedido. <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a></p>
   <div id="ts-pedido" style="margin-top:10px" hidden></div>
   <p id="p-msg" class="msg" role="status"></p>
   <button class="cheio" id="p-enviar">Enviar pedido</button>
@@ -146,26 +128,16 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
   <div id="fim" hidden>
     <p id="fim-msg" class="ok" role="status"></p>
     <div id="pix-box" class="pix" hidden>
-      <div id="pix-pagar">
-        <div>Pague com Pix para confirmar o pedido</div>
-        <div class="valor" id="pix-valor"></div>
-        <img id="pix-qr" alt="QR code do Pix" width="200" height="200">
-        <label>Pix copia e cola<textarea id="pix-cod" rows="4" readonly></textarea></label>
-        <button class="cheio" id="pix-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
-      </div>
-      <p id="pix-nota" class="msg" role="status" style="padding:10px 0 0"></p>
-      <p id="pix-pago" class="ok" role="status" hidden style="font-size:1.15rem;font-weight:700;margin:6px 0">Pagamento confirmado!</p>
+      <div>Pague com Pix para confirmar o pedido</div>
+      <div class="valor" id="pix-valor"></div>
+      <img id="pix-qr" alt="QR code do Pix" width="200" height="200">
+      <label>Pix copia e cola<textarea id="pix-cod" rows="4" readonly></textarea></label>
+      <button class="cheio" id="pix-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
+      <p class="msg" style="padding:10px 0 0">Depois de pagar, o estabelecimento confirma o seu pedido.</p>
     </div>
-    <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:14px">Acompanhar meu pedido</a>
+    <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:8px">Acompanhar meu pedido</a>
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
   </div>
-</dialog>
-<dialog id="info">
-  <h2>Informa&#231;&#245;es</h2>
-  <p id="i-txt" hidden></p>
-  <p id="i-end" class="meta" hidden></p>
-  <div id="i-hor" hidden></div>
-  <button class="cheio" id="i-fechar" style="margin-top:16px">Fechar</button>
 </dialog>
 <script>
 /* qrcode-generator 1.4.4, MIT, Kazuhiko Arase */
@@ -178,7 +150,6 @@ const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const URL_DO_CARDAPIO = URL_BASE + "saas-cardapio";
 const URL_DO_PEDIDO = URL_BASE + "saas-pedido";
 const URL_DA_SESSAO = URL_BASE + "saas-abrir";
-const URL_DO_PIX_MP = URL_BASE + "saas-pix-mp";
 // =======================================
 
 const $ = id => document.getElementById(id);
@@ -197,7 +168,9 @@ try{
   else if (new URLSearchParams(location.search).get("r")) sessionStorage.removeItem("mesa"); // link sem mesa = delivery, esquece a mesa antiga
   else MESA = (sessionStorage.getItem("mesa") || "").replace(/[^0-9A-Za-z]/g, "").slice(0, 10);
 }catch(e){}
-if (location.search) history.replaceState(null, "", location.pathname); // esconde ?mesa=N da barra de endere\u00e7o
+// Link de mesa: esconde tudo (ningu\u00e9m troca a mesa pela barra de endere\u00e7o).
+// Link de delivery/consulta: mant\u00e9m s\u00f3 ?r=bar, para a p\u00e1gina recarregar mesmo sem mem\u00f3ria do navegador.
+if (location.search) history.replaceState(null, "", (!MESA && REST) ? location.pathname + "?r=" + encodeURIComponent(REST) : location.pathname);
 let ROT = "Mesa"; const rot = () => ROT.toLowerCase(); const art = () => /o$/i.test(ROT) ? "do" : "da";
 let MODO = MESA ? "mesa" : "";
 let DELIVERY = {ativo: false, pedido_minimo: 0, bairros: []};
@@ -237,94 +210,6 @@ function mudar(id, d){
   atualizar();
 }
 
-// ===== Cabe\u00e7alho: avalia\u00e7\u00e3o, contatos, endere\u00e7o, hor\u00e1rio e pedido m\u00ednimo =====
-const ICONE = {
-  whats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5.1A8.5 8.5 0 1 1 21 11.5z"/></svg>',
-  insta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
-  mapa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
-  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M12 7v6M12 16.6v.1"/></svg>'
-};
-const DIAS = ["Domingo", "Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado"];
-const urlSegura = u => { u = limpa(u); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ""; };
-function linkWhats(v){
-  let d = limpa(v).replace(/\D/g, "");
-  if (d.length === 10 || d.length === 11) d = "55" + d;
-  return d.length >= 12 && d.length <= 13 ? "https://wa.me/" + d : "";
-}
-function linkInsta(v){
-  v = limpa(v);
-  if (urlSegura(v)) return /^https:\/\/(www\.)?instagram\.com\//i.test(v) ? v : "";
-  const u = v.replace(/^@/, "");
-  return /^[A-Za-z0-9._]{1,30}$/.test(u) ? "https://instagram.com/" + u : "";
-}
-function redondo(href, icone, rotulo){
-  const a = document.createElement(href ? "a" : "button");
-  a.className = "redondo";
-  a.innerHTML = icone;
-  a.setAttribute("aria-label", rotulo); a.title = rotulo;
-  if (href){ a.href = href; a.target = "_blank"; a.rel = "noopener"; }
-  return a;
-}
-function cabecalho(resposta){
-  const r = resposta.restaurante || {};
-  const acoes = $("acoes"); acoes.textContent = "";
-  // Avalia\u00e7\u00e3o no Google: mostra a nota e leva direto para a p\u00e1gina de avaliar
-  const av = r.avaliacao || {};
-  const avUrl = urlSegura(av.url);
-  if (avUrl){
-    const a = document.createElement("a");
-    a.className = "estrelas"; a.href = avUrl; a.target = "_blank"; a.rel = "noopener";
-    const nota = Number(av.nota), qtd = Number(av.qtd);
-    const st = document.createElement("span"); st.className = "st"; st.textContent = "\u2605"; st.setAttribute("aria-hidden", "true");
-    a.append(st);
-    if (nota > 0 && nota <= 5){
-      a.append(nota.toLocaleString("pt-BR", {minimumFractionDigits: 1, maximumFractionDigits: 1}));
-      if (qtd > 0){ const s = document.createElement("small"); s.textContent = "(" + qtd.toLocaleString("pt-BR") + ")"; a.append(s); }
-      a.setAttribute("aria-label", "Nota " + nota.toLocaleString("pt-BR") + " no Google. Toque para avaliar.");
-    } else a.append("Avaliar");
-    acoes.append(a);
-  }
-  const w = linkWhats(r.whatsapp); if (w) acoes.append(redondo(w, ICONE.whats, "WhatsApp"));
-  const ig = linkInsta(r.instagram); if (ig) acoes.append(redondo(ig, ICONE.insta, "Instagram"));
-  const mp = urlSegura(r.maps_url); if (mp) acoes.append(redondo(mp, ICONE.mapa, "Localiza\u00e7\u00e3o no mapa"));
-  // Informa\u00e7\u00f5es do bar (texto + hor\u00e1rios da semana)
-  const info = limpa(r.info), end = limpa(r.endereco);
-  const hor = r.horarios && typeof r.horarios === "object" ? r.horarios : null;
-  if (info || hor){
-    const b = redondo("", ICONE.info, "Informa\u00e7\u00f5es");
-    b.type = "button";
-    b.addEventListener("click", () => $("info").showModal());
-    acoes.append(b);
-    $("i-txt").textContent = info; $("i-txt").hidden = !info;
-    $("i-end").textContent = end; $("i-end").hidden = !end;
-    const cx = $("i-hor"); cx.textContent = ""; cx.hidden = !hor;
-    if (hor){
-      const hoje = new Date().getDay();
-      for (const d of [1, 2, 3, 4, 5, 6, 0]){
-        const x = hor[String(d)];
-        const l = document.createElement("div"); l.className = "linha" + (d === hoje ? " hoje" : "");
-        const a = document.createElement("span"); a.textContent = DIAS[d];
-        const c = document.createElement("span"); c.textContent = (x && x.abre && x.fecha) ? x.abre + " \u00e0s " + x.fecha : "Fechado";
-        l.append(a, c); cx.append(l);
-      }
-    }
-  }
-  acoes.hidden = !acoes.children.length;
-  // Aberto / fechado agora
-  const f = r.funcionamento, fc = $("func");
-  fc.textContent = ""; fc.hidden = !f;
-  if (f){
-    const bola = document.createElement("span"); bola.className = "bola" + (f.aberto ? " on" : "");
-    const b = document.createElement("b"); b.textContent = f.aberto ? "Aberto agora" : "Fechado agora";
-    const resto = f.aberto ? (f.fecha ? " \u00b7 fecha \u00e0s " + f.fecha : "") : (f.texto ? " \u00b7 " + f.texto : "");
-    fc.append(bola, b, resto);
-  }
-  $("ender").textContent = end; $("ender").hidden = !end;
-  const min = MODO === "delivery" ? DELIVERY.pedido_minimo : 0;
-  $("pmin").textContent = min > 0 ? "Pedido m\u00ednimo: " + reais(min) : ""; $("pmin").hidden = !(min > 0);
-}
-$("i-fechar").addEventListener("click", () => $("info").close());
-
 async function carregar(){
   const caixa = $("conteudo"), menu = $("menu");
   try{
@@ -335,13 +220,6 @@ async function carregar(){
     const dados = (resposta.itens || []).sort((a, b) => a.ordem - b.ordem);
     $("titulo").textContent = resposta.restaurante.nome;
     document.title = resposta.restaurante.nome;
-    const lg = limpa(resposta.restaurante.logo);
-    if (/^https:\/\//i.test(lg)){
-      const im = $("logo");
-      im.alt = "Logo de " + resposta.restaurante.nome;
-      im.onerror = () => im.remove();
-      im.src = lg; im.hidden = false;
-    }
     ROT = limpa(resposta.restaurante.rotulo_local) || "Mesa";
     $("l-mesa").firstChild.nodeValue = ROT;
     if (MESA) $("sub").textContent = ROT + " " + MESA;
@@ -364,7 +242,6 @@ async function carregar(){
       document.body.classList.remove("sem-mesa");
       $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada.";
     }
-    try{ cabecalho(resposta); }catch(e){}
 
     const grupos = new Map();
     let n = 0;
@@ -412,7 +289,7 @@ const TS_KEY = "0x4AAAAAAF8srzdkcuWqirXg";
 let tsId = null;
 function tsMontar(){
   if (tsId !== null) return;
-  if (window.turnstile){ tsId = turnstile.render("#ts-pedido", {sitekey: TS_KEY, theme: "light", language: "pt-br"}); return; }
+  if (window.turnstile){ tsId = turnstile.render("#ts-pedido", {sitekey: TS_KEY, theme: "dark", language: "pt-br"}); return; }
   setTimeout(tsMontar, 400);
 }
 const tsToken = () => { try{ return (window.turnstile && tsId !== null && turnstile.getResponse(tsId)) || ""; }catch(e){ return ""; } };
@@ -428,8 +305,6 @@ function abrirPainel(){
   if (delivery) tsMontar();
   $("bloco-mesa").hidden = delivery;
   $("bloco-deliv").hidden = !delivery;
-  $("bloco-lembrar").hidden = !delivery;
-  try{ if (delivery && (localStorage.getItem("tel") || localStorage.getItem("end"))) $("p-lembrar").checked = true; }catch(e){}
   $("rot-nome").textContent = delivery ? "Seu nome" : "Seu nome (para separar a sua conta)";
   $("p-mesa").value = MESA;
   $("p-mesa").readOnly = !!MESA;
@@ -552,10 +427,7 @@ $("p-enviar").addEventListener("click", async () => {
     $("p-obs").value = "";
     try{
       sessionStorage.setItem("nome", nome);
-      if (delivery){
-        if ($("p-lembrar").checked){ localStorage.setItem("nome", nome); localStorage.setItem("tel", tel); if (endereco) localStorage.setItem("end", endereco); }
-        else { localStorage.removeItem("nome"); localStorage.removeItem("tel"); localStorage.removeItem("end"); }
-      }
+      if (delivery){ localStorage.setItem("nome", nome); localStorage.setItem("tel", tel); if (endereco) localStorage.setItem("end", endereco); }
     }catch(e){}
     document.querySelectorAll("[data-q]").forEach(el => el.textContent = "0");
     atualizar();
@@ -577,78 +449,15 @@ function mostrarFim(resp){
   const tk = resp && resp.token ? String(resp.token).replace(/[^0-9a-f]/gi, "") : "";
   $("fim-acomp").hidden = !tk;
   if (tk) $("fim-acomp").href = "acompanhar.html?t=" + tk;
-  pararPix();
-  $("pix-pagar").hidden = false;
-  $("pix-pago").hidden = true;
-  $("pix-box").hidden = true;
-  if (resp && resp.pix_mp && tk) pixMP(resp, tk);
-  else pixEstatico(resp);
-}
-
-// Desenha o QR e o copia e cola na tela
-function desenharPix(codigo, valor, nota){
-  $("pix-box").hidden = false;
-  $("pix-pagar").hidden = false;
-  $("pix-valor").textContent = reais(valor);
-  $("pix-cod").value = codigo;
-  $("pix-nota").textContent = nota;
-  $("pix-qr").hidden = false;
+  const pix = resp && resp.pix && resp.pix.copia_cola ? resp.pix : null;
+  $("pix-box").hidden = !pix;
+  if (!pix) return;
+  $("pix-valor").textContent = reais(resp.total);
+  $("pix-cod").value = pix.copia_cola;
   try{
-    const q = qrcode(0, "M"); q.addData(codigo); q.make();
+    const q = qrcode(0, "M"); q.addData(pix.copia_cola); q.make();
     $("pix-qr").src = q.createDataURL(5, 0);
   }catch(e){ $("pix-qr").hidden = true; }
-}
-
-// Pix com a chave do bar: o dono confirma no painel
-function pixEstatico(resp){
-  const pix = resp && resp.pix && resp.pix.copia_cola ? resp.pix : null;
-  if (!pix){ $("pix-box").hidden = true; return; }
-  desenharPix(pix.copia_cola, resp.total, "Depois de pagar, o estabelecimento confirma o seu pedido.");
-}
-
-// Pix pelo Mercado Pago do bar: a confirma\u00e7\u00e3o \u00e9 autom\u00e1tica
-let pixTimer = null;
-function pararPix(){ if (pixTimer){ clearInterval(pixTimer); pixTimer = null; } }
-async function chamarPixMP(corpo){
-  const r = await fetch(URL_DO_PIX_MP, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(corpo)});
-  if (!r.ok) throw new Error("HTTP " + r.status);
-  return r.json();
-}
-function pixPago(){
-  pararPix();
-  $("pix-box").hidden = false;
-  $("pix-pagar").hidden = true;
-  $("pix-nota").textContent = "O estabelecimento j\u00e1 foi avisado.";
-  $("pix-pago").hidden = false;
-}
-async function pixMP(resp, tk){
-  $("pix-box").hidden = false;
-  $("pix-pagar").hidden = true;
-  $("pix-nota").textContent = "Gerando o Pix\u2026";
-  try{
-    const d = await chamarPixMP({t: tk});
-    if (d.pago) return pixPago();
-    if (!d.copia_cola) throw new Error("sem pix");
-    desenharPix(d.copia_cola, d.valor || resp.total, "Assim que voc\u00ea pagar, a confirma\u00e7\u00e3o aparece aqui sozinha.");
-  }catch(e){
-    // se o Mercado Pago falhar, cai no Pix com a chave do bar (quando houver)
-    $("pix-nota").textContent = "";
-    pixEstatico(resp);
-    if ($("pix-box").hidden){
-      $("pix-box").hidden = false;
-      $("pix-pagar").hidden = true;
-      $("pix-nota").textContent = "N\u00e3o foi poss\u00edvel gerar o Pix agora. Fale com o estabelecimento para combinar o pagamento.";
-    }
-    return;
-  }
-  let tentativas = 0;
-  pixTimer = setInterval(async () => {
-    if (++tentativas > 240) return pararPix(); // para de consultar depois de 20 minutos
-    try{
-      const s = await chamarPixMP({t: tk, consulta: true});
-      if (s.pago) pixPago();
-    }catch(e){}
-  }, 5000);
 }
 $("pix-copiar").addEventListener("click", async () => {
   const b = $("pix-copiar");
