@@ -11,7 +11,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
 main{max-width:1400px;margin:0 auto;padding:22px 16px 130px}
-.topo{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.topo{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .logo{width:56px;height:56px;flex:none;object-fit:cover;border-radius:16px;background:var(--surface);box-shadow:var(--sombra)}
 .logo[hidden]{display:none}
 h1{font-size:1.7rem;line-height:1.15;margin:0 0 2px;font-weight:800;letter-spacing:-.01em}
@@ -69,6 +69,21 @@ input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px soli
 .ok{color:var(--price)}
 footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted);line-height:1.5}footer.legal p{margin:0 0 6px;color:var(--muted)}footer.legal a{color:var(--muted);text-decoration:underline}footer.legal a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lembrar{display:flex;gap:10px;align-items:flex-start;color:var(--ink)}.lembrar input{width:20px;height:20px;flex:none;margin:2px 0 0;padding:0;accent-color:var(--accent)}.priv{margin:10px 0 0;font-size:.82rem;color:var(--muted)}.priv a{color:var(--accent)}
+
+/* ===== Cabecalho: avaliacao, contatos, endereco, horario ===== */
+.acoes{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.estrelas{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:999px;background:var(--surface);box-shadow:var(--sombra);color:var(--ink);text-decoration:none;font-weight:700;font-size:.95rem}
+.estrelas .st{color:#e8a013;font-size:1.05rem}
+.estrelas small{font-weight:500;color:var(--muted);font-size:.85rem}
+.redondo{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;margin:0;padding:0;border:0;border-radius:50%;background:var(--surface);box-shadow:var(--sombra);color:var(--accent);cursor:pointer}
+.redondo svg{width:20px;height:20px}
+.estrelas:focus-visible,.redondo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.meta{margin:0 0 4px;color:var(--muted);font-size:.92rem}
+.meta b{color:var(--ink);font-weight:600}
+.bola{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;background:#c0392b}
+.bola.on{background:var(--price)}
+#i-txt{white-space:pre-line;margin:0 0 12px}
+#i-hor .linha.hoje{font-weight:700}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
@@ -81,6 +96,10 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
       <p class="sub" id="sub"></p>
     </div>
   </header>
+  <div id="acoes" class="acoes" hidden></div>
+  <p id="func" class="meta" hidden></p>
+  <p id="ender" class="meta" hidden></p>
+  <p id="pmin" class="meta" hidden></p>
   <nav id="menu" aria-label="Categorias"></nav>
   <div id="conteudo"><p class="msg">Carregando o card&#225;pio&#8230;</p></div>
 <footer class="legal"><p>Seus dados s&#227;o usados s&#243; para este pedido. <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a> &middot; Card&#225;pio por MenuEasy</p></footer>
@@ -140,6 +159,13 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
     <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:14px">Acompanhar meu pedido</a>
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
   </div>
+</dialog>
+<dialog id="info">
+  <h2>Informa&#231;&#245;es</h2>
+  <p id="i-txt" hidden></p>
+  <p id="i-end" class="meta" hidden></p>
+  <div id="i-hor" hidden></div>
+  <button class="cheio" id="i-fechar" style="margin-top:16px">Fechar</button>
 </dialog>
 <script>
 /* qrcode-generator 1.4.4, MIT, Kazuhiko Arase */
@@ -211,6 +237,94 @@ function mudar(id, d){
   atualizar();
 }
 
+// ===== Cabe\u00e7alho: avalia\u00e7\u00e3o, contatos, endere\u00e7o, hor\u00e1rio e pedido m\u00ednimo =====
+const ICONE = {
+  whats: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-5.1A8.5 8.5 0 1 1 21 11.5z"/></svg>',
+  insta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+  mapa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M12 7v6M12 16.6v.1"/></svg>'
+};
+const DIAS = ["Domingo", "Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado"];
+const urlSegura = u => { u = limpa(u); return /^https:\/\/[^\s"'<>]+$/i.test(u) ? u : ""; };
+function linkWhats(v){
+  let d = limpa(v).replace(/\D/g, "");
+  if (d.length === 10 || d.length === 11) d = "55" + d;
+  return d.length >= 12 && d.length <= 13 ? "https://wa.me/" + d : "";
+}
+function linkInsta(v){
+  v = limpa(v);
+  if (urlSegura(v)) return /^https:\/\/(www\.)?instagram\.com\//i.test(v) ? v : "";
+  const u = v.replace(/^@/, "");
+  return /^[A-Za-z0-9._]{1,30}$/.test(u) ? "https://instagram.com/" + u : "";
+}
+function redondo(href, icone, rotulo){
+  const a = document.createElement(href ? "a" : "button");
+  a.className = "redondo";
+  a.innerHTML = icone;
+  a.setAttribute("aria-label", rotulo); a.title = rotulo;
+  if (href){ a.href = href; a.target = "_blank"; a.rel = "noopener"; }
+  return a;
+}
+function cabecalho(resposta){
+  const r = resposta.restaurante || {};
+  const acoes = $("acoes"); acoes.textContent = "";
+  // Avalia\u00e7\u00e3o no Google: mostra a nota e leva direto para a p\u00e1gina de avaliar
+  const av = r.avaliacao || {};
+  const avUrl = urlSegura(av.url);
+  if (avUrl){
+    const a = document.createElement("a");
+    a.className = "estrelas"; a.href = avUrl; a.target = "_blank"; a.rel = "noopener";
+    const nota = Number(av.nota), qtd = Number(av.qtd);
+    const st = document.createElement("span"); st.className = "st"; st.textContent = "\u2605"; st.setAttribute("aria-hidden", "true");
+    a.append(st);
+    if (nota > 0 && nota <= 5){
+      a.append(nota.toLocaleString("pt-BR", {minimumFractionDigits: 1, maximumFractionDigits: 1}));
+      if (qtd > 0){ const s = document.createElement("small"); s.textContent = "(" + qtd.toLocaleString("pt-BR") + ")"; a.append(s); }
+      a.setAttribute("aria-label", "Nota " + nota.toLocaleString("pt-BR") + " no Google. Toque para avaliar.");
+    } else a.append("Avaliar");
+    acoes.append(a);
+  }
+  const w = linkWhats(r.whatsapp); if (w) acoes.append(redondo(w, ICONE.whats, "WhatsApp"));
+  const ig = linkInsta(r.instagram); if (ig) acoes.append(redondo(ig, ICONE.insta, "Instagram"));
+  const mp = urlSegura(r.maps_url); if (mp) acoes.append(redondo(mp, ICONE.mapa, "Localiza\u00e7\u00e3o no mapa"));
+  // Informa\u00e7\u00f5es do bar (texto + hor\u00e1rios da semana)
+  const info = limpa(r.info), end = limpa(r.endereco);
+  const hor = r.horarios && typeof r.horarios === "object" ? r.horarios : null;
+  if (info || hor){
+    const b = redondo("", ICONE.info, "Informa\u00e7\u00f5es");
+    b.type = "button";
+    b.addEventListener("click", () => $("info").showModal());
+    acoes.append(b);
+    $("i-txt").textContent = info; $("i-txt").hidden = !info;
+    $("i-end").textContent = end; $("i-end").hidden = !end;
+    const cx = $("i-hor"); cx.textContent = ""; cx.hidden = !hor;
+    if (hor){
+      const hoje = new Date().getDay();
+      for (const d of [1, 2, 3, 4, 5, 6, 0]){
+        const x = hor[String(d)];
+        const l = document.createElement("div"); l.className = "linha" + (d === hoje ? " hoje" : "");
+        const a = document.createElement("span"); a.textContent = DIAS[d];
+        const c = document.createElement("span"); c.textContent = (x && x.abre && x.fecha) ? x.abre + " \u00e0s " + x.fecha : "Fechado";
+        l.append(a, c); cx.append(l);
+      }
+    }
+  }
+  acoes.hidden = !acoes.children.length;
+  // Aberto / fechado agora
+  const f = r.funcionamento, fc = $("func");
+  fc.textContent = ""; fc.hidden = !f;
+  if (f){
+    const bola = document.createElement("span"); bola.className = "bola" + (f.aberto ? " on" : "");
+    const b = document.createElement("b"); b.textContent = f.aberto ? "Aberto agora" : "Fechado agora";
+    const resto = f.aberto ? (f.fecha ? " \u00b7 fecha \u00e0s " + f.fecha : "") : (f.texto ? " \u00b7 " + f.texto : "");
+    fc.append(bola, b, resto);
+  }
+  $("ender").textContent = end; $("ender").hidden = !end;
+  const min = MODO === "delivery" ? DELIVERY.pedido_minimo : 0;
+  $("pmin").textContent = min > 0 ? "Pedido m\u00ednimo: " + reais(min) : ""; $("pmin").hidden = !(min > 0);
+}
+$("i-fechar").addEventListener("click", () => $("info").close());
+
 async function carregar(){
   const caixa = $("conteudo"), menu = $("menu");
   try{
@@ -250,6 +364,7 @@ async function carregar(){
       document.body.classList.remove("sem-mesa");
       $("sub").textContent = "Pe\u00e7a pelo celular: entrega ou retirada.";
     }
+    try{ cabecalho(resposta); }catch(e){}
 
     const grupos = new Map();
     let n = 0;
