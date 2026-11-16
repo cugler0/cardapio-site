@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Pedidos - MenuEasy</title>
+<title>Pedidos - LaMenu</title>
 <style>
 :root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#ffb000;--surface:#171112}
 *{box-sizing:border-box}
@@ -760,6 +760,18 @@ try{
   const c = sessionStorage.getItem("chave");
   if (c && $("l-rest").value){ $("l-chave").value = c; }
 }catch(e){}
+</script>
+<script>
+// Sem plano ativo (teste vencido ou assinatura encerrada): so a pagina Meu plano fica disponivel
+(async () => {
+  try{
+    const r = sessionStorage.getItem("rest") || "", c = sessionStorage.getItem("chave") || "";
+    if (!r || !c) return;
+    const resp = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r, chave: c})});
+    const d = await resp.json();
+    if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

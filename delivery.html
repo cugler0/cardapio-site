@@ -344,5 +344,17 @@ try{
   if (c && $("l-rest").value){ $("l-chave").value = c; entrar(); }
 }catch(e){}
 </script>
+<script>
+// Sem plano ativo (teste vencido ou assinatura encerrada): so a pagina Meu plano fica disponivel
+(async () => {
+  try{
+    const r = sessionStorage.getItem("rest") || "", c = sessionStorage.getItem("chave") || "";
+    if (!r || !c) return;
+    const resp = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r, chave: c})});
+    const d = await resp.json();
+    if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

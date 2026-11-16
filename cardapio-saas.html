@@ -334,6 +334,15 @@ async function carregar(){
     const resp = await fetch(URL_DO_CARDAPIO + "?r=" + encodeURIComponent(REST), {cache:"no-store"});
     if(!resp.ok) throw new Error("HTTP " + resp.status);
     const resposta = await resp.json();
+    if (resposta && resposta.indisponivel){
+      const nm = (resposta.restaurante && resposta.restaurante.nome) || "Card\u00e1pio";
+      $("titulo").textContent = nm; document.title = nm;
+      MODO = ""; document.body.classList.add("sem-mesa");
+      $("sub").textContent = "";
+      menu.innerHTML = "";
+      caixa.innerHTML = '<p class="msg">Este card\u00e1pio est\u00e1 indispon\u00edvel no momento.</p>';
+      return;
+    }
     const dados = (resposta.itens || []).sort((a, b) => a.ordem - b.ordem);
     $("titulo").textContent = resposta.restaurante.nome;
     document.title = resposta.restaurante.nome;

@@ -43,6 +43,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
     <button class="sec" id="sair">Sair</button>
   </div>
 
+  <div class="card" id="aviso-plano" hidden style="margin-bottom:16px"><p id="aviso-txt" style="margin:0 0 12px"></p><a id="aviso-btn" href="plano.html" style="display:inline-block;padding:10px 16px;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;text-decoration:none">Ver planos</a></div>
   <h2>Dia a dia</h2>
   <div class="grid">
     <a class="tile" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span>Veja os pedidos chegando, avance o status e feche as contas.</span></a>
@@ -72,7 +73,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 <script>
 const $ = id => document.getElementById(id);
 let rest = "", nome = "", ROT = "Mesa", NIVEL = -1;
-const LIMITES = [0, 40, 150, 500, 500]; // por plano: free, b\u00e1sico, b\u00e1sico+, profissional, profissional++
+const LIMITES = [0, 40, 150, 150, 150]; // por nivel: 0 sem plano, 1 basico, 3 profissional
 const tetoDe = n => LIMITES[Math.max(0, Math.min(4, n))];
 try{ ROT = sessionStorage.getItem("rot") || "Mesa"; rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
 if (!rest){ location.replace("entrar.html"); }
@@ -93,9 +94,9 @@ function aplicarLimite(){
   $("qtd").max = String(max || 1);
   $("gerar").disabled = NIVEL === 0;
   let dica = "Grave cada link na tag NFC correspondente, ou use no gerador de QR code.";
-  if (NIVEL === 0) dica = "Os pedidos pelo celular come\u00e7am no plano B\u00e1sico. Assine para gerar os links das " + ps + ".";
-  else if (NIVEL === 1) dica += " O plano B\u00e1sico permite at\u00e9 " + tetoDe(1) + " " + ps + ". O B\u00e1sico+ chega a " + tetoDe(2) + ".";
-  else if (NIVEL === 2) dica += " O plano B\u00e1sico+ permite at\u00e9 " + tetoDe(2) + " " + ps + ".";
+  if (NIVEL === 0) dica = "Assine um plano para gerar os links das " + ps + ".";
+  else if (NIVEL === 1) dica += " O plano B\u00e1sico permite at\u00e9 " + tetoDe(1) + " " + ps + ". O Profissional chega a " + tetoDe(3) + ".";
+  else if (NIVEL >= 2) dica += " O plano Profissional permite at\u00e9 " + tetoDe(3) + " " + ps + ".";
   $("dica-links").textContent = dica;
 }
 function aplicarRotulo(){
@@ -114,6 +115,20 @@ aplicarLimite();
     if (d && typeof d.nivel === "number") NIVEL = d.nivel;
     if (d && d.rotulo_local){ ROT = d.rotulo_local; sessionStorage.setItem("rot", ROT); }
     aplicarRotulo(); aplicarLimite();
+    const av = $("aviso-plano");
+    $("aviso-btn").href = "plano.html?r=" + encodeURIComponent(rest);
+    if (d && d.nivel === 0){
+      av.hidden = false;
+      $("aviso-txt").textContent = (d.teste_ate ? "O seu teste gr\u00e1tis terminou. " : "A sua assinatura terminou. ") + "Assine um plano para voltar a usar o painel e colocar o card\u00e1pio no ar. Os seus itens continuam guardados.";
+      for (const id of ["t-pedidos", "t-painel", "t-delivery", "t-pagamentos", "t-perfil", "t-cardapio"]){ const e = $(id); if (e) e.hidden = true; }
+      const hl = $("h-links"); hl.hidden = true; if (hl.nextElementSibling) hl.nextElementSibling.hidden = true;
+      document.querySelectorAll("main > h2").forEach(x => { if (x.textContent.trim() === "Seus clientes") x.hidden = true; });
+    } else if (d && d.teste){
+      const n = Number(d.teste_dias) || 1;
+      av.hidden = false;
+      $("aviso-txt").textContent = "Teste gr\u00e1tis do plano Profissional: " + (n === 1 ? "falta 1 dia" : "faltam " + n + " dias") + ". Assine um plano para continuar depois.";
+      $("aviso-btn").textContent = "Assinar um plano";
+    }
   }catch(e){}
 })();
 
