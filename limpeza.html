@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var t=localStorage.getItem("tema");if(t!=="claro"&&t!=="escuro")t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"escuro":"claro";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","claro");}})();</script>
 <meta name="robots" content="noindex">
 <title>Limpar pedidos - LaMenu</title>
 <style>
@@ -17,7 +18,7 @@ h2{margin:0 0 12px;font-size:1rem;color:var(--ink)}
 label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
 input{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#160504;font:inherit;font-weight:600;cursor:pointer}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer}
 button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
 .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .acoes{display:flex;gap:8px;flex-wrap:wrap}
@@ -26,7 +27,7 @@ a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);bor
 .st.erro{color:var(--accent)}
 .periodos{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
 .periodos button{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:600}
-.periodos button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#160504}
+.periodos button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
 .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
 .tile .rot{color:var(--muted);font-size:.85rem}
@@ -57,13 +58,32 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 .barra-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
 .barra-acoes .info{flex:1;min-width:180px;color:var(--muted);font-size:.9rem}
-button.perigo{background:var(--accent);color:#160504}
+button.perigo{background:var(--accent);color:var(--on-accent)}
 button:disabled{opacity:.5;cursor:default}
 td.c,th.c{width:34px}
 td.c input,th.c input{width:18px;height:18px;margin:0}
 td .it{display:block;color:var(--muted);font-size:.8rem}
 tr.off td{opacity:.55}
 .aviso{border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--muted);font-size:.88rem;margin:10px 0}
+
+/* ===== Tema claro ===== */
+:root{--on-accent:#160504;--on-ok:#04210f}
+:root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--grid:#eee5db;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff;--on-ok:#ffffff}
+:root[data-tema="claro"] body{background:radial-gradient(ellipse at 15% -10%,rgba(207,69,38,.08),transparent 55%),var(--bg)!important}
+[data-tema="claro"] .aviso,[data-tema="claro"] .obs{background:#fff6e5!important;border-color:#efd6a3!important;color:var(--ink)}
+[data-tema="claro"] .card,[data-tema="claro"] .ped,[data-tema="claro"] .conta,[data-tema="claro"] .tile{box-shadow:0 1px 2px rgba(60,30,10,.05),0 4px 14px rgba(60,30,10,.06)}
+[data-tema="claro"] .barra .dica{background:#2b1a16!important;color:#fff!important;border-color:#2b1a16!important}
+[data-tema="claro"] .col.saiu h2{color:#0369a1!important}
+[data-tema="claro"] .col.saiu .ped{border-left-color:#0369a1!important}
+[data-tema="claro"] .ped.destaque{animation-name:piscaClaro}
+@keyframes piscaClaro{50%{background:#fde3dc}}
+[data-tema="claro"] .chamado{background:#fff4dc}
+[data-tema="claro"] .chamado.conta{background:#e8f6ee}
+[data-tema="claro"] h1[style*="00e5ff"],[data-tema="claro"] main > .card > h1{color:var(--accent)!important;text-shadow:none!important}
+[data-tema="claro"] .aceite a,[data-tema="claro"] .legal-txt a{color:#0369a1}
+[data-tema="claro"] p a.zap{color:#15803d}
+button.tema-btn{background:transparent!important;border:1px solid var(--line)!important;color:var(--muted)!important;padding:6px 12px!important;border-radius:999px!important;font-size:.8rem!important;font-weight:600;margin:10px auto 0;display:inline-block;cursor:pointer}
+:root[data-tema="claro"]{--h1:var(--accent);--h1s:none;--h2c:var(--accent);--lnk:#0369a1}
 </style>
 </head>
 <body>
@@ -102,7 +122,7 @@ tr.off td{opacity:.55}
       </table>
     </div>
   </section>
-<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a></p></footer>
+<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a></p><p><button type="button" class="tema-btn" id="tema-btn">Tema</button></p></footer>
 </main>
 <script>
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
@@ -220,6 +240,19 @@ try{ const c = sessionStorage.getItem("chave"); if (c && $("l-rest").value){ $("
     const d = await resp.json();
     if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
   }catch(e){}
+})();
+</script>
+<script>
+(function(){
+  var b = document.getElementById("tema-btn"); if (!b) return;
+  function rot(){ b.textContent = document.documentElement.getAttribute("data-tema") === "escuro" ? "Tema: escuro" : "Tema: claro"; }
+  rot();
+  b.addEventListener("click", function(){
+    var novo = document.documentElement.getAttribute("data-tema") === "escuro" ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", novo);
+    try{ localStorage.setItem("tema", novo); }catch(e){}
+    rot();
+  });
 })();
 </script>
 </body>

@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>(function(){try{var t=localStorage.getItem("tema");if(t!=="claro"&&t!=="escuro")t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"escuro":"claro";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","claro");}})();</script>
 <meta name="robots" content="noindex">
 <title>Delivery</title>
 <style>
@@ -21,7 +22,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{ou
 @media (max-width:560px){.g2{grid-template-columns:1fr}}
 .chk{display:flex;align-items:center;gap:10px;margin:0;color:var(--ink);font-size:1rem}
 .chk input{width:22px;height:22px;margin:0}
-button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#160504;font:inherit;font-weight:600;cursor:pointer}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer}
 button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
 button:disabled{opacity:.6;cursor:wait}
 .rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap}
@@ -49,6 +50,25 @@ a.voltar:hover{border-color:var(--accent)}
 .lk button{padding:6px 12px;font-size:.85rem;flex:none}
 [hidden]{display:none!important}
 footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted);line-height:1.5}footer.legal p{margin:0 0 6px;color:var(--muted)}footer.legal a{color:var(--muted);text-decoration:underline}footer.legal a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ===== Tema claro ===== */
+:root{--on-accent:#160504;--on-ok:#04210f}
+:root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--grid:#eee5db;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff;--on-ok:#ffffff}
+:root[data-tema="claro"] body{background:radial-gradient(ellipse at 15% -10%,rgba(207,69,38,.08),transparent 55%),var(--bg)!important}
+[data-tema="claro"] .aviso,[data-tema="claro"] .obs{background:#fff6e5!important;border-color:#efd6a3!important;color:var(--ink)}
+[data-tema="claro"] .card,[data-tema="claro"] .ped,[data-tema="claro"] .conta,[data-tema="claro"] .tile{box-shadow:0 1px 2px rgba(60,30,10,.05),0 4px 14px rgba(60,30,10,.06)}
+[data-tema="claro"] .barra .dica{background:#2b1a16!important;color:#fff!important;border-color:#2b1a16!important}
+[data-tema="claro"] .col.saiu h2{color:#0369a1!important}
+[data-tema="claro"] .col.saiu .ped{border-left-color:#0369a1!important}
+[data-tema="claro"] .ped.destaque{animation-name:piscaClaro}
+@keyframes piscaClaro{50%{background:#fde3dc}}
+[data-tema="claro"] .chamado{background:#fff4dc}
+[data-tema="claro"] .chamado.conta{background:#e8f6ee}
+[data-tema="claro"] h1[style*="00e5ff"],[data-tema="claro"] main > .card > h1{color:var(--accent)!important;text-shadow:none!important}
+[data-tema="claro"] .aceite a,[data-tema="claro"] .legal-txt a{color:#0369a1}
+[data-tema="claro"] p a.zap{color:#15803d}
+button.tema-btn{background:transparent!important;border:1px solid var(--line)!important;color:var(--muted)!important;padding:6px 12px!important;border-radius:999px!important;font-size:.8rem!important;font-weight:600;margin:10px auto 0;display:inline-block;cursor:pointer}
+:root[data-tema="claro"]{--h1:var(--accent);--h1s:none;--h2c:var(--accent);--lnk:#0369a1}
 </style>
 </head>
 <body>
@@ -140,7 +160,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
       <div class="lk"><code id="link"></code><button id="copiar">Copiar</button></div>
     </div>
   </section>
-<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p></footer>
+<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p><p><button type="button" class="tema-btn" id="tema-btn">Tema</button></p></footer>
 </main>
 <script>
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
@@ -354,6 +374,19 @@ try{
     const d = await resp.json();
     if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
   }catch(e){}
+})();
+</script>
+<script>
+(function(){
+  var b = document.getElementById("tema-btn"); if (!b) return;
+  function rot(){ b.textContent = document.documentElement.getAttribute("data-tema") === "escuro" ? "Tema: escuro" : "Tema: claro"; }
+  rot();
+  b.addEventListener("click", function(){
+    var novo = document.documentElement.getAttribute("data-tema") === "escuro" ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", novo);
+    try{ localStorage.setItem("tema", novo); }catch(e){}
+    rot();
+  });
 })();
 </script>
 </body>
