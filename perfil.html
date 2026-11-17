@@ -122,6 +122,8 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <div class="card">
       <label class="chk"><input type="checkbox" id="taxa-on"> Cobrar taxa de servi&#231;o</label>
       <label id="l-taxa">Percentual da taxa (%)<input id="taxa" inputmode="decimal" maxlength="5" placeholder="10"></label>
+      <label class="chk" style="margin-top:16px"><input type="checkbox" id="pagar-mesa"> Cliente pode pagar a conta pelo celular (Pix)</label>
+      <p class="sub" id="pagar-dica"></p>
       <p class="sub">A taxa aparece nas contas das mesas, no painel de pedidos e na notinha da conta. N&#227;o vale para o delivery.</p>
     </div>
 
@@ -207,6 +209,12 @@ function desenhar(d){
   $("taxa-on").checked = tx > 0;
   $("taxa").value = tx > 0 ? String(tx).replace(".", ",") : "10";
   $("l-taxa").hidden = tx <= 0;
+  $("pagar-mesa").checked = !!d.pagar_mesa;
+  $("pagar-dica").textContent = d.mp_conectado
+    ? "O cliente v\u00ea a conta da mesa no card\u00e1pio e paga por Pix. Com o Mercado Pago conectado, a confirma\u00e7\u00e3o \u00e9 autom\u00e1tica e a conta fecha sozinha no painel."
+    : (d.tem_pix
+      ? "O cliente v\u00ea a conta e paga pelo Pix do bar. Sem o Mercado Pago, o gar\u00e7om confere e fecha a conta no painel. Para confirmar sozinho, conecte o Mercado Pago em Pagamento autom\u00e1tico."
+      : "Para usar, cadastre a chave Pix (tela Delivery) ou conecte o Mercado Pago (tela Pagamento autom\u00e1tico).");
   $("fuso").value = d.fuso || "America/Campo_Grande";
   $("usa-horario").checked = !!(d.horarios && Object.keys(d.horarios).length);
   $("grade").hidden = !$("usa-horario").checked;
@@ -230,7 +238,8 @@ $("c-salvar").addEventListener("click", async () => {
       maps_url: $("maps").value.trim(), avaliacao_url: $("av-url").value.trim(),
       avaliacao_nota: $("av-nota").value.trim(), avaliacao_qtd: $("av-qtd").value.trim(),
       info: $("info").value, fuso: $("fuso").value, horarios: lerGrade(),
-      taxa_servico: $("taxa-on").checked ? ($("taxa").value.trim() || "10") : 0
+      taxa_servico: $("taxa-on").checked ? ($("taxa").value.trim() || "10") : 0,
+      pagar_mesa: $("pagar-mesa").checked
     });
     if (status === 401) return sair();
     if (status === 200 && dados && dados.ok) msg(st, "Salvo! Aparece no card\u00e1pio em at\u00e9 1 minuto.", true);

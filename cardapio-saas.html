@@ -48,6 +48,13 @@ button:disabled{opacity:.6}
 .chamar button:disabled{opacity:.55;cursor:default}
 .sem-mesa #chamar{display:none!important}
 #chamar-st{flex-basis:100%;margin:2px 0 0;font-size:.9rem;color:var(--price);min-height:0}
+.cm-pessoa{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.cm-pessoa .topo{display:flex;justify-content:space-between;gap:10px;font-weight:700}
+.cm-pessoa ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:.9rem}
+.cm-opc label.op{margin-top:8px}
+.cm-tot{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
+.cm-tot.forte{font-weight:800;font-size:1.1rem;border-bottom:0}
+#cm{max-height:90vh;overflow:auto}
 .mais-op{font-size:.78rem;color:var(--muted);font-weight:600}
 #opc{max-height:88vh;overflow:auto}
 .og{margin-top:16px}
@@ -115,6 +122,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
   <div id="chamar" class="chamar" hidden>
     <button type="button" id="c-garcom">Chamar gar&#231;om</button>
     <button type="button" id="c-conta">Pedir a conta</button>
+    <button type="button" id="c-pagar" hidden>Ver conta / pagar</button>
     <p id="chamar-st" role="status"></p>
   </div>
   <div id="acoes" class="acoes" hidden></div>
@@ -180,6 +188,22 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
     <a id="fim-acomp" class="cheio" href="#" hidden style="display:block;margin-top:14px;text-align:center;text-decoration:none;border-radius:14px">Acompanhar meu pedido</a>
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
   </div>
+</dialog>
+<dialog id="cm">
+  <h2>Conta d<span id="cm-art">a</span> <span id="cm-rot">mesa</span></h2>
+  <div id="cm-corpo"></div>
+  <div id="cm-pix" hidden>
+    <div class="pix">
+      <div>Pague com Pix</div>
+      <div class="valor" id="cm-valor"></div>
+      <img id="cm-qr" alt="QR code do Pix" width="200" height="200">
+      <label>Pix copia e cola<textarea id="cm-cod" rows="4" readonly></textarea></label>
+      <button class="cheio" id="cm-copiar" style="margin-top:10px">Copiar c&#243;digo Pix</button>
+    </div>
+  </div>
+  <p id="cm-msg" class="msg" role="status" style="padding:10px 0 0"></p>
+  <button class="cheio" id="cm-pagar" style="margin-top:12px" hidden>Pagar com Pix</button>
+  <button id="cm-fechar" style="width:100%;margin-top:10px">Voltar ao card&#225;pio</button>
 </dialog>
 <dialog id="opc">
   <h2 id="o-nome"></h2>
@@ -464,6 +488,7 @@ async function carregar(){
       im.src = lg; im.hidden = false;
     }
     ROT = limpa(resposta.restaurante.rotulo_local) || "Mesa";
+    $("c-pagar").hidden = !(MESA && resposta.restaurante.pagar_mesa);
     $("l-mesa").firstChild.nodeValue = ROT;
     if (MESA) $("sub").textContent = ROT + " " + MESA;
     else if (resposta.pedidos !== false) $("sub").textContent = "Para fazer pedidos, aproxime o celular da plaquinha " + art() + " " + rot() + ".";
@@ -843,6 +868,121 @@ async function chamar(tipo){
 $("c-garcom").addEventListener("click", () => chamar("garcom"));
 $("c-conta").addEventListener("click", () => chamar("conta"));
 if (MESA) $("chamar").hidden = false;
+
+// ===== Ver conta / pagar pelo celular =====
+let CM = null, CM_PID = "", cmTimer = null;
+const CM_URL = URL_BASE + "saas-conta-mesa";
+async function cmApi(corpo){
+  const r = await fetch(CM_URL, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, mesa: MESA, sessao: SESSAO, ...corpo})});
+  let d = null; try{ d = await r.json(); }catch(e){}
+  return {status: r.status, d};
+}
+function cmParar(){ if (cmTimer){ clearInterval(cmTimer); cmTimer = null; } }
+function cmTotal(){
+  if (!CM) return {sub: 0, taxa: 0, tot: 0};
+  const esc = document.querySelector('input[name="cm-quem"]:checked');
+  const quem = esc ? esc.value : "__todos";
+  const sub = CM.contas.filter(c => quem === "__todos" || c.nome === quem).reduce((a, c) => a + c.subtotal, 0);
+  const comTaxa = $("cm-taxa") ? $("cm-taxa").checked : false;
+  const taxa = comTaxa ? Math.round(sub * CM.taxa) / 100 : 0;
+  return {sub, taxa, tot: Math.round((sub + taxa) * 100) / 100, quem};
+}
+function cmResumo(){
+  const t = cmTotal();
+  $("cm-tots").replaceChildren(...[
+    CM.taxa > 0 ? ["Subtotal", reais(t.sub)] : null,
+    CM.taxa > 0 && t.taxa > 0 ? ["Taxa de servi\u00e7o (" + String(CM.taxa).replace(".", ",") + "%)", reais(t.taxa)] : null,
+    ["Total a pagar", reais(t.tot), "forte"]
+  ].filter(Boolean).map(([a, b, c]) => { const d = document.createElement("div"); d.className = "cm-tot" + (c ? " " + c : ""); const x = document.createElement("span"); x.textContent = a; const y = document.createElement("span"); y.textContent = b; d.append(x, y); return d; }));
+  $("cm-pagar").textContent = "Pagar " + reais(t.tot) + " com Pix";
+  $("cm-pagar").disabled = !(t.tot > 0);
+}
+async function abrirConta(){
+  if (expirado()) return expirou();
+  cmParar(); CM_PID = "";
+  $("cm-rot").textContent = rot(); $("cm-art").textContent = art() === "do" ? "o" : "a";
+  $("cm-corpo").textContent = "Carregando a conta\u2026"; $("cm-msg").textContent = ""; $("cm-pix").hidden = true; $("cm-pagar").hidden = true;
+  $("cm").showModal();
+  try{
+    const {status, d} = await cmApi({acao: "ver"});
+    if (status === 400 && d && d.erro === "mesa encerrada"){ $("cm").close(); return encerrada(); }
+    if (status !== 200 || !d || !Array.isArray(d.contas)) throw new Error((d && d.erro) || "N\u00e3o foi poss\u00edvel abrir a conta.");
+    CM = d;
+    const corpo = $("cm-corpo"); corpo.replaceChildren();
+    if (!d.contas.length){ corpo.textContent = "Ainda n\u00e3o h\u00e1 pedidos em aberto nest" + (art() === "do" ? "e " : "a ") + rot() + "."; return; }
+    let meu = ""; try{ meu = sessionStorage.getItem("nome") || ""; }catch(e){}
+    for (const c of d.contas){
+      const box = document.createElement("div"); box.className = "cm-pessoa";
+      const tp = document.createElement("div"); tp.className = "topo";
+      const n = document.createElement("span"); n.textContent = c.nome || "(sem nome)";
+      const v = document.createElement("span"); v.textContent = reais(c.subtotal);
+      tp.append(n, v);
+      const ul = document.createElement("ul");
+      for (const it of c.itens){ const li = document.createElement("li"); li.textContent = it.qtd + "x " + it.texto + " \u00b7 " + reais(it.valor); ul.append(li); }
+      box.append(tp, ul); corpo.append(box);
+    }
+    if (!d.pix){ $("cm-msg").textContent = "Para pagar, chame o gar\u00e7om."; const t = document.createElement("div"); t.id = "cm-tots"; corpo.append(t); cmResumo(); return; }
+    const op = document.createElement("div"); op.className = "cm-opc";
+    const h3 = document.createElement("h3"); h3.style.margin = "16px 0 0"; h3.textContent = "O que voc\u00ea vai pagar?"; op.append(h3);
+    const opcoes = d.contas.length > 1 ? [...d.contas.map(c => [c.nome, "S\u00f3 a conta de " + (c.nome || "(sem nome)")]), ["__todos", "A conta inteira d" + (art() === "do" ? "o " : "a ") + rot()]] : [[d.contas[0].nome, "A conta de " + (d.contas[0].nome || "(sem nome)")]];
+    const padrao = opcoes.some(o => o[0] === meu) ? meu : opcoes[0][0];
+    for (const [val, txt] of opcoes){
+      const l = document.createElement("label"); l.className = "op";
+      const i = document.createElement("input"); i.type = "radio"; i.name = "cm-quem"; i.value = val; i.checked = val === padrao;
+      const s = document.createElement("span"); s.className = "l"; const sp = document.createElement("span"); sp.textContent = txt; s.append(i, sp);
+      l.append(s); op.append(l);
+    }
+    if (d.taxa > 0){
+      const l = document.createElement("label"); l.className = "op";
+      const i = document.createElement("input"); i.type = "checkbox"; i.id = "cm-taxa"; i.checked = true;
+      const s = document.createElement("span"); s.className = "l"; const sp = document.createElement("span"); sp.textContent = "Incluir taxa de servi\u00e7o (" + String(d.taxa).replace(".", ",") + "%)"; s.append(i, sp);
+      l.append(s); op.append(l);
+    }
+    const t = document.createElement("div"); t.id = "cm-tots"; t.style.marginTop = "12px"; op.append(t);
+    op.addEventListener("change", cmResumo);
+    corpo.append(op);
+    cmResumo();
+    $("cm-pagar").hidden = false;
+  }catch(e){ $("cm-corpo").textContent = e.message || "N\u00e3o foi poss\u00edvel abrir a conta."; }
+}
+$("cm-pagar").addEventListener("click", async () => {
+  const t = cmTotal(), b = $("cm-pagar"), m = $("cm-msg");
+  b.disabled = true; m.textContent = "Gerando o Pix\u2026";
+  try{
+    const {status, d} = await cmApi({acao: "pagar", nome: t.quem === "__todos" ? null : t.quem, taxa: $("cm-taxa") ? $("cm-taxa").checked : false});
+    if (status !== 200 || !d || !d.copia_cola) throw new Error((d && d.erro) || "N\u00e3o foi poss\u00edvel gerar o Pix. Chame o gar\u00e7om.");
+    CM_PID = d.pid;
+    $("cm-corpo").replaceChildren(); b.hidden = true;
+    $("cm-pix").hidden = false;
+    $("cm-valor").textContent = reais(d.valor);
+    $("cm-cod").value = d.copia_cola;
+    try{ const q = qrcode(0, "M"); q.addData(d.copia_cola); q.make(); $("cm-qr").src = q.createDataURL(5, 0); $("cm-qr").hidden = false; }catch(e){ $("cm-qr").hidden = true; }
+    if (d.auto){
+      m.textContent = "Assim que voc\u00ea pagar, a confirma\u00e7\u00e3o aparece aqui sozinha.";
+      let n = 0;
+      cmTimer = setInterval(async () => {
+        if (++n > 240) return cmParar();
+        try{
+          const s = await cmApi({acao: "consulta", pid: CM_PID});
+          if (s.d && s.d.pago){
+            cmParar(); $("cm-pix").hidden = true;
+            m.className = "msg ok"; m.textContent = "Pagamento confirmado! Obrigado. A conta j\u00e1 foi fechada.";
+          }
+        }catch(e){}
+      }, 5000);
+    } else {
+      m.textContent = "Depois de pagar, mostre o comprovante ao gar\u00e7om para fechar a conta.";
+    }
+  }catch(e){ m.textContent = e.message; b.disabled = false; }
+});
+$("cm-copiar").addEventListener("click", async () => {
+  const b = $("cm-copiar");
+  try{ await navigator.clipboard.writeText($("cm-cod").value); b.textContent = "C\u00f3digo copiado!"; }
+  catch(e){ $("cm-cod").select(); b.textContent = "Selecione e copie o c\u00f3digo"; }
+  setTimeout(() => { b.textContent = "Copiar c\u00f3digo Pix"; }, 2500);
+});
+$("cm-fechar").addEventListener("click", () => { cmParar(); $("cm").close(); $("cm-msg").className = "msg"; });
+$("c-pagar").addEventListener("click", abrirConta);
 
 abrirSessao();
 carregar();

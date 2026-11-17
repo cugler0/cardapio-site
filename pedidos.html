@@ -793,15 +793,15 @@ function desenharChamados(lista){
   chamadosConhecidos = new Set(lista.map(c => c.id));
   caixa.replaceChildren(...lista.map(c => {
     const d = document.createElement("div");
-    d.className = "chamado" + (c.tipo === "conta" ? " conta" : "") + (novos.includes(c) ? " novo" : "");
+    d.className = "chamado" + (c.tipo === "conta" || c.tipo === "pago" ? " conta" : "") + (novos.includes(c) ? " novo" : "");
     const t = document.createElement("div");
     const s = document.createElement("strong");
-    s.textContent = ROT + " " + c.mesa + (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om");
+    s.textContent = ROT + " " + c.mesa + (c.tipo === "pago" ? " pagou pelo celular" : (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om"));
     const min = Math.max(0, Math.round((Date.now() - new Date(c.criado_em).getTime()) / 60000));
     const q = document.createElement("div"); q.className = "q";
     q.textContent = (c.nome ? c.nome + " \u00b7 " : "") + (min < 1 ? "agora" : "h\u00e1 " + min + " min");
     t.append(s, q);
-    const b = document.createElement("button"); b.textContent = "Atendido";
+    const b = document.createElement("button"); b.textContent = c.tipo === "pago" ? "OK" : "Atendido";
     b.addEventListener("click", async () => {
       b.disabled = true;
       try{
@@ -819,7 +819,7 @@ function desenharChamados(lista){
     try{
       if ("Notification" in window && Notification.permission === "granted"){
         const c = novos[0];
-        new Notification(ROT + " " + c.mesa + (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om"));
+        new Notification(ROT + " " + c.mesa + (c.tipo === "pago" ? " pagou pelo celular" : (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om")));
       }
     }catch(e){}
   }
