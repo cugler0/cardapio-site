@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Relat&#243;rio de vendas - LaMenu</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--grid:#2c2022;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:900px;margin:0 auto;padding:24px 16px 80px}
+h1{margin:0 0 4px;font-size:1.6rem}
+h2{margin:0 0 12px;font-size:1rem;color:var(--ink)}
+.sub{margin:0 0 6px;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
+input{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#160504;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}
+.st{font-size:.9rem;min-height:1.2em;margin-top:10px}
+.st.erro{color:var(--accent)}
+.periodos{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.periodos button{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:600}
+.periodos button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#160504}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.tile .rot{color:var(--muted);font-size:.85rem}
+.tile .num{font-size:1.6rem;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .det{color:var(--muted);font-size:.8rem}
+.barras{position:relative;display:flex;align-items:flex-end;gap:2px;height:170px;padding-top:8px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to top,transparent 0,transparent 42px,var(--grid) 42px,var(--grid) 43px)}
+.barra{position:relative;flex:1;min-width:3px;height:100%;display:flex;align-items:flex-end;cursor:default}
+.barra i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:0}
+.barra.zero i{background:transparent}
+.barra:hover i,.barra:focus i{filter:brightness(1.25)}
+.barra .dica{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#000;border:1px solid var(--line);color:var(--ink);font-size:.8rem;padding:6px 8px;border-radius:8px;z-index:3;pointer-events:none}
+.barra:hover .dica,.barra:focus .dica{display:block}
+.eixo{display:flex;gap:2px;margin-top:4px;color:var(--muted);font-size:.72rem}
+.eixo span{flex:1;min-width:0;text-align:center;overflow:visible;white-space:nowrap;display:flex;justify-content:center}
+.maxv{color:var(--muted);font-size:.78rem;margin:0 0 4px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+details{margin-top:10px;color:var(--muted);font-size:.88rem}
+details summary{cursor:pointer}
+.vazio{color:var(--muted);padding:6px 0}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.duas{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted)}footer.legal a{color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="card" style="max-width:460px;margin:40px auto">
+    <h1>Relat&#243;rio de vendas</h1>
+    <p class="sub">Entre para ver o faturamento do seu estabelecimento.</p>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="topo">
+      <div><h1 id="a-nome">Relat&#243;rio</h1><p class="sub" id="a-periodo"></p></div>
+      <div class="acoes"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
+    </div>
+    <div class="periodos" role="group" aria-label="Per&#237;odo">
+      <button data-p="hoje">Hoje</button>
+      <button data-p="ontem">Ontem</button>
+      <button data-p="7">7 dias</button>
+      <button data-p="30">30 dias</button>
+      <button data-p="mes">Este m&#234;s</button>
+      <button data-p="mes_passado">M&#234;s passado</button>
+    </div>
+    <p id="st" class="st" role="status"></p>
+    <div id="conteudo" hidden>
+      <div class="tiles">
+        <div class="tile"><div class="rot">Faturamento</div><div class="num" id="t-fat"></div><div class="det" id="t-fat-d"></div></div>
+        <div class="tile"><div class="rot">Pedidos</div><div class="num" id="t-ped"></div><div class="det" id="t-ped-d"></div></div>
+        <div class="tile"><div class="rot">Ticket m&#233;dio</div><div class="num" id="t-tic"></div><div class="det">por pedido</div></div>
+      </div>
+      <div class="card" id="c-dias">
+        <h2>Faturamento por dia</h2>
+        <p class="maxv" id="d-max"></p>
+        <div class="barras" id="g-dias"></div>
+        <div class="eixo" id="e-dias"></div>
+        <details><summary>Ver em tabela</summary><table><thead><tr><th>Dia</th><th class="n">Pedidos</th><th class="n">Faturamento</th></tr></thead><tbody id="tb-dias"></tbody></table></details>
+      </div>
+      <div class="card">
+        <h2>Pedidos por hor&#225;rio</h2>
+        <p class="maxv" id="h-max"></p>
+        <div class="barras" id="g-horas"></div>
+        <div class="eixo" id="e-horas"></div>
+        <details><summary>Ver em tabela</summary><table><thead><tr><th>Hor&#225;rio</th><th class="n">Pedidos</th><th class="n">Faturamento</th></tr></thead><tbody id="tb-horas"></tbody></table></details>
+      </div>
+      <div class="card">
+        <h2>Itens mais vendidos</h2>
+        <table><thead><tr><th>Item</th><th class="n">Qtd</th><th class="n">Valor</th></tr></thead><tbody id="tb-itens"></tbody></table>
+      </div>
+      <div class="duas">
+        <div class="card"><h2>Por tipo de pedido</h2><table><thead><tr><th>Tipo</th><th class="n">Pedidos</th><th class="n">Valor</th></tr></thead><tbody id="tb-tipos"></tbody></table></div>
+        <div class="card"><h2>Pagamento (delivery)</h2><table><thead><tr><th>Forma</th><th class="n">Pedidos</th><th class="n">Valor</th></tr></thead><tbody id="tb-pag"></tbody></table></div>
+      </div>
+      <p class="sub" style="margin-top:8px">Conta todos os pedidos registrados no per&#237;odo, inclusive os ainda n&#227;o entregues. Pedidos apagados no painel n&#227;o entram.</p>
+    </div>
+  </section>
+<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a></p></footer>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const $ = id => document.getElementById(id);
+let REST = "", CHAVE = "", PER = "7";
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+const reais = n => Number(n || 0).toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
+const NOMES_TIPO = {mesa: "Mesa", entrega: "Entrega", retirada: "Retirada"};
+const NOMES_PAG = {pix_antecipado: "Pix antecipado", pix_entrega: "Pix na entrega", cartao: "Cart\u00e3o", dinheiro: "Dinheiro"};
+
+async function api(caminho, corpo){
+  const r = await fetch(URL_BASE + caminho, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})});
+  let dados = null; try{ dados = await r.json(); }catch(e){}
+  return {status: r.status, dados};
+}
+function linha(cels){
+  const tr = document.createElement("tr");
+  cels.forEach((v, i) => { const td = document.createElement("td"); td.textContent = v; if (i > 0) td.className = "n"; tr.append(td); });
+  return tr;
+}
+function barras(alvo, eixo, dados, cada){
+  // dados: [{rot, valor, dica}]
+  const max = Math.max(0, ...dados.map(d => d.valor));
+  $(alvo).replaceChildren(...dados.map(d => {
+    const b = document.createElement("div"); b.className = "barra" + (d.valor > 0 ? "" : " zero"); b.tabIndex = 0;
+    b.setAttribute("aria-label", d.dica);
+    const i = document.createElement("i"); i.style.height = max > 0 ? Math.max(d.valor > 0 ? 2 : 0, d.valor / max * 100) + "%" : "0";
+    const t = document.createElement("span"); t.className = "dica"; t.textContent = d.dica;
+    b.append(i, t); return b;
+  }));
+  $(eixo).replaceChildren(...dados.map((d, k) => { const s = document.createElement("span"); s.textContent = (k % cada === 0) ? d.rot : ""; return s; }));
+  return max;
+}
+function desenhar(d){
+  $("a-nome").textContent = d.nome || REST;
+  $("a-periodo").textContent = d.periodo_texto || "";
+  const t = d.totais;
+  $("t-fat").textContent = reais(t.faturamento);
+  $("t-fat-d").textContent = t.taxas > 0 ? "inclui " + reais(t.taxas) + " de taxas de entrega" : "";
+  $("t-ped").textContent = String(t.pedidos);
+  $("t-ped-d").textContent = t.itens + (t.itens === 1 ? " item vendido" : " itens vendidos");
+  $("t-tic").textContent = t.pedidos ? reais(t.faturamento / t.pedidos) : "\u2014";
+
+  const dias = d.dias || [];
+  $("c-dias").hidden = dias.length <= 1;
+  const cada = Math.ceil(dias.length / 8);
+  const mx = barras("g-dias", "e-dias", dias.map(x => ({rot: x.rotulo, valor: x.valor, dica: x.rotulo + ": " + reais(x.valor) + " \u00b7 " + x.pedidos + (x.pedidos === 1 ? " pedido" : " pedidos")})), cada);
+  $("d-max").textContent = mx > 0 ? "Maior dia: " + reais(mx) : "Sem vendas no per\u00edodo";
+  $("tb-dias").replaceChildren(...dias.map(x => linha([x.rotulo, x.pedidos, reais(x.valor)])));
+
+  const horas = d.horas || [];
+  const mh = barras("g-horas", "e-horas", horas.map(x => ({rot: x.hora + "h", valor: x.pedidos, dica: x.hora + "h\u2013" + (x.hora + 1) + "h: " + x.pedidos + (x.pedidos === 1 ? " pedido" : " pedidos") + " \u00b7 " + reais(x.valor)})), 3);
+  $("h-max").textContent = mh > 0 ? "Hor\u00e1rio de pico: " + horas.reduce((a, b) => b.pedidos > a.pedidos ? b : a).hora + "h (" + mh + (mh === 1 ? " pedido)" : " pedidos)") : "Sem pedidos no per\u00edodo";
+  $("tb-horas").replaceChildren(...horas.filter(x => x.pedidos).map(x => linha([x.hora + "h", x.pedidos, reais(x.valor)])));
+
+  const vazio = (tb, txt) => { const tr = document.createElement("tr"); const td = document.createElement("td"); td.colSpan = 3; td.className = "vazio"; td.textContent = txt; tr.append(td); $(tb).replaceChildren(tr); };
+  if ((d.itens || []).length) $("tb-itens").replaceChildren(...d.itens.map(x => linha([x.nome, x.qtd, reais(x.valor)]))); else vazio("tb-itens", "Nenhum item vendido no per\u00edodo.");
+  if ((d.tipos || []).length) $("tb-tipos").replaceChildren(...d.tipos.map(x => linha([NOMES_TIPO[x.tipo] || x.tipo, x.pedidos, reais(x.valor)]))); else vazio("tb-tipos", "Sem pedidos.");
+  if ((d.pagamentos || []).length) $("tb-pag").replaceChildren(...d.pagamentos.map(x => linha([NOMES_PAG[x.forma] || x.forma, x.pedidos, reais(x.valor)]))); else vazio("tb-pag", "Sem pedidos de delivery.");
+  $("conteudo").hidden = false;
+}
+async function carregar(){
+  document.querySelectorAll(".periodos button").forEach(b => b.setAttribute("aria-pressed", b.dataset.p === PER ? "true" : "false"));
+  const st = $("st"); st.className = "st"; st.textContent = "Carregando\u2026";
+  const {status, dados} = await api("saas-admin-relatorio", {periodo: PER});
+  if (status === 401) throw new Error("negado");
+  if (status !== 200 || !dados || !dados.totais) throw new Error("falha");
+  st.textContent = "";
+  desenhar(dados);
+}
+document.querySelectorAll(".periodos button").forEach(b => b.addEventListener("click", async () => {
+  PER = b.dataset.p;
+  try{ sessionStorage.setItem("rel_per", PER); }catch(e){}
+  try{ await carregar(); }catch(e){ $("st").className = "st erro"; $("st").textContent = "N\u00e3o foi poss\u00edvel carregar. Tente de novo."; }
+}));
+function sair(){
+  try{ sessionStorage.removeItem("chave"); }catch(e){}
+  CHAVE = ""; $("app").hidden = true; $("login").hidden = false; $("l-chave").value = "";
+}
+async function entrar(){
+  const st = $("l-st"), btn = $("l-entrar");
+  REST = limpaSlug($("l-rest").value); CHAVE = $("l-chave").value.trim();
+  if (!REST || !CHAVE){ st.className = "st erro"; st.textContent = "Preencha os dois campos."; return; }
+  btn.disabled = true; st.className = "st"; st.textContent = "Entrando\u2026";
+  $("login").hidden = true; $("app").hidden = false;
+  try{
+    await carregar();
+    try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
+    st.textContent = "";
+  }catch(e){
+    $("app").hidden = true; $("login").hidden = false;
+    st.className = "st erro";
+    st.textContent = e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "N\u00e3o foi poss\u00edvel conectar. Tente de novo.";
+  }finally{ btn.disabled = false; }
+}
+$("l-entrar").addEventListener("click", entrar);
+$("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+$("a-sair").addEventListener("click", sair);
+try{ PER = sessionStorage.getItem("rel_per") || "7"; }catch(e){}
+$("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
+try{ const c = sessionStorage.getItem("chave"); if (c && $("l-rest").value){ $("l-chave").value = c; entrar(); } }catch(e){}
+</script>
+<script>
+// Sem plano ativo: so a pagina Meu plano fica disponivel
+(async () => {
+  try{
+    const r = sessionStorage.getItem("rest") || "", c = sessionStorage.getItem("chave") || "";
+    if (!r || !c) return;
+    const resp = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r, chave: c})});
+    const d = await resp.json();
+    if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

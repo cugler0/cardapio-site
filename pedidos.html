@@ -69,7 +69,9 @@ button:disabled{opacity:.6;cursor:wait}
 .conta .m{font-weight:700;font-size:1.1rem}
 .pessoa{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
 .pessoa .v{font-weight:600;white-space:nowrap}
-.pessoa button{padding:6px 10px;font-size:.85rem}
+.pessoa{flex-wrap:wrap}
+.pessoa > span:last-child{flex-wrap:wrap;justify-content:flex-end}
+.pessoa button{padding:6px 10px;font-size:.85rem;white-space:nowrap}
 .conta .tm{display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--line);font-weight:700}
 [hidden]{display:none!important}
 .abas{display:flex;gap:8px;margin:0 0 14px}
@@ -142,6 +144,7 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
       <strong>Impress&#227;o de pedidos</strong>
       <p class="sub">Estas op&#231;&#245;es valem s&#243; para este computador ou tablet.</p>
       <label class="chk"><input type="checkbox" id="imp-auto"> Imprimir automaticamente cada pedido novo</label>
+      <label class="chk"><input type="checkbox" id="imp-conta"> Imprimir a conta ao fechar uma conta ou <span id="imp-conta-rot">mesa</span></label>
       <label>Largura do papel
         <select id="imp-larg"><option value="80">80 mm</option><option value="58">58 mm</option></select>
       </label>
@@ -346,12 +349,58 @@ function montarCupom(p){
 async function rodaFila(){
   imprimindo = true;
   while (filaImp.length){
-    montarCupom(filaImp.shift());
+    const x = filaImp.shift();
+    if (x && x.__conta) montarConta(x); else montarCupom(x);
     try{ window.print(); }catch(e){}
     await new Promise(r => setTimeout(r, 1200));
   }
   imprimindo = false;
 }
+// ===== Conta da mesa (toda a mesa ou s\u00f3 uma pessoa) =====
+function dadosConta(mesa, nome){
+  const peds = ULTIMOS.filter(p => tipoDe(p) === "mesa" && !p.paga && String(p.mesa) === String(mesa) && (nome == null || (p.nome || "") === nome));
+  const pessoas = new Map();
+  for (const p of peds){
+    const n = p.nome || "";
+    if (!pessoas.has(n)) pessoas.set(n, {linhas: new Map(), total: 0});
+    const pe = pessoas.get(n);
+    pe.total += Number(p.total) || 0;
+    for (const it of (Array.isArray(p.itens) ? p.itens : [])){
+      const preco = Number(it.preco) || 0;
+      const k = rotuloIt(it) + "|" + preco;
+      const l = pe.linhas.get(k) || {texto: rotuloIt(it), qtd: 0, valor: 0};
+      l.qtd += Number(it.qtd) || 0; l.valor += (Number(it.qtd) || 0) * preco;
+      pe.linhas.set(k, l);
+    }
+  }
+  let total = 0; for (const pe of pessoas.values()) total += pe.total;
+  return {__conta: true, mesa: String(mesa), nome: nome == null ? null : nome, pessoas, total, quando: new Date()};
+}
+function montarConta(c){
+  const cp = $("cupom"); cp.replaceChildren();
+  if (NOME_BAR) cp.append(linhaC(NOME_BAR, "c-tit"));
+  cp.append(linhaC("CONTA", "c-grande"));
+  cp.append(linhaC(ROT + " " + c.mesa + (c.nome ? " \u00b7 " + c.nome : (c.pessoas.size === 1 ? ([...c.pessoas.keys()][0] ? " \u00b7 " + [...c.pessoas.keys()][0] : "") : " \u00b7 todos")), "c-forte"));
+  cp.append(linhaC(c.quando.toLocaleString("pt-BR", {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"})));
+  cp.append(linhaC("", "c-sep"));
+  const varias = c.pessoas.size > 1;
+  for (const [n, pe] of c.pessoas){
+    if (varias) cp.append(linhaC(n || "(sem nome)", "c-forte"));
+    for (const l of pe.linhas.values()) cp.append(linhaC(l.qtd + "x " + l.texto + "  " + reais(l.valor), "c-item"));
+    if (varias){ cp.append(linhaC("Subtotal " + reais(pe.total))); cp.append(linhaC("", "c-sep")); }
+  }
+  if (!varias) cp.append(linhaC("", "c-sep"));
+  cp.append(linhaC("TOTAL " + reais(c.total), "c-tot"));
+}
+function imprimirConta(mesa, nome){
+  const c = dadosConta(mesa, nome);
+  if (!c.pessoas.size) return;
+  filaImp.push(c);
+  if (!imprimindo) rodaFila();
+}
+let IMP_CONTA = true;
+try{ IMP_CONTA = localStorage.getItem("imp_conta") !== "0"; }catch(e){}
+
 function imprimir(p){
   if (!impressos.includes(p.id)){ impressos.push(p.id); salvaImp(); }
   filaImp.push(p);
@@ -365,6 +414,8 @@ function impressaoAuto(pedidos){
 }
 $("imp-auto").checked = IMP.auto;
 $("imp-larg").value = IMP.larg;
+$("imp-conta").checked = IMP_CONTA;
+$("imp-conta").addEventListener("change", () => { IMP_CONTA = $("imp-conta").checked; try{ localStorage.setItem("imp_conta", IMP_CONTA ? "1" : "0"); }catch(e){} });
 aplicaLargura();
 $("a-imp").addEventListener("click", () => { $("imp-painel").hidden = !$("imp-painel").hidden; });
 $("imp-auto").addEventListener("change", () => {
@@ -606,6 +657,9 @@ function desenharContas(pedidos){
       const v = document.createElement("span"); v.className = "v"; v.textContent = reais(valor);
       const dir = document.createElement("span"); dir.style.display = "flex"; dir.style.gap = "8px"; dir.style.alignItems = "center";
       dir.append(v);
+      const bi = document.createElement("button"); bi.className = "sec"; bi.textContent = "Imprimir"; bi.title = "Imprimir a conta desta pessoa";
+      bi.addEventListener("click", () => imprimirConta(m, nome));
+      dir.append(bi);
       if (nome){
         const b = document.createElement("button"); b.textContent = "Fechar conta";
         b.addEventListener("click", () => fecharConta(m, nome, valor, b));
@@ -617,6 +671,9 @@ function desenharContas(pedidos){
     const a = document.createElement("span"); a.textContent = "Total d" + fem() + " " + ROT.toLowerCase();
     const b2 = document.createElement("span"); b2.textContent = reais(soma);
     tm.append(a, b2); c.append(tm);
+    const im = document.createElement("button"); im.className = "sec"; im.style.marginTop = "8px"; im.textContent = "Imprimir conta d" + fem() + " " + ROT.toLowerCase();
+    im.addEventListener("click", () => imprimirConta(m, null));
+    c.append(im);
     caixa.append(c);
   }
 }
@@ -624,12 +681,14 @@ function desenharContas(pedidos){
 async function fecharConta(mesa, nome, valor, btn){
   const st = $("c-st");
   if (!confirm("Fechar a conta de " + nome + " (" + ROT + " " + mesa + ")? Total " + reais(valor) + ".")) return;
+  const notinha = IMP_CONTA ? dadosConta(mesa, nome) : null;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "\u2026";
   try{
     const {status, dados} = await api("saas-admin-conta", {mesa, nome});
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     st.className = "st ok"; st.textContent = "Conta de " + nome + " fechada (" + reais(valor) + ").";
+    if (notinha && notinha.pessoas.size){ filaImp.push(notinha); if (!imprimindo) rodaFila(); }
     await atualizar();
   }catch(e){
     btn.disabled = false;
@@ -642,6 +701,7 @@ function aplicarRotulo(){
   $("t-fechar").textContent = "Fechar " + ROT.toLowerCase();
   $("f-btn").textContent = "Fechar " + ROT.toLowerCase();
   $("f-mesa").setAttribute("aria-label", ROT);
+  $("imp-conta-rot").textContent = ROT.toLowerCase();
 }
 async function carregarRotulo(){
   try{
@@ -732,6 +792,7 @@ $("f-btn").addEventListener("click", async () => {
   let soma = 0; for (const v of abertas.values()) soma += v;
   const aviso = abertas.size ? " Total em aberto: " + reais(soma) + " (" + abertas.size + (abertas.size === 1 ? " conta)." : " contas).") : "";
   if (!confirm("Fechar " + (fem()==="o" ? "o " : "a ") + ROT + " " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
+  const notinha = IMP_CONTA ? dadosConta(mesa, null) : null;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando\u2026";
   try{
     for (const nome of abertas.keys()){
@@ -745,6 +806,7 @@ $("f-btn").addEventListener("click", async () => {
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     st.className = "st ok";
     st.textContent = dados.atualizado ? ROT + " " + mesa + " fechad" + fem() + "." : ROT + " " + mesa + " j\u00e1 estava fechad" + fem() + ".";
+    if (notinha && notinha.pessoas.size){ filaImp.push(notinha); if (!imprimindo) rodaFila(); }
     await atualizar();
   }catch(e){
     st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel fechar. Tente de novo.";
