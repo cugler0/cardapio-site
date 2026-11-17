@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Limpar pedidos - LaMenu</title>
+<style>
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--grid:#2c2022;--accent:#ff4a3d;--ok:#4cc38a;--surface:#171112}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:900px;margin:0 auto;padding:24px 16px 80px}
+h1{margin:0 0 4px;font-size:1.6rem}
+h2{margin:0 0 12px;font-size:1rem;color:var(--ink)}
+.sub{margin:0 0 6px;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-top:12px}
+input{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:#160504;font:inherit;font-weight:600;cursor:pointer}
+button.sec{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.acoes{display:flex;gap:8px;flex-wrap:wrap}
+a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600}
+.st{font-size:.9rem;min-height:1.2em;margin-top:10px}
+.st.erro{color:var(--accent)}
+.periodos{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.periodos button{background:transparent;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font-weight:600}
+.periodos button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#160504}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.tile .rot{color:var(--muted);font-size:.85rem}
+.tile .num{font-size:1.6rem;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .det{color:var(--muted);font-size:.8rem}
+.barras{position:relative;display:flex;align-items:flex-end;gap:2px;height:170px;padding-top:8px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(to top,transparent 0,transparent 42px,var(--grid) 42px,var(--grid) 43px)}
+.barra{position:relative;flex:1;min-width:3px;height:100%;display:flex;align-items:flex-end;cursor:default}
+.barra i{display:block;width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:0}
+.barra.zero i{background:transparent}
+.barra:hover i,.barra:focus i{filter:brightness(1.25)}
+.barra .dica{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#000;border:1px solid var(--line);color:var(--ink);font-size:.8rem;padding:6px 8px;border-radius:8px;z-index:3;pointer-events:none}
+.barra:hover .dica,.barra:focus .dica{display:block}
+.eixo{display:flex;gap:2px;margin-top:4px;color:var(--muted);font-size:.72rem}
+.eixo span{flex:1;min-width:0;text-align:center;overflow:visible;white-space:nowrap;display:flex;justify-content:center}
+.maxv{color:var(--muted);font-size:.78rem;margin:0 0 4px}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:.8rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+details{margin-top:10px;color:var(--muted);font-size:.88rem}
+details summary{cursor:pointer}
+.vazio{color:var(--muted);padding:6px 0}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.duas{grid-template-columns:1fr}}
+[hidden]{display:none!important}
+footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted)}footer.legal a{color:var(--muted)}
+
+select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.barra-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.barra-acoes .info{flex:1;min-width:180px;color:var(--muted);font-size:.9rem}
+button.perigo{background:var(--accent);color:#160504}
+button:disabled{opacity:.5;cursor:default}
+td.c,th.c{width:34px}
+td.c input,th.c input{width:18px;height:18px;margin:0}
+td .it{display:block;color:var(--muted);font-size:.8rem}
+tr.off td{opacity:.55}
+.aviso{border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--muted);font-size:.88rem;margin:10px 0}
+</style>
+</head>
+<body>
+<main>
+  <section id="login" class="card" style="max-width:460px;margin:40px auto">
+    <h1>Limpar pedidos</h1>
+    <p class="sub">Entre para apagar pedidos antigos.</p>
+    <label>Restaurante (endere&#231;o do bar)<input id="l-rest" autocapitalize="none" autocomplete="off" placeholder="ex.: pizzahug"></label>
+    <label>Chave de acesso<input id="l-chave" type="password" autocomplete="off"></label>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px"><span id="l-st" class="st" role="status"></span><button id="l-entrar">Entrar</button></div>
+  </section>
+
+  <section id="app" hidden>
+    <div class="topo">
+      <div><h1>Limpar pedidos</h1><p class="sub">Apague pedidos antigos que voc&#234; n&#227;o precisa mais.</p></div>
+      <div class="acoes"><a class="voltar" id="voltar" href="relatorio.html">&larr; Relat&#243;rio</a></div>
+    </div>
+    <div class="aviso">S&#243; aparecem pedidos <b>entregues</b> (e mesas com a conta fechada). Apagar &#233; definitivo: eles somem do painel e do relat&#243;rio. Se quiser guardar um registro, baixe a planilha antes.</div>
+    <label>Mostrar pedidos entregues
+      <select id="ate">
+        <option value="mes_passado">Anteriores ao m&#234;s passado</option>
+        <option value="este_mes">Anteriores a este m&#234;s</option>
+        <option value="tudo">Todos os entregues</option>
+      </select>
+    </label>
+    <div class="barra-acoes">
+      <span class="info" id="info"></span>
+      <button class="sec" id="b-csv" disabled>Baixar planilha</button>
+      <button class="perigo" id="b-apagar" disabled>Apagar selecionados</button>
+    </div>
+    <p id="st" class="st" role="status"></p>
+    <div class="card" style="padding:6px 10px">
+      <table>
+        <thead><tr><th class="c"><input type="checkbox" id="todos" aria-label="Selecionar todos"></th><th>Data</th><th>Pedido</th><th class="n">Total</th></tr></thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </div>
+  </section>
+<footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a></p></footer>
+</main>
+<script>
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const $ = id => document.getElementById(id);
+let REST = "", CHAVE = "", LISTA = [];
+const marcados = new Set();
+const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
+const reais = n => Number(n || 0).toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
+const quando = iso => new Date(iso).toLocaleString("pt-BR", {day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit"});
+const titulo = p => p.tipo === "mesa" ? "Mesa " + p.mesa + (p.nome ? " \u00b7 " + p.nome : "") : (p.tipo === "entrega" ? "Entrega" : "Retirada") + (p.nome ? " \u00b7 " + p.nome : "");
+
+async function api(caminho, corpo){
+  const r = await fetch(URL_BASE + caminho, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})});
+  let dados = null; try{ dados = await r.json(); }catch(e){}
+  return {status: r.status, dados};
+}
+function resumo(){
+  let soma = 0; for (const p of LISTA) if (marcados.has(p.id)) soma += p.total;
+  $("info").textContent = LISTA.length ? marcados.size + " de " + LISTA.length + " selecionados" + (marcados.size ? " \u00b7 " + reais(soma) : "") : "";
+  $("b-apagar").disabled = !marcados.size;
+  $("b-csv").disabled = !marcados.size;
+  $("todos").checked = LISTA.length > 0 && marcados.size === LISTA.length;
+  $("todos").indeterminate = marcados.size > 0 && marcados.size < LISTA.length;
+}
+function desenhar(){
+  const tb = $("lista");
+  if (!LISTA.length){
+    const tr = document.createElement("tr"); const td = document.createElement("td"); td.colSpan = 4; td.className = "vazio";
+    td.textContent = "Nenhum pedido para limpar neste per\u00edodo."; tr.append(td); tb.replaceChildren(tr); resumo(); return;
+  }
+  tb.replaceChildren(...LISTA.map(p => {
+    const tr = document.createElement("tr"); tr.className = marcados.has(p.id) ? "" : "off";
+    const c = document.createElement("td"); c.className = "c";
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = marcados.has(p.id); cb.setAttribute("aria-label", "Selecionar pedido de " + quando(p.criado_em));
+    cb.addEventListener("change", () => { if (cb.checked) marcados.add(p.id); else marcados.delete(p.id); tr.className = cb.checked ? "" : "off"; resumo(); });
+    c.append(cb);
+    const d = document.createElement("td"); d.textContent = quando(p.criado_em);
+    const t = document.createElement("td"); t.textContent = titulo(p);
+    const it = document.createElement("span"); it.className = "it"; it.textContent = p.itens; t.append(it);
+    const v = document.createElement("td"); v.className = "n"; v.textContent = reais(p.total);
+    tr.append(c, d, t, v); return tr;
+  }));
+  resumo();
+}
+async function carregar(){
+  const st = $("st"); st.className = "st"; st.textContent = "Carregando\u2026";
+  const {status, dados} = await api("saas-admin-limpeza", {acao: "listar", ate: $("ate").value});
+  if (status === 401) throw new Error("negado");
+  if (status !== 200 || !dados || !Array.isArray(dados.pedidos)) throw new Error("falha");
+  LISTA = dados.pedidos;
+  marcados.clear(); for (const p of LISTA) marcados.add(p.id);
+  st.textContent = "";
+  desenhar();
+}
+$("todos").addEventListener("change", () => {
+  marcados.clear(); if ($("todos").checked) for (const p of LISTA) marcados.add(p.id);
+  desenhar();
+});
+$("ate").addEventListener("change", () => carregar().catch(() => { $("st").className = "st erro"; $("st").textContent = "N\u00e3o foi poss\u00edvel carregar. Tente de novo."; }));
+$("b-csv").addEventListener("click", () => {
+  const esc = v => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+  const linhas = [["Data", "Tipo", "Mesa", "Nome", "Itens", "Total"].map(esc).join(";")];
+  for (const p of LISTA) if (marcados.has(p.id)) linhas.push([quando(p.criado_em), p.tipo, p.tipo === "mesa" ? p.mesa : "", p.nome, p.itens, String(p.total.toFixed(2)).replace(".", ",")].map(esc).join(";"));
+  const blob = new Blob(["\ufeff" + linhas.join("\r\n")], {type: "text/csv;charset=utf-8"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "pedidos-" + REST + ".csv";
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+});
+$("b-apagar").addEventListener("click", async () => {
+  const n = marcados.size; if (!n) return;
+  if (!confirm("Apagar " + n + (n === 1 ? " pedido" : " pedidos") + " para sempre? Eles somem do painel e do relat\u00f3rio. Isso n\u00e3o pode ser desfeito.")) return;
+  const st = $("st"), b = $("b-apagar");
+  b.disabled = true; st.className = "st"; st.textContent = "Apagando\u2026";
+  try{
+    const {status, dados} = await api("saas-admin-limpeza", {acao: "apagar", ids: [...marcados]});
+    if (status === 401) return sair();
+    if (status === 400 && dados && dados.erro) throw new Error(dados.erro);
+    if (status !== 200 || !dados || !dados.ok) throw new Error("N\u00e3o foi poss\u00edvel apagar. Tente de novo.");
+    await carregar();
+    st.className = "st ok"; st.textContent = dados.apagados + (dados.apagados === 1 ? " pedido apagado." : " pedidos apagados.");
+  }catch(e){ st.className = "st erro"; st.textContent = e.message; b.disabled = false; }
+});
+function sair(){
+  try{ sessionStorage.removeItem("chave"); }catch(e){}
+  CHAVE = ""; $("app").hidden = true; $("login").hidden = false; $("l-chave").value = "";
+}
+async function entrar(){
+  const st = $("l-st"), btn = $("l-entrar");
+  REST = limpaSlug($("l-rest").value); CHAVE = $("l-chave").value.trim();
+  if (!REST || !CHAVE){ st.className = "st erro"; st.textContent = "Preencha os dois campos."; return; }
+  btn.disabled = true; st.className = "st"; st.textContent = "Entrando\u2026";
+  $("login").hidden = true; $("app").hidden = false;
+  try{
+    await carregar();
+    try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
+    $("voltar").href = "relatorio.html?r=" + encodeURIComponent(REST);
+    st.textContent = "";
+  }catch(e){
+    $("app").hidden = true; $("login").hidden = false;
+    st.className = "st erro";
+    st.textContent = e.message === "negado" ? "Acesso negado. Confira o restaurante e a chave." : "N\u00e3o foi poss\u00edvel conectar. Tente de novo.";
+  }finally{ btn.disabled = false; }
+}
+$("l-entrar").addEventListener("click", entrar);
+$("l-chave").addEventListener("keydown", e => { if (e.key === "Enter") entrar(); });
+$("l-rest").value = limpaSlug(new URLSearchParams(location.search).get("r")) || (() => { try{ return sessionStorage.getItem("rest") || ""; }catch(e){ return ""; } })();
+try{ const c = sessionStorage.getItem("chave"); if (c && $("l-rest").value){ $("l-chave").value = c; entrar(); } }catch(e){}
+</script>
+<script>
+// Sem plano ativo: so a pagina Meu plano fica disponivel
+(async () => {
+  try{
+    const r = sessionStorage.getItem("rest") || "", c = sessionStorage.getItem("chave") || "";
+    if (!r || !c) return;
+    const resp = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r, chave: c})});
+    const d = await resp.json();
+    if (d && d.nivel === 0) location.replace("plano.html?r=" + encodeURIComponent(r));
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

@@ -107,7 +107,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
         <div class="card"><h2>Por tipo de pedido</h2><table><thead><tr><th>Tipo</th><th class="n">Pedidos</th><th class="n">Valor</th></tr></thead><tbody id="tb-tipos"></tbody></table></div>
         <div class="card"><h2>Pagamento (delivery)</h2><table><thead><tr><th>Forma</th><th class="n">Pedidos</th><th class="n">Valor</th></tr></thead><tbody id="tb-pag"></tbody></table></div>
       </div>
-      <p class="sub" style="margin-top:8px">Conta todos os pedidos registrados no per&#237;odo, inclusive os ainda n&#227;o entregues. Pedidos apagados no painel n&#227;o entram.</p>
+      <p class="sub" style="margin-top:8px">Conta todos os pedidos registrados no per&#237;odo, inclusive os ainda n&#227;o entregues. Pedidos apagados no painel n&#227;o entram. <a id="link-limpeza" href="limpeza.html" style="color:var(--ink)">Limpar pedidos antigos</a></p>
     </div>
   </section>
 <footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a></p></footer>
@@ -200,6 +200,7 @@ async function entrar(){
     await carregar();
     try{ sessionStorage.setItem("rest", REST); sessionStorage.setItem("chave", CHAVE); }catch(e){}
     st.textContent = "";
+    $("link-limpeza").href = "limpeza.html?r=" + encodeURIComponent(REST);
   }catch(e){
     $("app").hidden = true; $("login").hidden = false;
     st.className = "st erro";

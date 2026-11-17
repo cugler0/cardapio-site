@@ -232,6 +232,16 @@ function bip(){
 const tipoDe = p => p.tipo || "mesa";
 const rotuloPedido = p => tipoDe(p) === "mesa" ? ROT + " " + p.mesa : (tipoDe(p) === "entrega" ? "Entrega" : "Retirada");
 
+// Hora do pedido: hoje mostra so a hora; ontem e antes mostram a data
+function quandoPedido(iso){
+  const d = new Date(iso), agora = new Date();
+  const h = d.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  const dia = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dif = Math.round((dia(agora) - dia(d)) / 86400000);
+  if (dif === 0) return h;
+  if (dif === 1) return "ontem " + h;
+  return d.toLocaleDateString("pt-BR", {day: "2-digit", month: "2-digit"}) + " " + h;
+}
 function avisar(novos){
   bip();
   try{
@@ -248,7 +258,7 @@ function cartao(p, destaque){
   const cab = document.createElement("div"); cab.className = "cab";
   const mesa = document.createElement("span"); mesa.className = "mesa"; mesa.textContent = tipoDe(p) === "mesa" ? ROT + " " + p.mesa : String(p.mesa);
   const hora = document.createElement("span"); hora.className = "hora";
-  hora.textContent = new Date(p.criado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  hora.textContent = quandoPedido(p.criado_em);
   cab.append(mesa, hora); d.append(cab);
 
   if (p.nome){ const q = document.createElement("div"); q.className = "quem"; q.textContent = p.nome; d.append(q); }
@@ -503,7 +513,7 @@ function cartaoDelivery(p, destaque){
   const cab = document.createElement("div"); cab.className = "cab";
   const tag = document.createElement("span"); tag.className = "tag" + (ent ? "" : " ret"); tag.textContent = ent ? "ENTREGA" : "RETIRADA";
   const hora = document.createElement("span"); hora.className = "hora";
-  hora.textContent = new Date(p.criado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+  hora.textContent = quandoPedido(p.criado_em);
   cab.append(tag, hora); d.append(cab);
 
   const q = document.createElement("div"); q.className = "mesa"; q.style.fontSize = "1.1rem"; q.style.marginTop = "6px";
