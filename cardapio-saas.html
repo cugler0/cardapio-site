@@ -43,6 +43,11 @@ button:disabled{opacity:.6}
 .sem-mesa .qtd{display:none}
 #barra{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto;display:none;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 10px 18px;background:var(--surface);border-radius:20px;box-shadow:0 2px 6px rgba(60,30,10,.10),0 12px 32px rgba(60,30,10,.18);z-index:5}
 #barra.on{display:flex}
+.chamar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.chamar button{margin:0;padding:10px 16px;border-radius:999px;border:1px solid var(--accent);background:var(--surface);color:var(--accent);font-weight:700;box-shadow:var(--sombra);cursor:pointer}
+.chamar button:disabled{opacity:.55;cursor:default}
+.sem-mesa #chamar{display:none!important}
+#chamar-st{flex-basis:100%;margin:2px 0 0;font-size:.9rem;color:var(--price);min-height:0}
 .mais-op{font-size:.78rem;color:var(--muted);font-weight:600}
 #opc{max-height:88vh;overflow:auto}
 .og{margin-top:16px}
@@ -107,6 +112,11 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
       <p class="sub" id="sub"></p>
     </div>
   </header>
+  <div id="chamar" class="chamar" hidden>
+    <button type="button" id="c-garcom">Chamar gar&#231;om</button>
+    <button type="button" id="c-conta">Pedir a conta</button>
+    <p id="chamar-st" role="status"></p>
+  </div>
   <div id="acoes" class="acoes" hidden></div>
   <p id="func" class="meta" hidden></p>
   <p id="ender" class="meta" hidden></p>
@@ -810,6 +820,29 @@ function encerrada(){
   $("sub").textContent = ROT + (art()==="do" ? " encerrado" : " encerrada") + ". Aproxime o celular da plaquinha " + art() + " " + rot() + " para pedir de novo.";
   if ($("painel").open) $("painel").close();
 }
+
+// ===== Chamar gar\u00e7om / pedir a conta (s\u00f3 na mesa) =====
+async function chamar(tipo){
+  const b = $(tipo === "conta" ? "c-conta" : "c-garcom"), st = $("chamar-st");
+  if (expirado()) return expirou();
+  if (!SESSAO){ st.textContent = "Aguarde um instante e tente de novo."; return; }
+  b.disabled = true; st.style.color = ""; st.textContent = "Enviando\u2026";
+  let nome = ""; try{ nome = sessionStorage.getItem("nome") || ""; }catch(e){}
+  try{
+    const r = await fetch(URL_BASE + "saas-chamar", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({r: REST, mesa: MESA, sessao: SESSAO, tipo, nome})});
+    if (r.status === 403){ let d = null; try{ d = await r.json(); }catch(e){} if (d && d.erro === "mesa encerrada") { encerrada(); return; } throw new Error("x"); }
+    if (!r.ok) throw new Error("x");
+    st.textContent = tipo === "conta" ? "Pedido de conta enviado! J\u00e1 levamos para voc\u00ea." : "Gar\u00e7om chamado! J\u00e1 vamos at\u00e9 " + (art() === "do" ? "o seu " : "a sua ") + rot() + ".";
+    setTimeout(() => { b.disabled = false; }, 60000);
+    setTimeout(() => { if (st.textContent.indexOf("!") > 0) st.textContent = ""; }, 15000);
+  }catch(e){
+    b.disabled = false; st.style.color = "var(--accent)"; st.textContent = "N\u00e3o foi poss\u00edvel chamar. Tente de novo.";
+  }
+}
+$("c-garcom").addEventListener("click", () => chamar("garcom"));
+$("c-conta").addEventListener("click", () => chamar("conta"));
+if (MESA) $("chamar").hidden = false;
 
 abrirSessao();
 carregar();

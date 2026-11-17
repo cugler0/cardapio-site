@@ -26,6 +26,13 @@ button:disabled{opacity:.6;cursor:wait}
 .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pulso{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px}
 .pulso.off{background:var(--accent)}
+#chamados{display:grid;gap:10px;margin:0 0 14px}
+.chamado{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:12px;background:rgba(255,176,0,.12);border:2px solid var(--warn)}
+.chamado.conta{background:rgba(76,195,138,.12);border-color:var(--ok)}
+.chamado strong{font-size:1.15rem}
+.chamado .q{color:var(--muted);font-size:.9rem}
+.chamado.novo{animation:piscar 1s ease-in-out 4}
+@keyframes piscar{50%{transform:scale(1.02)}}
 .colunas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
 @media (max-width:900px){.colunas{grid-template-columns:1fr}}
 .col h2{margin:0 0 10px;font-size:1rem;text-transform:uppercase;letter-spacing:.06em;display:flex;justify-content:space-between}
@@ -151,6 +158,7 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
         <p>Sem isso a impress&#227;o funciona, mas o navegador pede uma confirma&#231;&#227;o a cada pedido. A p&#225;gina precisa ficar aberta para imprimir.</p>
       </details>
     </div>
+    <div id="chamados" aria-live="polite"></div>
     <div class="abas" role="tablist">
       <button class="aba on" id="aba-mesas" data-aba="mesas" role="tab"><span id="t-aba">Mesas</span> <span class="badge" id="b-mesas">0</span></button>
       <button class="aba" id="aba-delivery" data-aba="delivery" role="tab">Delivery <span class="badge" id="b-delivery">0</span></button>
@@ -645,6 +653,46 @@ async function carregarRotulo(){
   }catch(e){}
   aplicarRotulo();
 }
+// ===== Chamados das mesas (gar\u00e7om / conta) =====
+let chamadosConhecidos = null;
+function desenharChamados(lista){
+  const caixa = $("chamados");
+  const novos = chamadosConhecidos ? lista.filter(c => !chamadosConhecidos.has(c.id)) : [];
+  chamadosConhecidos = new Set(lista.map(c => c.id));
+  caixa.replaceChildren(...lista.map(c => {
+    const d = document.createElement("div");
+    d.className = "chamado" + (c.tipo === "conta" ? " conta" : "") + (novos.includes(c) ? " novo" : "");
+    const t = document.createElement("div");
+    const s = document.createElement("strong");
+    s.textContent = ROT + " " + c.mesa + (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om");
+    const min = Math.max(0, Math.round((Date.now() - new Date(c.criado_em).getTime()) / 60000));
+    const q = document.createElement("div"); q.className = "q";
+    q.textContent = (c.nome ? c.nome + " \u00b7 " : "") + (min < 1 ? "agora" : "h\u00e1 " + min + " min");
+    t.append(s, q);
+    const b = document.createElement("button"); b.textContent = "Atendido";
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try{
+        const {status, dados} = await api("saas-admin-chamado", {id: c.id});
+        if (status === 401) return sair();
+        if (status === 200 && dados && dados.ok){ d.remove(); chamadosConhecidos.delete(c.id); return; }
+      }catch(e){}
+      b.disabled = false;
+    });
+    d.append(t, b);
+    return d;
+  }));
+  if (novos.length){
+    bip();
+    try{
+      if ("Notification" in window && Notification.permission === "granted"){
+        const c = novos[0];
+        new Notification(ROT + " " + c.mesa + (c.tipo === "conta" ? " pediu a conta" : " chamou o gar\u00e7om"));
+      }
+    }catch(e){}
+  }
+}
+
 async function atualizar(){
   if (ocupado) return;
   ocupado = true;
@@ -664,6 +712,7 @@ async function atualizar(){
     $("a-nome").textContent = dados.restaurante.nome;
     NOME_BAR = dados.restaurante.nome || "";
     desenhar(pedidos, novosIds);
+    desenharChamados(Array.isArray(dados.chamados) ? dados.chamados : []);
     if (novosPedidos.length) avisar(novosPedidos);
     impressaoAuto(pedidos);
     $("a-pulso").className = "pulso";
