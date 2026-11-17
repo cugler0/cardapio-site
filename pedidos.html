@@ -72,6 +72,10 @@ body.equipe .del,body.equipe #a-menu{display:none!important}
 .pessoa{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
 .pessoa .v{font-weight:600;white-space:nowrap}
 .pessoa{flex-wrap:wrap}
+.dividir{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.9rem;color:var(--muted)}
+.dividir button{padding:4px 12px;font-size:1rem;line-height:1.2}
+.dividir strong{color:var(--ink);min-width:1.5em;text-align:center}
+.dividir .res{color:var(--ink);font-weight:700}
 .pessoa > span:last-child{flex-wrap:wrap;justify-content:flex-end}
 .pessoa button{padding:6px 10px;font-size:.85rem;white-space:nowrap}
 .conta .tm{display:flex;justify-content:space-between;padding-top:8px;border-top:2px solid var(--line);font-weight:700}
@@ -331,6 +335,10 @@ const PAGAMENTOS = {pix_antecipado: "Pix antecipado", pix_entrega: "Pix ao receb
 
 // ---- Impress\u00e3o de notinha (configura\u00e7\u00e3o fica neste aparelho) ----
 let NOME_BAR = "";
+let TAXA = 0; // taxa de servico em %
+const DIVIDIR = {}; // mesa -> em quantas partes dividir
+const r2 = n => Math.round(n * 100) / 100;
+const comTaxa = v => r2(v + v * TAXA / 100);
 const IMP = {auto: false, larg: "80"};
 let impressos = [], filaImp = [], imprimindo = false;
 try{
@@ -406,7 +414,8 @@ function dadosConta(mesa, nome){
     }
   }
   let total = 0; for (const pe of pessoas.values()) total += pe.total;
-  return {__conta: true, mesa: String(mesa), nome: nome == null ? null : nome, pessoas, total, quando: new Date()};
+  return {__conta: true, mesa: String(mesa), nome: nome == null ? null : nome, pessoas, total, taxa: TAXA,
+    partes: nome == null ? Math.max(1, DIVIDIR[mesa] || 1) : 1, quando: new Date()};
 }
 function montarConta(c){
   const cp = $("cupom"); cp.replaceChildren();
@@ -419,10 +428,17 @@ function montarConta(c){
   for (const [n, pe] of c.pessoas){
     if (varias) cp.append(linhaC(n || "(sem nome)", "c-forte"));
     for (const l of pe.linhas.values()) cp.append(linhaC(l.qtd + "x " + l.texto + "  " + reais(l.valor), "c-item"));
-    if (varias){ cp.append(linhaC("Subtotal " + reais(pe.total))); cp.append(linhaC("", "c-sep")); }
+    if (varias){ cp.append(linhaC("Consumo de " + (n || "(sem nome)") + ": " + reais(pe.total))); cp.append(linhaC("", "c-sep")); }
   }
   if (!varias) cp.append(linhaC("", "c-sep"));
-  cp.append(linhaC("TOTAL " + reais(c.total), "c-tot"));
+  const tx = r2(c.total * (c.taxa || 0) / 100);
+  if (tx > 0){
+    cp.append(linhaC("Subtotal " + reais(c.total)));
+    cp.append(linhaC("Taxa de servi\u00e7o (" + String(c.taxa).replace(".", ",") + "%) " + reais(tx)));
+  }
+  const tot = r2(c.total + tx);
+  cp.append(linhaC("TOTAL " + reais(tot), "c-tot"));
+  if (c.partes > 1) cp.append(linhaC("Dividido por " + c.partes + ": " + reais(Math.ceil(tot / c.partes * 100) / 100) + " cada", "c-forte"));
 }
 function imprimirConta(mesa, nome){
   const c = dadosConta(mesa, nome);
@@ -694,15 +710,34 @@ function desenharContas(pedidos){
       dir.append(bi);
       if (nome){
         const b = document.createElement("button"); b.textContent = "Fechar conta";
-        b.addEventListener("click", () => fecharConta(m, nome, valor, b));
+        b.addEventListener("click", () => fecharConta(m, nome, comTaxa(valor), b));
         dir.append(b);
       }
       l.append(n, dir); c.append(l);
     }
-    const tm = document.createElement("div"); tm.className = "tm";
-    const a = document.createElement("span"); a.textContent = "Total d" + fem() + " " + ROT.toLowerCase();
-    const b2 = document.createElement("span"); b2.textContent = reais(soma);
-    tm.append(a, b2); c.append(tm);
+    const linhaT = (rot, val, cls) => {
+      const d = document.createElement("div"); d.className = cls || "pessoa";
+      const a = document.createElement("span"); a.textContent = rot;
+      const b = document.createElement("span"); b.textContent = val;
+      d.append(a, b); c.append(d); return d;
+    };
+    if (TAXA > 0){
+      linhaT("Subtotal", reais(soma)).style.color = "var(--muted)";
+      linhaT("Taxa de servi\u00e7o (" + String(TAXA).replace(".", ",") + "%)", reais(r2(soma * TAXA / 100))).style.color = "var(--muted)";
+    }
+    const total = comTaxa(soma);
+    linhaT("Total d" + fem() + " " + ROT.toLowerCase(), reais(total), "tm");
+    const partes = Math.max(1, Math.min(30, DIVIDIR[m] || 1));
+    const dv = document.createElement("div"); dv.className = "dividir";
+    const lab = document.createElement("span"); lab.textContent = "Dividir por";
+    const menos = document.createElement("button"); menos.className = "sec"; menos.textContent = "\u2212"; menos.setAttribute("aria-label", "Menos pessoas");
+    const qt = document.createElement("strong"); qt.textContent = String(partes);
+    const mais = document.createElement("button"); mais.className = "sec"; mais.textContent = "+"; mais.setAttribute("aria-label", "Mais pessoas");
+    const res = document.createElement("span"); res.className = "res";
+    res.textContent = partes > 1 ? partes + " \u00d7 " + reais(Math.ceil(total / partes * 100) / 100) : "";
+    menos.addEventListener("click", () => { DIVIDIR[m] = Math.max(1, partes - 1); desenharContas(ULTIMOS); });
+    mais.addEventListener("click", () => { DIVIDIR[m] = Math.min(30, partes + 1); desenharContas(ULTIMOS); });
+    dv.append(lab, menos, qt, mais, res); c.append(dv);
     const im = document.createElement("button"); im.className = "sec"; im.style.marginTop = "8px"; im.textContent = "Imprimir conta d" + fem() + " " + ROT.toLowerCase();
     im.addEventListener("click", () => imprimirConta(m, null));
     c.append(im);
@@ -808,6 +843,7 @@ async function atualizar(){
     conhecidos = ids;
     $("a-nome").textContent = dados.restaurante.nome;
     NOME_BAR = dados.restaurante.nome || "";
+    TAXA = Number(dados.restaurante.taxa_servico) || 0;
     desenhar(pedidos, novosIds);
     desenharChamados(Array.isArray(dados.chamados) ? dados.chamados : []);
     if (novosPedidos.length) avisar(novosPedidos);
