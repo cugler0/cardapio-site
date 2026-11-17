@@ -43,6 +43,17 @@ button:disabled{opacity:.6}
 .sem-mesa .qtd{display:none}
 #barra{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:560px;margin:0 auto;display:none;justify-content:space-between;align-items:center;gap:12px;padding:10px 10px 10px 18px;background:var(--surface);border-radius:20px;box-shadow:0 2px 6px rgba(60,30,10,.10),0 12px 32px rgba(60,30,10,.18);z-index:5}
 #barra.on{display:flex}
+.mais-op{font-size:.78rem;color:var(--muted);font-weight:600}
+#opc{max-height:88vh;overflow:auto}
+.og{margin-top:16px}
+.og h3{margin:0;font-size:1.02rem}
+.og .regra{font-size:.82rem;color:var(--muted)}
+label.op{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;color:var(--ink);font-size:.95rem;cursor:pointer}
+label.op input{width:18px;height:18px;margin:0;flex:none}
+label.op .l{display:flex;gap:10px;align-items:center}
+label.op:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+label.op:has(input:disabled){opacity:.5}
+.p-op{display:block;font-size:.82rem;color:var(--muted)}
 .sem-mesa #barra{display:none!important}
 #barra button,.cheio{margin:0;background:var(--accent);color:#fff;border:0;font-weight:700}
 #barra button{padding:12px 20px;border-radius:14px}
@@ -160,6 +171,13 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
     <button id="fim-fechar" style="margin-top:14px">Fechar</button>
   </div>
 </dialog>
+<dialog id="opc">
+  <h2 id="o-nome"></h2>
+  <div id="o-grupos"></div>
+  <p id="o-msg" class="msg" role="status" style="padding:10px 0 0"></p>
+  <button class="cheio" id="o-add" style="margin-top:12px">Adicionar</button>
+  <button id="o-fechar" style="width:100%;margin-top:10px">Voltar</button>
+</dialog>
 <dialog id="info">
   <h2>Informa&#231;&#245;es</h2>
   <p id="i-txt" hidden></p>
@@ -230,14 +248,96 @@ function atualizar(){
   $("b-qtd").textContent = qtd + (qtd === 1 ? " item" : " itens");
   $("b-total").textContent = reais(total);
 }
+const OPC = {}; // id do item -> grupos de op\u00e7\u00f5es
+const baseDe = k => (catalogo[k] && catalogo[k].base) || k;
+function qtdBase(base){ let q = 0; for (const [k, v] of carrinho) if (baseDe(k) === base) q += v; return q; }
+function pintarQtd(base){ const el = document.querySelector('[data-q="' + base + '"]'); if (el) el.textContent = qtdBase(base); }
 function mudar(id, d){
   if (expirado()) return expirou();
-  const q = Math.max(0, Math.min(20, (carrinho.get(id) || 0) + d));
-  if (q) carrinho.set(id, q); else carrinho.delete(id);
-  const el = document.querySelector('[data-q="' + id + '"]');
-  if (el) el.textContent = q;
+  if (d > 0 && OPC[id]) return abrirOpcoes(id);
+  let alvo = id;
+  if (d < 0 && OPC[id]){
+    const ks = [...carrinho.keys()].filter(k => baseDe(k) === id);
+    if (!ks.length) return;
+    alvo = ks[ks.length - 1];
+  }
+  const q = Math.max(0, Math.min(20, (carrinho.get(alvo) || 0) + d));
+  if (q) carrinho.set(alvo, q); else carrinho.delete(alvo);
+  pintarQtd(id);
   atualizar();
 }
+function addVariante(base, sel){
+  const key = base + "|" + JSON.stringify(sel.map(s => [s.grupo, s.nome]));
+  if (!catalogo[key]) catalogo[key] = {nome: catalogo[base].nome, preco: catalogo[base].preco + sel.reduce((a, s) => a + s.preco, 0), base, opcoes: sel};
+  carrinho.set(key, Math.min(20, (carrinho.get(key) || 0) + 1));
+  pintarQtd(base);
+  atualizar();
+}
+let OPC_ATUAL = null;
+function abrirOpcoes(base){
+  OPC_ATUAL = base;
+  const grupos = OPC[base];
+  $("o-nome").textContent = catalogo[base].nome;
+  $("o-msg").textContent = "";
+  const caixa = $("o-grupos"); caixa.replaceChildren();
+  grupos.forEach((g, gi) => {
+    const sec = document.createElement("div"); sec.className = "og";
+    const t = document.createElement("h3"); t.textContent = g.nome;
+    const r = document.createElement("div"); r.className = "regra";
+    r.textContent = g.max === 1 ? (g.min ? "Escolha 1 (obrigat\u00f3rio)" : "Escolha at\u00e9 1 (opcional)") : "Escolha at\u00e9 " + g.max + (g.min ? " (obrigat\u00f3rio)" : " (opcional)");
+    sec.append(t, r);
+    const radio = g.max === 1 && g.min > 0;
+    g.itens.forEach((o, oi) => {
+      const l = document.createElement("label"); l.className = "op";
+      const i = document.createElement("input"); i.type = radio ? "radio" : "checkbox"; i.name = "og" + gi;
+      i.dataset.g = gi; i.dataset.o = oi;
+      const esq = document.createElement("span"); esq.className = "l";
+      const nm = document.createElement("span"); nm.textContent = o.nome;
+      esq.append(i, nm);
+      const pr = document.createElement("span"); pr.textContent = o.preco > 0 ? "+ " + reais(o.preco) : "";
+      l.append(esq, pr); sec.append(l);
+    });
+    caixa.append(sec);
+  });
+  precoOpcoes();
+  $("opc").showModal();
+}
+function escolhasOpcoes(){
+  const grupos = OPC[OPC_ATUAL];
+  return grupos.map((g, gi) => [...document.querySelectorAll('#o-grupos input[data-g="' + gi + '"]:checked')].map(i => g.itens[Number(i.dataset.o)]));
+}
+function precoOpcoes(){
+  const grupos = OPC[OPC_ATUAL];
+  const esc = escolhasOpcoes();
+  grupos.forEach((g, gi) => {
+    if (g.max === 1 && g.min > 0) return;
+    const cheio = esc[gi].length >= g.max;
+    document.querySelectorAll('#o-grupos input[data-g="' + gi + '"]').forEach(i => { i.disabled = cheio && !i.checked; });
+  });
+  const extra = esc.flat().reduce((a, o) => a + o.preco, 0);
+  $("o-add").textContent = "Adicionar \u00b7 " + reais(catalogo[OPC_ATUAL].preco + extra);
+}
+$("o-grupos").addEventListener("change", e => {
+  const i = e.target;
+  if (i.type === "checkbox" && i.checked){
+    const g = OPC[OPC_ATUAL][Number(i.dataset.g)];
+    if (g.max === 1) document.querySelectorAll('#o-grupos input[data-g="' + i.dataset.g + '"]').forEach(x => { if (x !== i) x.checked = false; });
+  }
+  $("o-msg").textContent = "";
+  precoOpcoes();
+});
+$("o-add").addEventListener("click", () => {
+  const grupos = OPC[OPC_ATUAL];
+  const esc = escolhasOpcoes();
+  for (let gi = 0; gi < grupos.length; gi++){
+    if (esc[gi].length < grupos[gi].min){ $("o-msg").textContent = "Escolha " + grupos[gi].nome + "."; return; }
+  }
+  const sel = [];
+  grupos.forEach((g, gi) => esc[gi].forEach(o => sel.push({grupo: g.nome, nome: o.nome, preco: o.preco})));
+  addVariante(OPC_ATUAL, sel);
+  $("opc").close();
+});
+$("o-fechar").addEventListener("click", () => $("opc").close());
 
 // ===== Cabe\u00e7alho: avalia\u00e7\u00e3o, contatos, endere\u00e7o, hor\u00e1rio e pedido m\u00ednimo =====
 const ICONE = {
@@ -386,6 +486,11 @@ async function carregar(){
       if(!cat || !nome) continue;
       const id = "i" + (n++);
       catalogo[id] = {nome, categoria: cat, preco: Number(linha.preco) || 0};
+      const gs = Array.isArray(linha.opcoes) ? linha.opcoes.filter(g => g && g.nome && Array.isArray(g.itens) && g.itens.length).map(g => ({
+        nome: String(g.nome), min: Number(g.min) > 0 ? 1 : 0, max: Math.max(1, Math.min(Number(g.max) || 1, g.itens.length)),
+        itens: g.itens.map(o => ({nome: String(o.nome), preco: Number(o.preco) || 0}))
+      })) : [];
+      if (gs.length) OPC[id] = gs;
       if(!grupos.has(cat)) grupos.set(cat, []);
       grupos.get(cat).push({id, nome, desc: limpa(linha.descricao), foto: limpa(linha.foto), preco: catalogo[id].preco});
     }
@@ -399,7 +504,7 @@ async function carregar(){
       for(const it of itens){
         html += '<div class="item"><div class="esq">' + imagem(it.foto, it.nome) + '<div><div class="nome">' + escapa(it.nome) + '</div>' +
           (it.desc ? '<div class="desc">' + escapa(it.desc) + '</div>' : '') + '</div></div>' +
-          '<div class="dir"><div class="preco">' + reais(it.preco) + '</div>' +
+          '<div class="dir"><div class="preco">' + reais(it.preco) + (OPC[it.id] ? '<div class="mais-op">' + "com op\u00e7\u00f5es" + '</div>' : '') + '</div>' +
           '<div class="qtd"><button data-a="-1" data-k="' + it.id + '" aria-label="Remover um">\u2212</button>' +
           '<span data-q="' + it.id + '">0</span>' +
           '<button data-a="1" data-k="' + it.id + '" aria-label="Adicionar um">+</button></div></div></div>';
@@ -431,7 +536,8 @@ const tsReset = () => { try{ if (window.turnstile && tsId !== null) turnstile.re
 function abrirPainel(){
   let linhas = "";
   for (const [id, q] of carrinho){
-    linhas += '<div class="linha"><span>' + q + 'x ' + escapa(catalogo[id].nome) + '</span><span>' + reais(q * catalogo[id].preco) + '</span></div>';
+    const ops = catalogo[id].opcoes && catalogo[id].opcoes.length ? '<small class="p-op">' + escapa(catalogo[id].opcoes.map(o => o.nome).join(", ")) + '</small>' : '';
+    linhas += '<div class="linha"><span>' + q + 'x ' + escapa(catalogo[id].nome) + ops + '</span><span>' + reais(q * catalogo[id].preco) + '</span></div>';
   }
   $("p-lista").innerHTML = linhas;
   const delivery = MODO === "delivery";
@@ -506,7 +612,7 @@ $("p-enviar").addEventListener("click", async () => {
   const delivery = MODO === "delivery";
   const nome = limpa($("p-nome").value);
   if (!carrinho.size) return;
-  const itens = [...carrinho].map(([id, q]) => ({nome: catalogo[id].nome, qtd: q}));
+  const itens = [...carrinho].map(([id, q]) => { const x = {nome: catalogo[id].nome, qtd: q}; if (catalogo[id].opcoes && catalogo[id].opcoes.length) x.opcoes = catalogo[id].opcoes.map(o => ({grupo: o.grupo, nome: o.nome})); return x; });
   let corpo;
   let tel = "";
   let endereco = "";

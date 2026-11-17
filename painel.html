@@ -15,7 +15,7 @@ h2{margin:28px 0 10px;font-size:1.1rem;color:var(--accent);text-transform:upperc
 .sub{margin:0 0 20px;color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
 label{display:block;font-size:.85rem;color:var(--muted);margin-top:10px}
-input,textarea{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input,textarea,select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -38,6 +38,14 @@ button:disabled{opacity:.6;cursor:wait}
 button.mini{padding:6px 10px;font-size:.8rem;font-weight:500;margin-top:6px}
 .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 [hidden]{display:none!important}
+details.opc{margin-top:14px;border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+details.opc summary{cursor:pointer;font-weight:600}
+.og{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.og .g3{display:grid;grid-template-columns:2fr 1.4fr 1fr;gap:8px}
+@media (max-width:560px){.og .g3{grid-template-columns:1fr}}
+.oprow{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;margin-top:6px}
+.oprow button{padding:9px 12px}
+.og .acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;justify-content:space-between}
 a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
 a.voltar:hover{border-color:var(--accent)}
 a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -144,6 +152,76 @@ async function tratarFoto(id, d){
   return status === 200 && !!dados && dados.ok === true;
 }
 
+// ---- Editor de op\u00e7\u00f5es do item (tamanho, adicionais, borda...) ----
+function botao(texto, cls){ const b = document.createElement("button"); b.type = "button"; b.className = cls || "sec mini"; b.textContent = texto; return b; }
+function editorOpcoes(inicial){
+  const wrap = document.createElement("details"); wrap.className = "opc";
+  const sum = document.createElement("summary");
+  const lista = document.createElement("div");
+  const add = botao("+ Adicionar grupo de op\u00e7\u00f5es");
+  wrap.append(sum, lista, add);
+  const contar = () => {
+    const n = lista.children.length;
+    sum.textContent = n ? "Op\u00e7\u00f5es: " + n + (n === 1 ? " grupo" : " grupos") : "Op\u00e7\u00f5es (tamanho, adicionais, borda...)";
+  };
+  function grupo(g){
+    const box = document.createElement("div"); box.className = "og";
+    const nome = input("text", g.nome, {maxLength: 40, placeholder: "Ex.: Tamanho"});
+    const tipo = document.createElement("select");
+    for (const [v, t] of [["1", "Cliente escolhe 1"], ["n", "Cliente escolhe v\u00e1rias"]]){ const o = document.createElement("option"); o.value = v; o.textContent = t; tipo.append(o); }
+    tipo.value = (Number(g.max) || 1) > 1 ? "n" : "1";
+    const max = input("number", (Number(g.max) || 1) > 1 ? g.max : "", {min: 2, max: 20, placeholder: "Ex.: 3"});
+    const lmax = campo("At\u00e9 quantas?", max);
+    const g3 = document.createElement("div"); g3.className = "g3";
+    g3.append(campo("Nome do grupo", nome), campo("Escolha", tipo), lmax);
+    const ops = document.createElement("div");
+    function op(o){
+      const row = document.createElement("div"); row.className = "oprow";
+      const n = input("text", o.nome, {maxLength: 40, placeholder: "Ex.: Grande"}); n.className = "o-nome";
+      const p = input("text", o.preco ? String(o.preco).replace(".", ",") : "", {inputMode: "decimal", placeholder: "+ R$ 0,00"}); p.className = "o-preco";
+      const x = botao("\u00d7"); x.setAttribute("aria-label", "Remover op\u00e7\u00e3o");
+      x.addEventListener("click", () => row.remove());
+      row.append(campo("Op\u00e7\u00e3o", n), campo("Acr\u00e9scimo", p), x);
+      ops.append(row);
+    }
+    (Array.isArray(g.itens) && g.itens.length ? g.itens : [{}]).forEach(op);
+    const obr = input("checkbox", ""); obr.checked = (Number(g.min) || 0) > 0;
+    const lobr = document.createElement("label"); lobr.className = "chk"; lobr.append(obr, "Obrigat\u00f3rio");
+    const addOp = botao("+ Op\u00e7\u00e3o");
+    const rem = botao("Remover grupo");
+    rem.addEventListener("click", () => { box.remove(); contar(); });
+    addOp.addEventListener("click", () => op({}));
+    const ac = document.createElement("div"); ac.className = "acoes";
+    const esq = document.createElement("div"); esq.style.display = "flex"; esq.style.gap = "8px"; esq.style.flexWrap = "wrap";
+    esq.append(addOp, rem); ac.append(lobr, esq);
+    const vis = () => { lmax.hidden = tipo.value !== "n"; };
+    tipo.addEventListener("change", vis); vis();
+    box.append(g3, ops, ac);
+    box.ler = () => {
+      const itens = [...ops.querySelectorAll(".oprow")].map(r => ({
+        nome: r.querySelector(".o-nome").value.trim(),
+        preco: Number(String(r.querySelector(".o-preco").value || "0").replace(",", "."))
+      })).filter(o => o.nome);
+      return {nome: nome.value.trim(), min: obr.checked ? 1 : 0, max: tipo.value === "n" ? (Number(max.value) || itens.length || 1) : 1, itens};
+    };
+    lista.append(box);
+  }
+  (Array.isArray(inicial) ? inicial : []).forEach(grupo);
+  contar();
+  add.addEventListener("click", () => { grupo({}); wrap.open = true; contar(); });
+  wrap.ler = () => {
+    const gs = [...lista.children].map(b => b.ler()).filter(g => g.nome || g.itens.length);
+    for (const g of gs){
+      if (!g.nome) throw new Error("D\u00ea um nome a cada grupo de op\u00e7\u00f5es.");
+      if (!g.itens.length) throw new Error("O grupo " + g.nome + " precisa de pelo menos uma op\u00e7\u00e3o.");
+      if (g.itens.some(o => !Number.isFinite(o.preco) || o.preco < 0)) throw new Error("Acr\u00e9scimo inv\u00e1lido no grupo " + g.nome + ".");
+      g.max = Math.max(1, Math.min(g.max, g.itens.length, 20));
+    }
+    return gs;
+  };
+  return wrap;
+}
+
 // Monta o formul\u00e1rio de um item (existente ou novo)
 function formItem(item, aoSalvar, textoBotao){
   const box = document.createElement("div");
@@ -191,6 +269,8 @@ function formItem(item, aoSalvar, textoBotao){
     vistaFoto("", removerFoto ? "A foto ser\u00e1 removida quando voc\u00ea salvar." : "Foto opcional. Ela \u00e9 reduzida automaticamente.");
   });
 
+  const opc = editorOpcoes(item.opcoes);
+  box.append(opc);
   const rod = document.createElement("div"); rod.className = "rodape";
   let disp = null;
   if (item.id){
@@ -213,11 +293,13 @@ function formItem(item, aoSalvar, textoBotao){
     if (nome.value.trim().length < 2){ st.className = "st erro"; st.textContent = "Digite o nome."; return; }
     if (!cat.value.trim()){ st.className = "st erro"; st.textContent = "Digite a categoria."; return; }
     if (!Number.isFinite(p) || p < 0){ st.className = "st erro"; st.textContent = "Pre\u00e7o inv\u00e1lido."; return; }
+    let opcoes;
+    try{ opcoes = opc.ler(); }catch(e){ st.className = "st erro"; st.textContent = e.message; return; }
     btn.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
     try{
       const dados = {
         id: item.id, nome: nome.value, descricao: desc.value,
-        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true,
+        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true, opcoes,
         foto_pendente: pendente, remover_foto: removerFoto && !pendente
       };
       const ok = await aoSalvar(dados);

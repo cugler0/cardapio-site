@@ -60,6 +60,7 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 <footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p></footer>
 </main>
 <script>
+const rotuloIt = it => it.nome + (Array.isArray(it.opcoes) && it.opcoes.length ? " (" + it.opcoes.map(o => o.nome).join(", ") + ")" : "");
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const $ = id => document.getElementById(id);
 const reais = n => Number(n).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
@@ -97,7 +98,7 @@ function desenhar(d){
   $("pix-aviso").hidden = !(d.pagamento === "pix_antecipado" && !d.pago_confirmado && d.status !== "entregue");
   $("itens").replaceChildren(...(d.itens || []).map(i => {
     const l = document.createElement("div"); l.className = "linha";
-    l.textContent = i.qtd + "x " + i.nome; return l;
+    l.textContent = i.qtd + "x " + rotuloIt(i); return l;
   }));
   $("l-taxa").hidden = !(d.taxa_entrega > 0);
   $("taxa").textContent = reais(d.taxa_entrega);

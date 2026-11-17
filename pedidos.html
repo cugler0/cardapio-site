@@ -181,6 +181,7 @@ a.voltar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </main>
 <div id="cupom" aria-hidden="true"></div>
 <script>
+const rotuloIt = it => it.nome + (Array.isArray(it.opcoes) && it.opcoes.length ? " (" + it.opcoes.map(o => o.nome).join(", ") + ")" : "");
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const INTERVALO_MS = 5000;
 const $ = id => document.getElementById(id);
@@ -243,7 +244,7 @@ function cartao(p, destaque){
 
   const ul = document.createElement("ul"); ul.className = "itens";
   for (const it of (Array.isArray(p.itens) ? p.itens : [])){
-    const li = document.createElement("li"); li.textContent = it.qtd + "x " + it.nome; ul.append(li);
+    const li = document.createElement("li"); li.textContent = it.qtd + "x " + rotuloIt(it); ul.append(li);
   }
   d.append(ul);
 
@@ -321,7 +322,7 @@ function montarCupom(p){
   if (p.telefone) c.append(linhaC("Tel: " + p.telefone));
   if (tipo === "entrega") c.append(linhaC("End: " + (p.endereco || "") + (p.bairro ? " - " + p.bairro : ""), "c-forte"));
   c.append(linhaC("", "c-sep"));
-  for (const it of (Array.isArray(p.itens) ? p.itens : [])) c.append(linhaC(it.qtd + "x " + it.nome, "c-item"));
+  for (const it of (Array.isArray(p.itens) ? p.itens : [])) c.append(linhaC(it.qtd + "x " + rotuloIt(it), "c-item"));
   c.append(linhaC("", "c-sep"));
   if (p.observacoes){ c.append(linhaC("OBS: " + p.observacoes, "c-forte")); c.append(linhaC("", "c-sep")); }
   const taxa = Number(p.taxa_entrega || 0);
@@ -456,7 +457,7 @@ function cartaoDelivery(p, destaque){
 
   const ul = document.createElement("ul"); ul.className = "itens";
   for (const it of (Array.isArray(p.itens) ? p.itens : [])){
-    const li = document.createElement("li"); li.textContent = it.qtd + "x " + it.nome; ul.append(li);
+    const li = document.createElement("li"); li.textContent = it.qtd + "x " + rotuloIt(it); ul.append(li);
   }
   d.append(ul);
   if (p.observacoes){ const o = document.createElement("div"); o.className = "obs"; o.textContent = "Obs: " + p.observacoes; d.append(o); }
