@@ -75,6 +75,19 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <a class="tile" id="t-perfil" href="perfil.html"><strong>Dados do bar</strong><span>Endere&#231;o, WhatsApp, Instagram, avalia&#231;&#227;o no Google e hor&#225;rio de funcionamento.</span></a>
   </div>
 
+  <h2>Equipe</h2>
+  <div class="card" id="equipe">
+    <p style="margin:0 0 8px"><strong>Chave da equipe</strong></p>
+    <p class="dica" style="margin:0 0 10px">Para gar&#231;ons e cozinha. Com ela, a pessoa entra pela mesma tela de login e s&#243; acessa o painel de pedidos: muda status, atende chamados, fecha contas e imprime. N&#227;o mexe em pre&#231;os, card&#225;pio, plano nem relat&#243;rio, e n&#227;o apaga pedidos.</p>
+    <code id="eq-chave" style="display:block;font-size:1.05rem;padding:10px;border:1px dashed var(--line);border-radius:8px;word-break:break-all;margin-bottom:10px">&#8230;</code>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="eq-copiar" class="sec" type="button" hidden>Copiar</button>
+      <button id="eq-gerar" type="button">Gerar chave</button>
+      <button id="eq-remover" class="sec" type="button" hidden>Desativar</button>
+    </div>
+    <p class="dica" id="eq-st" role="status" style="margin:8px 0 0"></p>
+  </div>
+
   <h2>Seus clientes</h2>
   <div class="grid">
     <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o card&#225;pio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
@@ -98,6 +111,34 @@ const LIMITES = [0, 40, 150, 150, 150]; // por nivel: 0 sem plano, 1 basico, 3 p
 const tetoDe = n => LIMITES[Math.max(0, Math.min(4, n))];
 try{ ROT = sessionStorage.getItem("rot") || "Mesa"; rest = sessionStorage.getItem("rest") || ""; nome = sessionStorage.getItem("nome") || ""; if (!sessionStorage.getItem("chave")) rest = ""; }catch(e){}
 if (!rest){ location.replace("entrar.html"); }
+try{ if (sessionStorage.getItem("papel") === "equipe") location.replace("pedidos.html?r=" + encodeURIComponent(rest)); }catch(e){}
+
+// ===== Chave da equipe (s\u00f3 o dono v\u00ea) =====
+async function equipe(acao){
+  const st = $("eq-st");
+  try{
+    const r = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-equipe", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({r: rest, chave: sessionStorage.getItem("chave") || "", acao})});
+    if (r.status === 401){ $("equipe").hidden = true; return; }
+    const d = await r.json();
+    if (!d || !d.ok) throw new Error("x");
+    const k = d.chave_equipe;
+    $("eq-chave").textContent = k || "Nenhuma chave ativa.";
+    $("eq-copiar").hidden = !k; $("eq-remover").hidden = !k;
+    $("eq-gerar").textContent = k ? "Gerar nova chave" : "Gerar chave";
+    if (acao === "gerar") st.textContent = "Chave nova gerada. A anterior parou de funcionar.";
+    else if (acao === "remover") st.textContent = "Acesso da equipe desativado.";
+    else st.textContent = "";
+  }catch(e){ st.textContent = "N\u00e3o foi poss\u00edvel carregar a chave da equipe."; }
+}
+$("eq-gerar").addEventListener("click", () => {
+  if ($("eq-remover").hidden || confirm("Gerar uma chave nova? A chave atual para de funcionar na hora e a equipe precisa entrar de novo.")) equipe("gerar");
+});
+$("eq-remover").addEventListener("click", () => { if (confirm("Desativar o acesso da equipe? Quem estiver usando a chave sai do painel.")) equipe("remover"); });
+$("eq-copiar").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText($("eq-chave").textContent); $("eq-st").textContent = "Copiada!"; }catch(e){ $("eq-st").textContent = "Selecione a chave e copie."; }
+});
+if (rest) equipe("ver");
 
 $("nome").textContent = nome || rest;
 $("end").textContent = "Endere\u00e7o: " + rest;
@@ -134,6 +175,7 @@ aplicarLimite();
     if (!rest || !chave) return;
     const r = await fetch("https://n8n.automatikai.cloud/webhook/saas-admin-plano", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({r: rest, chave})});
     const d = await r.json();
+    if (d && d.papel === "equipe"){ try{ sessionStorage.setItem("papel", "equipe"); }catch(e){} location.replace("pedidos.html?r=" + encodeURIComponent(rest)); return; }
     if (d && typeof d.nivel === "number") NIVEL = d.nivel;
     if (d && d.rotulo_local){ ROT = d.rotulo_local; sessionStorage.setItem("rot", ROT); }
     aplicarRotulo(); aplicarLimite();

@@ -27,6 +27,7 @@ button:disabled{opacity:.6;cursor:wait}
 .acoes{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pulso{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ok);margin-right:6px}
 .pulso.off{background:var(--accent)}
+body.equipe .del,body.equipe #a-menu{display:none!important}
 #chamados{display:grid;gap:10px;margin:0 0 14px}
 .chamado{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 16px;border-radius:12px;background:rgba(255,176,0,.12);border:2px solid var(--warn)}
 .chamado.conta{background:rgba(76,195,138,.12);border-color:var(--ok)}
@@ -154,7 +155,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
         <p class="sub"><span id="a-pulso" class="pulso"></span><span id="a-status">Conectando&#8230;</span></p>
       </div>
       <div class="acoes">
-        <a class="voltar" href="app.html">&larr; Menu</a>
+        <a class="voltar" id="a-menu" href="app.html">&larr; Menu</a>
         <button class="sec" id="a-imp">Impressora</button>
         <button class="sec tema-btn" id="tema-btn" style="margin:0">Tema</button>
         <button class="sec" id="a-som">Som: ligado</button>
@@ -737,6 +738,11 @@ function aplicarRotulo(){
 async function carregarRotulo(){
   try{
     const {status, dados} = await api("saas-admin-plano", {});
+    if (status === 200 && dados){
+      const eq = dados.papel === "equipe";
+      document.body.classList.toggle("equipe", eq);
+      try{ sessionStorage.setItem("papel", eq ? "equipe" : "dono"); }catch(e){}
+    }
     if (status === 200 && dados && dados.rotulo_local){
       ROT = dados.rotulo_local;
       try{ sessionStorage.setItem("rot", ROT); }catch(e){}

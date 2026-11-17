@@ -75,13 +75,24 @@ $("f").addEventListener("submit", async e => {
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({r, chave})
     });
-    if (resp.status === 401){ st.style.color = "var(--accent)"; st.textContent = "Endereço ou chave incorretos."; return; }
+    if (resp.status === 401){
+      // talvez seja a chave da equipe: ela so abre o painel de pedidos
+      const rp = await fetch(URL_BASE + "saas-admin-plano", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r, chave})});
+      const dp = rp.ok ? await rp.json() : null;
+      if (dp && dp.papel === "equipe"){
+        try{ sessionStorage.setItem("rest", r); sessionStorage.setItem("chave", chave); sessionStorage.setItem("nome", dp.nome || r); sessionStorage.setItem("papel", "equipe"); }catch(err){}
+        location.href = "pedidos.html?r=" + encodeURIComponent(r);
+        return;
+      }
+      st.style.color = "var(--accent)"; st.textContent = "Endereço ou chave incorretos."; return;
+    }
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const d = await resp.json();
     try{
       sessionStorage.setItem("rest", r);
       sessionStorage.setItem("chave", chave);
       sessionStorage.setItem("nome", (d.restaurante && d.restaurante.nome) || r);
+      sessionStorage.setItem("papel", "dono");
     }catch(err){}
     location.href = "app.html";
   }catch(err){
