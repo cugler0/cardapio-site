@@ -98,6 +98,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <div class="linha">
       <label><span id="l-qtd">Quantas mesas?</span><input id="qtd" type="number" inputmode="numeric" min="1" max="500" value="10"></label>
       <button id="gerar">Gerar links</button>
+      <button class="sec" id="qr-imp" type="button">Imprimir QR codes</button>
     </div>
     <p class="dica" id="dica-links">Grave cada link na tag NFC correspondente, ou use no gerador de QR code.</p>
     <div class="links" id="links"></div>
@@ -156,6 +157,7 @@ function aplicarLimite(){
   const max = tetoDe(NIVEL);
   $("qtd").max = String(max || 1);
   $("gerar").disabled = NIVEL === 0;
+  $("qr-imp").disabled = NIVEL === 0;
   let dica = "Grave cada link na tag NFC correspondente, ou use no gerador de QR code.";
   if (NIVEL === 0) dica = "Assine um plano para gerar os links das " + ps + ".";
   else if (NIVEL === 1) dica += " O plano B\u00e1sico permite at\u00e9 " + tetoDe(1) + " " + ps + ". O Profissional chega a " + tetoDe(3) + ".";
@@ -201,6 +203,12 @@ $("sair").addEventListener("click", () => {
   location.href = "index.html";
 });
 
+$("qr-imp").addEventListener("click", () => {
+  if (NIVEL === 0) return;
+  const teto = tetoDe(NIVEL < 0 ? 1 : NIVEL);
+  const n = Math.max(1, Math.min(teto, Number($("qtd").value) || 10));
+  location.href = "qrcodes.html?n=" + n + "&max=" + teto + "&del=" + (NIVEL >= 2 ? "1" : "0");
+});
 $("gerar").addEventListener("click", () => {
   const teto = tetoDe(NIVEL < 0 ? 1 : NIVEL);
   if (NIVEL === 0) return;
