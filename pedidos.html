@@ -339,7 +339,7 @@ function cartao(p, destaque){
     b.addEventListener("click", async () => {
       b.disabled = true;
       try{
-        const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: proximo[0]});
+        const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: proximo[0], setor: SETOR});
         if (status === 401) return sair();
         if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
         await atualizar();
@@ -356,7 +356,7 @@ function cartao(p, destaque){
 async function mudarStatus(p, novo, b){
   b.disabled = true;
   try{
-    const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: novo});
+    const {status, dados} = await api("saas-admin-status", {pedido_id: p.id, status: novo, setor: SETOR});
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
     await atualizar();
@@ -685,7 +685,7 @@ try{ SETOR = ["cozinha", "bar"].includes(localStorage.getItem("setor")) ? localS
 const setorIt = it => it.setor === "bar" ? "bar" : "cozinha";
 function filtrarSetor(lista){
   if (SETOR === "tudo") return lista;
-  return lista.map(p => ({...p, itens: (Array.isArray(p.itens) ? p.itens : []).filter(it => setorIt(it) === SETOR)})).filter(p => p.itens.length);
+  return lista.map(p => ({...p, status: (p.status_setor && p.status_setor[SETOR]) || p.status, itens: (Array.isArray(p.itens) ? p.itens : []).filter(it => setorIt(it) === SETOR)})).filter(p => p.itens.length);
 }
 function desenhar(todos, novosIds){
   const pedidosTodos = todos.filter(p => tipoDe(p) === "mesa");
