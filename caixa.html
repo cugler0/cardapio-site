@@ -2,6 +2,8 @@
 <style>
 [hidden]{display:none!important}
 :root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#f0a43a;--surface:#171112;--on-accent:#160504}
+:root[data-tema="claro"] body{background:radial-gradient(ellipse at 15% -10%,rgba(207,69,38,.08),transparent 55%),var(--bg)}
+[data-tema="claro"] .card{box-shadow:0 1px 2px rgba(60,30,10,.05),0 4px 14px rgba(60,30,10,.06)}
 :root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
@@ -49,8 +51,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{ou
 </head>
 <body>
 <main>
-  <div class="nao-imp">
-    <a class="sec bt" id="voltar" href="app.html" style="margin-bottom:14px">&larr; Voltar</a>
+  <div class="nao-imp" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <a class="sec bt" id="voltar" href="app.html">&larr; Menu</a>
+    <a class="bt" id="ir-pedidos" href="pedidos.html">Pedidos em tempo real</a>
+    <button type="button" class="sec" id="tema-btn" style="margin-left:auto">Tema</button>
   </div>
   <h1>Caixa do dia</h1>
   <p class="sub" id="nome-bar"></p>
@@ -129,8 +133,19 @@ const dataHora = t => { const d = new Date(t); return d.toLocaleDateString("pt-B
 let REST = "", CHAVE = "", NOME = "", PAPEL = "dono", ATUAL = null, timer = null;
 try{ REST = sessionStorage.getItem("rest") || ""; CHAVE = sessionStorage.getItem("chave") || ""; NOME = sessionStorage.getItem("nome") || ""; PAPEL = sessionStorage.getItem("papel") || "dono"; }catch(e){}
 if (!REST || !CHAVE) location.replace("entrar.html");
-$("voltar").href = PAPEL === "equipe" ? "pedidos.html?r=" + encodeURIComponent(REST) : "app.html";
-$("voltar").innerHTML = PAPEL === "equipe" ? "&larr; Pedidos" : "&larr; Menu";
+$("ir-pedidos").href = "pedidos.html?r=" + encodeURIComponent(REST);
+$("voltar").hidden = PAPEL === "equipe";
+(function(){
+  const b = $("tema-btn");
+  const rot = () => { b.textContent = document.documentElement.getAttribute("data-tema") === "escuro" ? "Tema: escuro" : "Tema: claro"; };
+  rot();
+  b.addEventListener("click", () => {
+    const novo = document.documentElement.getAttribute("data-tema") === "escuro" ? "claro" : "escuro";
+    document.documentElement.setAttribute("data-tema", novo);
+    try{ localStorage.setItem("tema", novo); }catch(e){}
+    rot();
+  });
+})();
 $("nome-bar").textContent = NOME || REST;
 
 async function api(corpo){
