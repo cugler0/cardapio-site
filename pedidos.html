@@ -29,7 +29,13 @@ button:disabled{opacity:.6;cursor:wait}
 .pulso.off{background:var(--accent)}
 #setor{width:auto;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-weight:600}
 dialog#lanc{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(620px,94vw);max-height:92vh;overflow:auto;padding:18px}
-dialog#lanc::backdrop{background:rgba(0,0,0,.55)}
+dialog#lanc::backdrop,dialog#pgto::backdrop{background:rgba(0,0,0,.55)}
+dialog#pgto{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(420px,94vw);padding:18px}
+#pgto h2{margin:0 0 4px;font-size:1.15rem}
+#pgto .valor{font-size:1.6rem;font-weight:800;margin:6px 0 2px}
+#pgto .formas{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+#pgto .formas button{padding:14px 10px;font-size:1rem;margin:0}
+#pgto .formas button.sel{outline:3px solid var(--accent);outline-offset:1px}
 #lanc h2{margin:0 0 6px}
 #lanc .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 #lanc .cat{margin:14px 0 4px;font-weight:700;color:var(--muted);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
@@ -181,6 +187,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
           <option value="tudo">Setor: tudo</option><option value="cozinha">S&#243; cozinha</option><option value="bar">S&#243; bar</option>
         </select>
         <a class="voltar" id="a-menu" href="app.html">&larr; Menu</a>
+        <a class="voltar" id="a-caixa" href="caixa.html">Caixa</a>
         <button class="sec" id="a-imp">Impressora</button>
         <button class="sec tema-btn" id="tema-btn" style="margin:0">Tema</button>
         <button class="sec" id="a-som">Som: ligado</button>
@@ -236,6 +243,20 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
       </div>
     </div>
   </section>
+<dialog id="pgto">
+  <h2 id="pg-tit">Fechar conta</h2>
+  <div class="sub" id="pg-sub"></div>
+  <div class="valor" id="pg-valor"></div>
+  <label class="chk" id="pg-taxa-l"><input type="checkbox" id="pg-taxa" checked> <span id="pg-taxa-t">Cobrar taxa de servi&#231;o</span></label>
+  <div class="formas">
+    <button type="button" class="sec" data-f="dinheiro">Dinheiro</button>
+    <button type="button" class="sec" data-f="cartao">Cart&#227;o</button>
+    <button type="button" class="sec" data-f="pix">Pix</button>
+    <button type="button" class="sec" data-f="outro">Outro</button>
+  </div>
+  <p class="st erro" id="pg-st"></p>
+  <div class="rod" style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="sec" type="button" id="pg-cancelar">Cancelar</button><button type="button" id="pg-ok">Confirmar</button></div>
+</dialog>
 <dialog id="lanc">
   <h2>Lan&#231;ar pedido</h2>
   <div class="g2">
@@ -751,11 +772,9 @@ function desenharContas(pedidos){
       const bi = document.createElement("button"); bi.className = "sec"; bi.textContent = "Imprimir"; bi.title = "Imprimir a conta desta pessoa";
       bi.addEventListener("click", () => imprimirConta(m, nome));
       dir.append(bi);
-      if (nome){
-        const b = document.createElement("button"); b.textContent = "Fechar conta";
-        b.addEventListener("click", () => fecharConta(m, nome, comTaxa(valor), b));
-        dir.append(b);
-      }
+      const b = document.createElement("button"); b.textContent = "Fechar conta";
+      b.addEventListener("click", () => fecharConta(m, nome, valor, b));
+      dir.append(b);
       l.append(n, dir); c.append(l);
     }
     const linhaT = (rot, val, cls) => {
@@ -788,16 +807,47 @@ function desenharContas(pedidos){
   }
 }
 
-async function fecharConta(mesa, nome, valor, btn){
+// ===== Forma de pagamento ao fechar conta =====
+function escolherPagamento(titulo, sub, subtotal){
+  return new Promise(res => {
+    const d = $("pgto"); let forma = null;
+    $("pg-tit").textContent = titulo; $("pg-sub").textContent = sub; $("pg-st").textContent = "";
+    $("pg-taxa-l").hidden = !(TAXA > 0);
+    $("pg-taxa").checked = true;
+    $("pg-taxa-t").textContent = "Cobrar taxa de servi\u00e7o (" + String(TAXA).replace(".", ",") + "%)";
+    const mostra = () => { $("pg-valor").textContent = reais($("pg-taxa").checked ? comTaxa(subtotal) : r2(subtotal)); };
+    mostra();
+    $("pg-taxa").onchange = mostra;
+    for (const bt of d.querySelectorAll(".formas button")){
+      bt.classList.remove("sel");
+      bt.onclick = () => { forma = bt.dataset.f; for (const x of d.querySelectorAll(".formas button")) x.classList.toggle("sel", x === bt); $("pg-st").textContent = ""; };
+    }
+    const fim = v => { d.onclose = null; if (d.open) d.close(); res(v); };
+    $("pg-cancelar").onclick = () => fim(null);
+    d.onclose = () => res(null);
+    $("pg-ok").onclick = () => {
+      if (!forma){ $("pg-st").textContent = "Escolha a forma de pagamento."; return; }
+      fim({forma, taxa: TAXA > 0 && $("pg-taxa").checked});
+    };
+    d.showModal();
+  });
+}
+const NOME_FORMA = {dinheiro: "dinheiro", cartao: "cart\u00e3o", pix: "Pix", outro: "outra forma"};
+
+async function fecharConta(mesa, nome, subtotal, btn){
   const st = $("c-st");
-  if (!confirm("Fechar a conta de " + nome + " (" + ROT + " " + mesa + ")? Total " + reais(valor) + ".")) return;
+  const quem = nome || "(sem nome)";
+  const pg = await escolherPagamento("Fechar a conta de " + quem, ROT + " " + mesa, subtotal);
+  if (!pg) return;
+  const valor = pg.taxa ? comTaxa(subtotal) : r2(subtotal);
   const notinha = IMP_CONTA ? dadosConta(mesa, nome) : null;
-  btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + nome + "\u2026";
+  if (notinha && !pg.taxa) notinha.taxa = 0;
+  btn.disabled = true; st.className = "st"; st.textContent = "Fechando a conta de " + quem + "\u2026";
   try{
-    const {status, dados} = await api("saas-admin-conta", {mesa, nome});
+    const {status, dados} = await api("saas-admin-conta", {mesa, nome, forma: pg.forma, taxa: pg.taxa});
     if (status === 401) return sair();
     if (!(status === 200 && dados && dados.ok)) throw new Error("falha");
-    st.className = "st ok"; st.textContent = "Conta de " + nome + " fechada (" + reais(valor) + ").";
+    st.className = "st ok"; st.textContent = "Conta de " + quem + " fechada (" + reais(valor) + " em " + NOME_FORMA[pg.forma] + ").";
     if (notinha && notinha.pessoas.size){ filaImp.push(notinha); if (!imprimindo) rodaFila(); }
     await atualizar();
   }catch(e){
@@ -1023,13 +1073,17 @@ $("f-btn").addEventListener("click", async () => {
   const abertas = contasAbertas(ULTIMOS).get(String(mesa)) || new Map();
   let soma = 0; for (const v of abertas.values()) soma += v;
   const aviso = abertas.size ? " Total em aberto: " + reais(soma) + " (" + abertas.size + (abertas.size === 1 ? " conta)." : " contas).") : "";
-  if (!confirm("Fechar " + (fem()==="o" ? "o " : "a ") + ROT + " " + mesa + "?" + aviso + " O celular dos clientes deixa de aceitar pedidos.")) return;
+  let pg = null;
+  if (abertas.size){
+    pg = await escolherPagamento("Fechar " + (fem()==="o" ? "o " : "a ") + ROT.toLowerCase() + " " + mesa, abertas.size + (abertas.size === 1 ? " conta aberta" : " contas abertas") + ". O celular dos clientes deixa de aceitar pedidos.", soma);
+    if (!pg) return;
+  } else if (!confirm("Fechar " + (fem()==="o" ? "o " : "a ") + ROT + " " + mesa + "? O celular dos clientes deixa de aceitar pedidos.")) return;
   const notinha = IMP_CONTA ? dadosConta(mesa, null) : null;
+  if (notinha && pg && !pg.taxa) notinha.taxa = 0;
   btn.disabled = true; st.className = "st"; st.textContent = "Fechando\u2026";
   try{
-    for (const nome of abertas.keys()){
-      if (!nome) continue;
-      const rc = await api("saas-admin-conta", {mesa, nome});
+    if (pg){
+      const rc = await api("saas-admin-conta", {mesa, todos: true, forma: pg.forma, taxa: pg.taxa});
       if (rc.status === 401) return sair();
       if (!(rc.status === 200 && rc.dados && rc.dados.ok)) throw new Error("falha");
     }

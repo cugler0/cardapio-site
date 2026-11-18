@@ -1,0 +1,272 @@
+<title>Caixa - LaMenu</title>
+<style>
+[hidden]{display:none!important}
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#f0a43a;--surface:#171112;--on-accent:#160504}
+:root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:860px;margin:0 auto;padding:22px 16px 40px}
+h1{margin:0;font-size:1.4rem}
+h2{margin:26px 0 10px;font-size:.95rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.linha{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+label{font-size:.85rem;color:var(--muted)}
+input,select{display:block;margin-top:4px;width:150px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input.lg{width:240px}
+button,a.bt{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.sec{background:transparent!important;border:1px solid var(--line)!important;color:var(--ink)!important}
+button:disabled{opacity:.55;cursor:default}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.st{font-size:.9rem;min-height:1.2em;margin:8px 0 0}
+.st.erro{color:var(--accent)} .st.ok{color:var(--ok)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.tile span{display:block;color:var(--muted);font-size:.82rem}
+.tile strong{display:block;font-size:1.15rem;margin-top:2px;font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
+.total strong{font-size:2rem;font-variant-numeric:tabular-nums}
+.conta{display:grid;grid-template-columns:1fr auto;gap:4px 14px;margin-top:8px;font-variant-numeric:tabular-nums}
+.conta .r{text-align:right}
+.conta .tt{font-weight:800;border-top:1px solid var(--line);padding-top:6px}
+.mv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.mv:last-child{border-bottom:0}
+.mv .m{color:var(--muted)}
+.dif.pos{color:var(--ok)} .dif.neg{color:var(--accent)} .dif.zero{color:var(--muted)}
+.hist{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 14px;align-items:center;font-size:.92rem;font-variant-numeric:tabular-nums}
+.hist .cab{color:var(--muted);font-size:.8rem}
+.vazio{color:var(--muted);font-size:.92rem}
+.so-imp{display:none}
+@media print{
+  body{background:#fff!important;color:#000!important}
+  .nao-imp{display:none!important}
+  .so-imp{display:block}
+  .card{border:1px solid #999;box-shadow:none;background:#fff}
+  .tile{background:#fff;border-color:#bbb}
+  main{max-width:none;padding:0}
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="nao-imp">
+    <a class="sec bt" id="voltar" href="app.html" style="margin-bottom:14px">&larr; Voltar</a>
+  </div>
+  <h1>Caixa do dia</h1>
+  <p class="sub" id="nome-bar"></p>
+  <p class="st" id="st" role="status"></p>
+
+  <section id="fechado" hidden>
+    <div class="card">
+      <strong>O caixa est&#225; fechado.</strong>
+      <p class="sub">Abra o caixa no come&#231;o do expediente. Tudo que for pago a partir da&#237; entra na conta dele.</p>
+      <div class="linha" style="margin-top:12px">
+        <label>Troco na gaveta (R$)<input id="troco" inputmode="decimal" placeholder="0,00"></label>
+        <button id="abrir">Abrir caixa</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="aberto" hidden>
+    <div class="card">
+      <div class="sub" id="desde"></div>
+      <div class="total"><span>Total recebido</span><strong id="v-total"></strong></div>
+      <div class="tiles">
+        <div class="tile"><span>Dinheiro</span><strong id="v-dinheiro"></strong></div>
+        <div class="tile"><span>Cart&#227;o</span><strong id="v-cartao"></strong></div>
+        <div class="tile"><span>Pix</span><strong id="v-pix"></strong></div>
+        <div class="tile"><span>Pix pelo celular</span><strong id="v-pix_app"></strong></div>
+        <div class="tile" id="t-outro"><span>Outros</span><strong id="v-outro"></strong></div>
+      </div>
+      <p class="sub" id="det" style="margin-top:10px"></p>
+    </div>
+
+    <h2>Gaveta (dinheiro)</h2>
+    <div class="card">
+      <div class="conta" id="gaveta"></div>
+    </div>
+
+    <h2 class="nao-imp">Sangria ou refor&#231;o</h2>
+    <div class="card nao-imp">
+      <div class="linha">
+        <label>Tipo<select id="mv-tipo"><option value="sangria">Sangria (retirada)</option><option value="suprimento">Refor&#231;o (colocar troco)</option></select></label>
+        <label>Valor (R$)<input id="mv-valor" inputmode="decimal" placeholder="0,00"></label>
+        <label>Motivo (opcional)<input id="mv-motivo" class="lg" maxlength="80" placeholder="Ex.: pagamento do gelo"></label>
+        <button id="mv-ok">Registrar</button>
+      </div>
+      <div id="movs" style="margin-top:10px"></div>
+    </div>
+
+    <h2 class="nao-imp">Fechar caixa</h2>
+    <div class="card nao-imp">
+      <p class="sub" style="margin-top:0">Conte o dinheiro da gaveta e digite o valor. O sistema mostra se sobrou ou faltou.</p>
+      <div class="linha" style="margin-top:10px">
+        <label>Dinheiro contado (R$)<input id="contado" inputmode="decimal" placeholder="0,00"></label>
+        <button id="fechar">Fechar caixa</button>
+        <button class="sec" id="imprimir" type="button">Imprimir parcial</button>
+      </div>
+      <p class="st" id="prev"></p>
+    </div>
+  </section>
+
+  <section id="resultado" hidden>
+    <h2>Caixa fechado</h2>
+    <div class="card" id="res-box"></div>
+    <div class="linha nao-imp" style="margin-top:10px"><button id="res-imp">Imprimir</button><button class="sec" id="res-ok">Ok</button></div>
+  </section>
+
+  <section class="nao-imp">
+    <h2>Caixas anteriores</h2>
+    <div class="card"><div id="hist"></div></div>
+  </section>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+const reais = n => Number(n || 0).toLocaleString("pt-BR", {style: "currency", currency: "BRL"});
+const num = s => { let x = String(s || "").trim().replace(/[R$\s]/g, ""); if (x.includes(",")) x = x.replace(/\./g, "").replace(",", "."); const n = Number(x); return x && Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN; };
+const dataHora = t => { const d = new Date(t); return d.toLocaleDateString("pt-BR", {day: "2-digit", month: "2-digit"}) + " " + d.toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"}); };
+let REST = "", CHAVE = "", NOME = "", PAPEL = "dono", ATUAL = null, timer = null;
+try{ REST = sessionStorage.getItem("rest") || ""; CHAVE = sessionStorage.getItem("chave") || ""; NOME = sessionStorage.getItem("nome") || ""; PAPEL = sessionStorage.getItem("papel") || "dono"; }catch(e){}
+if (!REST || !CHAVE) location.replace("entrar.html");
+$("voltar").href = PAPEL === "equipe" ? "pedidos.html?r=" + encodeURIComponent(REST) : "app.html";
+$("voltar").innerHTML = PAPEL === "equipe" ? "&larr; Pedidos" : "&larr; Menu";
+$("nome-bar").textContent = NOME || REST;
+
+async function api(corpo){
+  const r = await fetch(URL_BASE + "saas-admin-caixa", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})});
+  let d = null; try{ d = await r.json(); }catch(e){}
+  if (r.status === 401){ location.replace("entrar.html"); throw new Error("Acesso negado"); }
+  if (!r.ok || !d) throw new Error((d && d.erro) || "N\u00e3o foi poss\u00edvel falar com o servidor.");
+  return d;
+}
+function msg(t, cls){ $("st").className = "st " + (cls || ""); $("st").textContent = t || ""; }
+
+function linhas(box, pares){
+  box.replaceChildren();
+  for (const [a, b, cls] of pares){
+    const x = document.createElement("span"); x.textContent = a;
+    const y = document.createElement("span"); y.className = "r"; y.textContent = b;
+    if (cls){ x.classList.add(cls); y.classList.add(cls); }
+    box.append(x, y);
+  }
+}
+function gavetaPares(rs){
+  const p = [["Troco inicial", reais(rs.troco_inicial)], ["Vendas em dinheiro", "+ " + reais(rs.formas.dinheiro)]];
+  if (rs.suprimentos) p.push(["Refor\u00e7os", "+ " + reais(rs.suprimentos)]);
+  if (rs.sangrias) p.push(["Sangrias", "\u2212 " + reais(rs.sangrias)]);
+  p.push(["Deve ter na gaveta", reais(rs.dinheiro_esperado), "tt"]);
+  return p;
+}
+function difTexto(d){
+  if (Math.abs(d) < 0.005) return ["Bateu certinho", "zero"];
+  return d > 0 ? ["Sobrou " + reais(d), "pos"] : ["Faltou " + reais(-d), "neg"];
+}
+
+function desenhar(d){
+  ATUAL = d.aberto;
+  $("fechado").hidden = !!ATUAL; $("aberto").hidden = !ATUAL;
+  if (ATUAL){
+    const rs = ATUAL.resumo;
+    $("desde").textContent = "Aberto desde " + dataHora(ATUAL.aberto_em) + " \u00b7 atualiza sozinho";
+    $("v-total").textContent = reais(rs.total);
+    for (const k of ["dinheiro", "cartao", "pix", "pix_app", "outro"]) $("v-" + k).textContent = reais(rs.formas[k]);
+    $("t-outro").hidden = !rs.formas.outro;
+    const partes = [rs.pedidos + (rs.pedidos === 1 ? " pedido" : " pedidos")];
+    if (rs.entregas) partes.push(reais(rs.entregas) + " de delivery");
+    if (rs.taxa_servico) partes.push(reais(rs.taxa_servico) + " de taxa de servi\u00e7o (j\u00e1 no total)");
+    $("det").textContent = partes.join(" \u00b7 ");
+    linhas($("gaveta"), gavetaPares(rs));
+    const movs = $("movs"); movs.replaceChildren();
+    for (const m of [...ATUAL.movimentos].reverse()){
+      const l = document.createElement("div"); l.className = "mv";
+      const a = document.createElement("span"); a.textContent = (m.tipo === "sangria" ? "Sangria" : "Refor\u00e7o") + (m.motivo ? " \u00b7 " + m.motivo : "");
+      const b = document.createElement("span"); b.className = "m"; b.textContent = (m.tipo === "sangria" ? "\u2212 " : "+ ") + reais(m.valor) + " \u00b7 " + new Date(m.em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+      l.append(a, b); movs.append(l);
+    }
+    previa();
+  }
+  const hist = $("hist"); hist.replaceChildren();
+  if (!d.historico.length){ const v = document.createElement("div"); v.className = "vazio"; v.textContent = "Nenhum caixa fechado ainda."; hist.append(v); return; }
+  const g = document.createElement("div"); g.className = "hist";
+  for (const t of ["Per\u00edodo", "Total", "Diferen\u00e7a", ""]){ const c = document.createElement("span"); c.className = "cab"; c.textContent = t; g.append(c); }
+  for (const c of d.historico){
+    const rs = c.resumo || {formas: {}};
+    const p = document.createElement("span"); p.textContent = dataHora(c.aberto_em) + " \u2192 " + new Date(c.fechado_em).toLocaleTimeString("pt-BR", {hour: "2-digit", minute: "2-digit"});
+    const t = document.createElement("span"); t.textContent = reais(rs.total);
+    const [dt, dc] = difTexto(Number(rs.diferenca) || 0);
+    const df = document.createElement("span"); df.className = "dif " + dc; df.textContent = dt;
+    const b = document.createElement("button"); b.className = "sec"; b.textContent = "Ver"; b.style.padding = "6px 12px";
+    b.addEventListener("click", () => mostrarResultado(c));
+    g.append(p, t, df, b);
+  }
+  hist.append(g);
+}
+function previa(){
+  if (!ATUAL) return;
+  const v = num($("contado").value);
+  if (!$("contado").value.trim() || !(v >= 0)){ $("prev").textContent = ""; return; }
+  const [t, c] = difTexto(v - ATUAL.resumo.dinheiro_esperado);
+  $("prev").className = "st dif " + c; $("prev").textContent = t + ".";
+}
+function mostrarResultado(c){
+  const rs = c.resumo;
+  const box = $("res-box"); box.replaceChildren();
+  const tt = document.createElement("strong"); tt.textContent = (NOME || REST) + " \u00b7 " + dataHora(c.aberto_em) + " at\u00e9 " + dataHora(c.fechado_em); box.append(tt);
+  const g1 = document.createElement("div"); g1.className = "conta";
+  linhas(g1, [["Dinheiro", reais(rs.formas.dinheiro)], ["Cart\u00e3o", reais(rs.formas.cartao)], ["Pix", reais(rs.formas.pix)], ["Pix pelo celular", reais(rs.formas.pix_app)], ...(rs.formas.outro ? [["Outros", reais(rs.formas.outro)]] : []), ["Total recebido", reais(rs.total), "tt"]]);
+  const g2 = document.createElement("div"); g2.className = "conta"; g2.style.marginTop = "14px";
+  const [dt, dc] = difTexto(Number(rs.diferenca) || 0);
+  linhas(g2, [...gavetaPares(rs), ["Contado", reais(rs.contado)], [dt, "", "tt"]]);
+  g2.lastChild.previousSibling.classList.add("dif", dc);
+  box.append(g1, g2);
+  if (rs.taxa_servico){ const p = document.createElement("p"); p.className = "sub"; p.textContent = "Taxa de servi\u00e7o inclu\u00edda: " + reais(rs.taxa_servico); box.append(p); }
+  $("resultado").hidden = false;
+  $("resultado").scrollIntoView({behavior: "smooth"});
+}
+
+async function carregar(){
+  try{ desenhar(await api({acao: "ver"})); if ($("st").textContent === "Carregando\u2026") msg(""); }
+  catch(e){ msg(e.message, "erro"); }
+}
+async function acao(btn, corpo, ok){
+  btn.disabled = true; msg("Salvando\u2026");
+  try{ await api(corpo); msg(ok, "ok"); await carregar(); return true; }
+  catch(e){ msg(e.message, "erro"); return false; }
+  finally{ btn.disabled = false; }
+}
+$("abrir").addEventListener("click", async () => {
+  const v = $("troco").value.trim() ? num($("troco").value) : 0;
+  if (!(v >= 0)) return msg("Digite o troco, por exemplo 100,00.", "erro");
+  if (await acao($("abrir"), {acao: "abrir", troco: v}, "Caixa aberto.")) $("troco").value = "";
+});
+$("mv-ok").addEventListener("click", async () => {
+  const v = num($("mv-valor").value);
+  if (!(v > 0)) return msg("Digite o valor.", "erro");
+  if (await acao($("mv-ok"), {acao: "mov", tipo: $("mv-tipo").value, valor: v, motivo: $("mv-motivo").value.trim()}, "Registrado.")){ $("mv-valor").value = ""; $("mv-motivo").value = ""; }
+});
+$("contado").addEventListener("input", previa);
+$("fechar").addEventListener("click", async () => {
+  const v = num($("contado").value);
+  if (!$("contado").value.trim() || !(v >= 0)) return msg("Digite quanto dinheiro tem na gaveta.", "erro");
+  const [t] = difTexto(v - ATUAL.resumo.dinheiro_esperado);
+  if (!confirm("Fechar o caixa? " + t + ". Depois de fechado n\u00e3o d\u00e1 para mudar.")) return;
+  const id = ATUAL.id;
+  $("fechar").disabled = true; msg("Fechando\u2026");
+  try{
+    await api({acao: "fechar", contado: v});
+    $("contado").value = ""; $("prev").textContent = "";
+    const d = await api({acao: "ver"});
+    desenhar(d); msg("Caixa fechado.", "ok");
+    const c = d.historico.find(x => x.id === id); if (c) mostrarResultado(c);
+  }catch(e){ msg(e.message, "erro"); }
+  finally{ $("fechar").disabled = false; }
+});
+$("imprimir").addEventListener("click", () => window.print());
+$("res-imp").addEventListener("click", () => { document.body.classList.add("imp-res"); window.print(); document.body.classList.remove("imp-res"); });
+$("res-ok").addEventListener("click", () => { $("resultado").hidden = true; });
+if (REST){ msg("Carregando\u2026"); carregar(); timer = setInterval(() => { if (ATUAL && document.visibilityState === "visible") carregar(); }, 30000); }
+</script>
+<style>@media print{body.imp-res #aberto,body.imp-res #fechado,body.imp-res h1,body.imp-res #nome-bar,body.imp-res #st{display:none!important}}</style>
+</body>
+</html>
