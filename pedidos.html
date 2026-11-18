@@ -275,7 +275,10 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 <script>
 const rotuloIt = it => it.nome + (Array.isArray(it.opcoes) && it.opcoes.length ? " (" + it.opcoes.map(o => o.nome).join(", ") + ")" : "");
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
-const INTERVALO_MS = 5000;
+const INTERVALO_MS = 8000;
+// Tela visivel: atualiza a cada 8 s. Escondida (outra aba na frente): a cada 24 s, para ainda tocar o aviso de pedido novo.
+let tiques = 0;
+function tique(){ tiques++; if (!document.hidden || tiques % 3 === 0) atualizar(); }
 const $ = id => document.getElementById(id);
 const reais = n => Number(n).toLocaleString("pt-BR", {style:"currency", currency:"BRL"});
 const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
@@ -1135,7 +1138,7 @@ async function entrar(){
     try{ mostrarAba(sessionStorage.getItem("aba") === "delivery" ? "delivery" : "mesas"); }catch(e){}
     await atualizar();
     clearInterval(timer);
-    timer = setInterval(atualizar, INTERVALO_MS);
+    timer = setInterval(tique, INTERVALO_MS);
     manterTelaLigada();
   }catch(e){
     st.className = "st erro"; st.textContent = "N\u00e3o foi poss\u00edvel conectar. Tente de novo.";
