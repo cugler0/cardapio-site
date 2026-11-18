@@ -36,6 +36,16 @@ button:disabled{opacity:.6;cursor:wait}
 .foto-bloco .col{flex:1;min-width:190px}
 .foto-bloco input[type=file]{padding:8px;font-size:.85rem}
 .foto-bloco .dica{display:block;font-size:.8rem;color:var(--muted);margin-top:4px}
+.ord-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:28px}
+.ord-topo h2{margin:0}
+dialog#ord{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(560px,94vw);max-height:90vh;overflow:auto;padding:18px}
+dialog#ord::backdrop{background:rgba(0,0,0,.55)}
+.oc{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.oc-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--bg);font-weight:700}
+.oi{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px 6px 18px;border-top:1px solid var(--line);font-size:.92rem}
+.oi span,.oc-cab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setas{display:flex;gap:4px;flex:none}
+.setas button{padding:4px 10px;margin:0;font-size:.9rem;line-height:1.2}
 button.mini{padding:6px 10px;font-size:.8rem;font-weight:500;margin-top:6px}
 .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 [hidden]{display:none!important}
@@ -108,7 +118,15 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <h2>Novo item</h2>
     <div class="card" id="novo"></div>
 
+    <div class="ord-topo"><h2>Itens do card&#225;pio</h2><button class="sec" id="ord-abrir" type="button">Mudar a ordem</button></div>
     <div id="lista"></div>
+    <dialog id="ord">
+      <h3 style="margin:0 0 4px">Ordem do card&#225;pio</h3>
+      <p class="sub" style="margin:0 0 12px;font-size:.9rem">Use as setas para subir ou descer as categorias e os itens dentro delas. &#201; assim que o cliente v&#234; no celular.</p>
+      <div id="ord-lista"></div>
+      <p class="st" id="ord-st" role="status"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="sec" type="button" id="ord-cancelar">Cancelar</button><button type="button" id="ord-salvar">Salvar ordem</button></div>
+    </dialog>
   </section>
 <footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p><p><button type="button" class="tema-btn" id="tema-btn">Tema</button></p></footer>
 </main>
@@ -201,20 +219,36 @@ function editorOpcoes(inicial){
       const p = input("text", o.preco ? String(o.preco).replace(".", ",") : "", {inputMode: "decimal", placeholder: "+ R$ 0,00"}); p.className = "o-preco";
       const x = botao("\u00d7"); x.setAttribute("aria-label", "Remover op\u00e7\u00e3o");
       x.addEventListener("click", () => row.remove());
-      row.append(campo("Op\u00e7\u00e3o", n), campo("Acr\u00e9scimo", p), x);
+      const cp = campo("Acr\u00e9scimo", p);
+      const rot = [...cp.childNodes].find(x => x.nodeType === 3 || (x.tagName === "SPAN"));
+      if (rot && rot.nodeType === 3){ const s = document.createElement("span"); s.className = "o-rot-preco"; s.textContent = rot.nodeValue; rot.replaceWith(s); }
+      else if (rot) rot.classList.add("o-rot-preco");
+      row.append(campo("Op\u00e7\u00e3o", n), cp, x);
       ops.append(row);
     }
     (Array.isArray(g.itens) && g.itens.length ? g.itens : [{}]).forEach(op);
     const obr = input("checkbox", ""); obr.checked = (Number(g.min) || 0) > 0;
     const lobr = document.createElement("label"); lobr.className = "chk"; lobr.append(obr, "Obrigat\u00f3rio");
+    const mai = input("checkbox", ""); mai.checked = g.regra === "maior";
+    const lmai = document.createElement("label"); lmai.className = "chk";
+    lmai.append(mai, "Cobrar s\u00f3 a op\u00e7\u00e3o mais cara (pizza meio a meio)");
+    lmai.title = "Cada op\u00e7\u00e3o leva o pre\u00e7o cheio. Se o cliente escolher 2 sabores, paga s\u00f3 o mais caro.";
     const addOp = botao("+ Op\u00e7\u00e3o");
     const rem = botao("Remover grupo");
     rem.addEventListener("click", () => { box.remove(); contar(); });
-    addOp.addEventListener("click", () => op({}));
+    addOp.addEventListener("click", () => { op({}); vis(); });
     const ac = document.createElement("div"); ac.className = "acoes";
     const esq = document.createElement("div"); esq.style.display = "flex"; esq.style.gap = "8px"; esq.style.flexWrap = "wrap";
-    esq.append(addOp, rem); ac.append(lobr, esq);
-    const vis = () => { lmax.hidden = tipo.value !== "n"; };
+    esq.append(addOp, rem);
+    const chks = document.createElement("div"); chks.style.display = "flex"; chks.style.gap = "4px 18px"; chks.style.flexWrap = "wrap";
+    chks.append(lobr, lmai); ac.append(chks, esq);
+    const vis = () => {
+      lmax.hidden = tipo.value !== "n"; lmai.hidden = tipo.value !== "n";
+      const m = tipo.value === "n" && mai.checked;
+      ops.querySelectorAll(".o-rot-preco").forEach(s => { s.textContent = m ? "Pre\u00e7o" : "Acr\u00e9scimo"; });
+      ops.querySelectorAll(".o-preco").forEach(p => { p.placeholder = m ? "R$ 0,00" : "+ R$ 0,00"; });
+    };
+    mai.addEventListener("change", vis);
     tipo.addEventListener("change", vis); vis();
     box.append(g3, ops, ac);
     box.ler = () => {
@@ -222,7 +256,9 @@ function editorOpcoes(inicial){
         nome: r.querySelector(".o-nome").value.trim(),
         preco: Number(String(r.querySelector(".o-preco").value || "0").replace(",", "."))
       })).filter(o => o.nome);
-      return {nome: nome.value.trim(), min: obr.checked ? 1 : 0, max: tipo.value === "n" ? (Number(max.value) || itens.length || 1) : 1, itens};
+      const gr = {nome: nome.value.trim(), min: obr.checked ? 1 : 0, max: tipo.value === "n" ? (Number(max.value) || itens.length || 1) : 1, itens};
+      if (tipo.value === "n" && mai.checked) gr.regra = "maior";
+      return gr;
     };
     lista.append(box);
   }
@@ -340,6 +376,8 @@ function formItem(item, aoSalvar, textoBotao){
 }
 
 function desenhar(itens){
+  itens = [...itens].sort((a, b) => (Number(a.ordem) || 0) - (Number(b.ordem) || 0));
+  ITENS = itens;
   const grupos = new Map();
   for (const it of itens){
     const c = it.categoria || "sem categoria";
@@ -393,6 +431,62 @@ function desenhar(itens){
     return true;
   }, "Adicionar"));
 }
+
+// ---- Ordem do cardapio (categorias e itens) ----
+let ITENS = [], ORD = [];
+function ordGrupos(){
+  const m = new Map();
+  for (const it of ITENS){ const c = it.categoria || "sem categoria"; if (!m.has(c)) m.set(c, []); m.get(c).push({id: it.id, nome: it.nome}); }
+  return [...m].map(([nome, itens]) => ({nome, itens}));
+}
+function setas(onUp, onDown, primeiro, ultimo, rot){
+  const s = document.createElement("span"); s.className = "setas";
+  const u = document.createElement("button"); u.type = "button"; u.className = "sec"; u.textContent = "\u2191"; u.disabled = primeiro; u.setAttribute("aria-label", "Subir " + rot);
+  const d = document.createElement("button"); d.type = "button"; d.className = "sec"; d.textContent = "\u2193"; d.disabled = ultimo; d.setAttribute("aria-label", "Descer " + rot);
+  u.addEventListener("click", onUp); d.addEventListener("click", onDown);
+  s.append(u, d); return s;
+}
+const troca = (arr, i, k) => { const x = arr[i]; arr[i] = arr[k]; arr[k] = x; };
+function ordDesenhar(){
+  const box = $("ord-lista"); box.replaceChildren();
+  ORD.forEach((g, gi) => {
+    const c = document.createElement("div"); c.className = "oc";
+    const cab = document.createElement("div"); cab.className = "oc-cab";
+    const n = document.createElement("span"); n.textContent = g.nome;
+    cab.append(n, setas(() => { troca(ORD, gi, gi - 1); ordDesenhar(); }, () => { troca(ORD, gi, gi + 1); ordDesenhar(); }, gi === 0, gi === ORD.length - 1, "categoria " + g.nome));
+    c.append(cab);
+    g.itens.forEach((it, ii) => {
+      const l = document.createElement("div"); l.className = "oi";
+      const s = document.createElement("span"); s.textContent = it.nome;
+      l.append(s, setas(() => { troca(g.itens, ii, ii - 1); ordDesenhar(); }, () => { troca(g.itens, ii, ii + 1); ordDesenhar(); }, ii === 0, ii === g.itens.length - 1, it.nome));
+      c.append(l);
+    });
+    box.append(c);
+  });
+}
+$("ord-abrir").addEventListener("click", () => {
+  ORD = ordGrupos();
+  $("ord-st").className = "st"; $("ord-st").textContent = ORD.length ? "" : "Cadastre itens primeiro.";
+  ordDesenhar();
+  $("ord").showModal();
+});
+$("ord-cancelar").addEventListener("click", () => $("ord").close());
+$("ord-salvar").addEventListener("click", async () => {
+  const b = $("ord-salvar"), st = $("ord-st");
+  const itens = []; let k = 0;
+  for (const g of ORD) for (const it of g.itens) itens.push({id: it.id, ordem: (k++) * 10});
+  if (!itens.length) return;
+  b.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
+  try{
+    const {status, dados} = await api("saas-admin-ordem", {itens});
+    if (status === 401){ sair(); return; }
+    if (!(status === 200 && dados && dados.ok)) throw new Error((dados && dados.erro) || "N\u00e3o foi poss\u00edvel salvar.");
+    $("ord").close();
+    await carregar();
+    $("aviso-foto").className = "st ok"; $("aviso-foto").textContent = "Ordem salva. O card\u00e1pio dos clientes atualiza em at\u00e9 1 minuto.";
+  }catch(e){ st.className = "st erro"; st.textContent = e.message; }
+  finally{ b.disabled = false; }
+});
 
 // ---- Logo do estabelecimento ----
 let logoPendente = null;

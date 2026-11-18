@@ -963,11 +963,11 @@ function lnOpcoes(it, linha){
   const box = document.createElement("div"); box.className = "ops";
   it.opcoes.forEach((g, gi) => {
     const t = document.createElement("div"); t.className = "gt";
-    t.textContent = g.nome + (g.max > 1 ? " (at\u00e9 " + g.max + ")" : "") + (g.min ? " *" : ""); box.append(t);
+    t.textContent = g.nome + (g.max > 1 ? " (at\u00e9 " + g.max + ")" : "") + (g.min ? " *" : "") + (g.maior ? " \u00b7 cobra o mais caro" : ""); box.append(t);
     g.itens.forEach((o, oi) => {
       const l = document.createElement("label");
       const i = document.createElement("input"); i.type = g.max === 1 ? "radio" : "checkbox"; i.name = "lno" + gi; i.dataset.g = gi; i.dataset.o = oi;
-      l.append(i, o.nome + (o.preco > 0 ? " (+ " + reais(o.preco) + ")" : "")); box.append(l);
+      l.append(i, o.nome + (o.preco > 0 ? (g.maior ? " (" + reais(o.preco) + ")" : " (+ " + reais(o.preco) + ")") : "")); box.append(l);
     });
   });
   const ok = document.createElement("button"); ok.type = "button"; ok.textContent = "Adicionar"; ok.style.marginTop = "8px";
@@ -979,7 +979,8 @@ function lnOpcoes(it, linha){
       const marc = [...box.querySelectorAll('input[data-g="' + gi + '"]:checked')].map(i => g.itens[Number(i.dataset.o)]);
       if (marc.length < g.min){ msg.textContent = "Escolha " + g.nome; return; }
       if (marc.length > g.max){ msg.textContent = "No m\u00e1ximo " + g.max + " em " + g.nome; return; }
-      marc.forEach(o => sel.push({grupo: g.nome, nome: o.nome, preco: o.preco}));
+      const caro = g.maior && marc.length ? marc.reduce((a, o) => o.preco > a.preco ? o : a, marc[0]) : null;
+      marc.forEach(o => sel.push({grupo: g.nome, nome: o.nome, preco: caro ? (o === caro ? o.preco : 0) : o.preco}));
     }
     lnAdd(it, sel); box.remove(); LN_ABERTO = null;
   });
@@ -995,7 +996,8 @@ function lnLista(){
   for (const it of lista){
     if (it.categoria !== cat){ cat = it.categoria; const c = document.createElement("div"); c.className = "cat"; c.textContent = cat; caixa.append(c); }
     const d = document.createElement("div"); d.className = "it";
-    const n = document.createElement("span"); n.textContent = it.nome + " \u00b7 " + reais(it.preco) + (it.opcoes.length ? " \u00b7 com op\u00e7\u00f5es" : "");
+    const n = document.createElement("span"); const ap = it.preco + it.opcoes.filter(g => g.min > 0).reduce((a, g) => a + Math.min(...g.itens.map(o => o.preco)), 0);
+    n.textContent = it.nome + " \u00b7 " + (ap > it.preco ? "a partir de " : "") + reais(ap) + (it.opcoes.length ? " \u00b7 com op\u00e7\u00f5es" : "");
     const b = document.createElement("button"); b.type = "button"; b.textContent = "+";
     b.addEventListener("click", () => it.opcoes.length ? lnOpcoes(it, d) : lnAdd(it, []));
     d.append(n, b); caixa.append(d);
@@ -1015,7 +1017,7 @@ $("a-lancar").addEventListener("click", async () => {
     const cap = s => { s = String(s || "").trim(); return s.charAt(0).toUpperCase() + s.slice(1); };
     LN_ITENS = (d.itens || []).filter(i => i.disponivel).sort((a, b) => cap(a.categoria).localeCompare(cap(b.categoria), "pt-BR") || (a.ordem - b.ordem))
       .map(i => ({nome: i.nome, categoria: cap(i.categoria), preco: Number(i.preco) || 0,
-        opcoes: Array.isArray(i.opcoes) ? i.opcoes.filter(g => g && g.nome && Array.isArray(g.itens) && g.itens.length).map(g => ({nome: String(g.nome), min: Number(g.min) > 0 ? 1 : 0, max: Math.max(1, Math.min(Number(g.max) || 1, g.itens.length)), itens: g.itens.map(o => ({nome: String(o.nome), preco: Number(o.preco) || 0}))})) : []}));
+        opcoes: Array.isArray(i.opcoes) ? i.opcoes.filter(g => g && g.nome && Array.isArray(g.itens) && g.itens.length).map(g => ({nome: String(g.nome), min: Number(g.min) > 0 ? 1 : 0, max: Math.max(1, Math.min(Number(g.max) || 1, g.itens.length)), itens: g.itens.map(o => ({nome: String(o.nome), preco: Number(o.preco) || 0})), maior: g.regra === "maior"})) : []}));
     lnLista();
     $("ln-mesa").focus();
   }catch(e){ $("ln-lista").textContent = "N\u00e3o foi poss\u00edvel carregar o card\u00e1pio."; }
