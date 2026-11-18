@@ -19,7 +19,7 @@ label{display:block;font-size:.85rem;color:var(--muted);margin-top:10px}
 input,textarea,select{width:100%;margin-top:4px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .grid{display:grid;grid-template-columns:2fr 1fr;gap:10px}
-.grid3{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:10px}
 @media (max-width:560px){.grid,.grid3{grid-template-columns:1fr}}
 .rodape{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;flex-wrap:wrap}
 .chk{display:flex;align-items:center;gap:8px;margin:0;color:var(--ink);font-size:.95rem}
@@ -254,7 +254,11 @@ function formItem(item, aoSalvar, textoBotao){
   const g = document.createElement("div"); g.className = "grid";
   g.append(campo("Nome", nome), campo("Pre\u00e7o (R$)", preco));
   const g2 = document.createElement("div"); g2.className = "grid3";
-  g2.append(campo("Descri\u00e7\u00e3o", desc), campo("Categoria", cat));
+  const setor = document.createElement("select");
+  for (const [v, t] of [["", "Autom\u00e1tico"], ["cozinha", "Cozinha"], ["bar", "Bar"]]){ const o = document.createElement("option"); o.value = v; o.textContent = t; setor.append(o); }
+  setor.value = item.setor === "bar" || item.setor === "cozinha" ? item.setor : "";
+  setor.title = "Para onde o pedido deste item vai. Autom\u00e1tico: bebidas v\u00e3o para o bar, o resto para a cozinha.";
+  g2.append(campo("Descri\u00e7\u00e3o", desc), campo("Categoria", cat), campo("Setor", setor));
   box.append(g, g2);
 
   const fb = document.createElement("div"); fb.className = "foto-bloco";
@@ -319,7 +323,7 @@ function formItem(item, aoSalvar, textoBotao){
     try{
       const dados = {
         id: item.id, nome: nome.value, descricao: desc.value,
-        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true, opcoes,
+        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true, opcoes, setor: setor.value || null,
         foto_pendente: pendente, remover_foto: removerFoto && !pendente
       };
       const ok = await aoSalvar(dados);
