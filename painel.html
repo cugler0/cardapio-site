@@ -38,6 +38,17 @@ button:disabled{opacity:.6;cursor:wait}
 .foto-bloco .dica{display:block;font-size:.8rem;color:var(--muted);margin-top:4px}
 .ord-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:28px}
 .ord-topo h2{margin:0}
+dialog#imp{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(760px,96vw);max-height:92vh;overflow:auto;padding:18px}
+dialog#imp::backdrop{background:rgba(0,0,0,.55)}
+#imp-prev img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.imp-l{display:grid;grid-template-columns:28px minmax(0,1fr) minmax(0,1.6fr) 110px;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid var(--line)}
+.imp-l:first-child{border-top:0}
+.imp-l input[type=text]{margin:0;padding:8px 10px;font-size:.9rem}
+.imp-l input[type=checkbox]{width:20px;height:20px;margin:0}
+.imp-l .d{grid-column:2 / -1;font-size:.82rem;color:var(--muted)}
+.imp-l.falta input.pr{border-color:var(--accent)}
+.imp-l.off{opacity:.45}
+@media (max-width:560px){.imp-l{grid-template-columns:28px minmax(0,1fr) 96px}.imp-l .cat{grid-column:2 / -1;order:-1}}
 dialog#ord{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(560px,94vw);max-height:90vh;overflow:auto;padding:18px}
 dialog#ord::backdrop{background:rgba(0,0,0,.55)}
 .oc{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
@@ -118,8 +129,22 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <h2>Novo item</h2>
     <div class="card" id="novo"></div>
 
-    <div class="ord-topo"><h2>Itens do card&#225;pio</h2><button class="sec" id="ord-abrir" type="button">Mudar a ordem</button></div>
+    <div class="ord-topo"><h2>Itens do card&#225;pio</h2><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="sec" id="imp-abrir" type="button">Importar de foto</button><button class="sec" id="ord-abrir" type="button">Mudar a ordem</button></span></div>
     <div id="lista"></div>
+    <dialog id="imp">
+      <h3 style="margin:0 0 4px">Importar card&#225;pio de foto</h3>
+      <div id="imp-p1">
+        <p class="sub" style="margin:0 0 12px;font-size:.9rem">Tire foto do card&#225;pio impresso (at&#233; 4 fotos, uma por p&#225;gina). Foto reta, com boa luz e os pre&#231;os leg&#237;veis. A leitura leva at&#233; 1 minuto.</p>
+        <input type="file" id="imp-fotos" accept="image/*" multiple>
+        <div id="imp-prev" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"></div>
+      </div>
+      <div id="imp-p2" hidden>
+        <p class="sub" style="margin:0 0 10px;font-size:.9rem">Confira tudo antes de adicionar: a leitura pode errar. Pre&#231;o em branco precisa ser preenchido. Desmarque o que n&#227;o quiser.</p>
+        <div id="imp-lista" style="max-height:52vh;overflow:auto;border:1px solid var(--line);border-radius:12px"></div>
+      </div>
+      <p class="st" id="imp-st" role="status"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="sec" type="button" id="imp-cancelar">Cancelar</button><button type="button" id="imp-ok">Ler fotos</button></div>
+    </dialog>
     <dialog id="ord">
       <h3 style="margin:0 0 4px">Ordem do card&#225;pio</h3>
       <p class="sub" style="margin:0 0 12px;font-size:.9rem">Use as setas para subir ou descer as categorias e os itens dentro delas. &#201; assim que o cliente v&#234; no celular.</p>
@@ -431,6 +456,103 @@ function desenhar(itens){
     return true;
   }, "Adicionar"));
 }
+
+// ---- Importar cardapio de foto (IA) ----
+let IMP_FOTOS = [], IMP_ITENS = [];
+async function fotoCardapio(arquivo){
+  const url = URL.createObjectURL(arquivo);
+  try{
+    const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => falha(new Error("img")); i.src = url; });
+    const esc = Math.min(1, 1800 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas");
+    c.width = Math.round(img.naturalWidth * esc); c.height = Math.round(img.naturalHeight * esc);
+    const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+    let q = 0.85, s = "";
+    for (let k = 0; k < 5; k++){ s = c.toDataURL("image/jpeg", q); if (s.length < 1400000) break; q -= 0.12; }
+    return s;
+  } finally { URL.revokeObjectURL(url); }
+}
+function impPasso(n){
+  $("imp-p1").hidden = n !== 1; $("imp-p2").hidden = n !== 2;
+  $("imp-ok").textContent = n === 1 ? "Ler fotos" : "Adicionar itens";
+}
+function impContar(){
+  const n = IMP_ITENS.filter(i => i.on).length;
+  if (!$("imp-p2").hidden) $("imp-ok").textContent = "Adicionar " + n + (n === 1 ? " item" : " itens");
+}
+function impDesenhar(){
+  const box = $("imp-lista"); box.replaceChildren();
+  IMP_ITENS.forEach(it => {
+    const l = document.createElement("div"); l.className = "imp-l";
+    const ck = input("checkbox", ""); ck.checked = it.on; ck.setAttribute("aria-label", "Incluir " + it.nome);
+    const cat = input("text", it.categoria); cat.className = "cat"; cat.placeholder = "Categoria"; cat.setAttribute("aria-label", "Categoria");
+    const nm = input("text", it.nome); nm.placeholder = "Nome"; nm.setAttribute("aria-label", "Nome");
+    const pr = input("text", it.preco == null ? "" : String(it.preco.toFixed(2)).replace(".", ",")); pr.className = "pr"; pr.placeholder = "R$"; pr.inputMode = "decimal"; pr.setAttribute("aria-label", "Pre\u00e7o");
+    const marca = () => { l.classList.toggle("off", !it.on); l.classList.toggle("falta", it.on && !(precoNum(pr.value) >= 0)); };
+    ck.addEventListener("change", () => { it.on = ck.checked; marca(); impContar(); });
+    cat.addEventListener("input", () => { it.categoria = cat.value; });
+    nm.addEventListener("input", () => { it.nome = nm.value; });
+    pr.addEventListener("input", () => { it.precoTxt = pr.value; marca(); });
+    it.precoTxt = pr.value;
+    l.append(ck, cat, nm, pr);
+    if (it.descricao){ const d = document.createElement("div"); d.className = "d"; d.textContent = it.descricao; l.append(d); }
+    marca(); box.append(l);
+  });
+  impContar();
+}
+const precoNum = v => { const s = String(v || "").replace(/[R$\s]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."); const n = Number(s); return s && Number.isFinite(n) ? n : NaN; };
+$("imp-abrir").addEventListener("click", () => {
+  IMP_FOTOS = []; IMP_ITENS = []; $("imp-fotos").value = ""; $("imp-prev").replaceChildren();
+  $("imp-st").className = "st"; $("imp-st").textContent = ""; $("imp-ok").disabled = false;
+  impPasso(1); $("imp").showModal();
+});
+$("imp-cancelar").addEventListener("click", () => $("imp").close());
+$("imp-fotos").addEventListener("change", async () => {
+  const arqs = [...$("imp-fotos").files].slice(0, 4);
+  const st = $("imp-st"); st.className = "st"; st.textContent = "Preparando as fotos\u2026";
+  IMP_FOTOS = []; $("imp-prev").replaceChildren();
+  try{
+    for (const a of arqs){ const f = await fotoCardapio(a); IMP_FOTOS.push(f); const im = document.createElement("img"); im.src = f; im.alt = "Foto do card\u00e1pio"; $("imp-prev").append(im); }
+    st.textContent = $("imp-fotos").files.length > 4 ? "Usando s\u00f3 as 4 primeiras fotos." : "";
+  }catch(e){ st.className = "st erro"; st.textContent = "N\u00e3o consegui abrir uma das fotos."; }
+});
+$("imp-ok").addEventListener("click", async () => {
+  const st = $("imp-st"), b = $("imp-ok");
+  if (!$("imp-p1").hidden){
+    if (!IMP_FOTOS.length){ st.className = "st erro"; st.textContent = "Escolha pelo menos uma foto."; return; }
+    b.disabled = true; st.className = "st"; st.textContent = "Lendo o card\u00e1pio\u2026 isso pode levar at\u00e9 1 minuto.";
+    try{
+      const {status, dados} = await api("saas-admin-importar", {acao: "ler", fotos: IMP_FOTOS});
+      if (status === 401){ sair(); return; }
+      if (!(status === 200 && dados && dados.ok)) throw new Error((dados && dados.erro) || "N\u00e3o foi poss\u00edvel ler as fotos.");
+      if (!dados.itens.length) throw new Error("N\u00e3o encontrei itens nessas fotos. Tente uma foto mais n\u00edtida e reta.");
+      IMP_ITENS = dados.itens.map(i => ({...i, on: true}));
+      impPasso(2); impDesenhar();
+      const falta = IMP_ITENS.filter(i => i.preco == null).length;
+      st.className = "st ok"; st.textContent = IMP_ITENS.length + " itens encontrados" + (falta ? " \u00b7 " + falta + " sem pre\u00e7o (em vermelho)" : "") + ".";
+    }catch(e){ st.className = "st erro"; st.textContent = e.message; }
+    finally{ b.disabled = false; impContar(); }
+    return;
+  }
+  const marcados = IMP_ITENS.filter(i => i.on);
+  if (!marcados.length){ st.className = "st erro"; st.textContent = "Marque pelo menos um item."; return; }
+  for (const i of marcados){
+    if (String(i.nome || "").trim().length < 2){ st.className = "st erro"; st.textContent = "Tem item sem nome."; return; }
+    if (!String(i.categoria || "").trim()){ st.className = "st erro"; st.textContent = "Tem item sem categoria: " + i.nome; return; }
+    if (!(precoNum(i.precoTxt) >= 0)){ st.className = "st erro"; st.textContent = "Preencha o pre\u00e7o de: " + i.nome; return; }
+  }
+  b.disabled = true; st.className = "st"; st.textContent = "Adicionando\u2026";
+  try{
+    const itens = marcados.map(i => ({categoria: i.categoria.trim(), nome: i.nome.trim(), descricao: i.descricao || "", preco: precoNum(i.precoTxt)}));
+    const {status, dados} = await api("saas-admin-importar", {acao: "salvar", itens});
+    if (status === 401){ sair(); return; }
+    if (!(status === 200 && dados && dados.ok)) throw new Error((dados && dados.erro) || "N\u00e3o foi poss\u00edvel adicionar.");
+    $("imp").close();
+    await carregar();
+    $("aviso-foto").className = "st ok"; $("aviso-foto").textContent = dados.criados + " itens adicionados. Confira, coloque fotos e ajuste o setor se precisar.";
+  }catch(e){ st.className = "st erro"; st.textContent = e.message; }
+  finally{ b.disabled = false; }
+});
 
 // ---- Ordem do cardapio (categorias e itens) ----
 let ITENS = [], ORD = [];
