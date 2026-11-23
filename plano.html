@@ -80,9 +80,11 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 
     <div class="card" id="form-up" hidden>
       <strong id="up-titulo"></strong>
-      <p class="sub">Voc&#234; vai ao Mercado Pago para pagar. Quando o pagamento for confirmado, o novo plano &#233; liberado sozinho e a cobran&#231;a do plano antigo &#233; cancelada.</p>
+      <p class="sub">Pagamento com cart&#227;o de cr&#233;dito, processado pelo Mercado Pago. A cobran&#231;a &#233; mensal e voc&#234; cancela quando quiser. Quando o pagamento for confirmado, o novo plano &#233; liberado sozinho.</p>
       <label>E-mail para a cobran&#231;a<input id="email" type="email" maxlength="120" autocomplete="email"></label>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap"><button id="up-ir">Continuar para o pagamento</button><button class="sec" id="up-cancelar">Cancelar</button></div>
+      <div id="brick-cartao" style="margin-top:14px;min-height:120px"></div>
+      <p class="sub seguro" style="font-size:.82rem;margin-top:8px">&#128274; Os dados do cart&#227;o v&#227;o direto para o Mercado Pago. O LaMenu n&#227;o v&#234; nem guarda o n&#250;mero do cart&#227;o.</p>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><button class="sec" id="up-cancelar">Cancelar</button></div>
       <div id="up-st" class="st" role="status"></div>
     </div>
 
@@ -101,17 +103,19 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
   </section>
 <footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p><p><button type="button" class="tema-btn" id="tema-btn">Tema</button></p></footer>
 </main>
+<script src="https://sdk.mercadopago.com/js/v2"></script>
 <script>
 const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
 const $ = id => document.getElementById(id);
-let REST = "", CHAVE = "", ESCOLHIDO = null;
+let REST = "", CHAVE = "", ESCOLHIDO = null, BRICK = null, PLANO_ATUAL = "";
+const MP_PUBLIC_KEY = "APP_USR-308a5ba0-c2e5-4652-aa92-5879cf67d6d3";
 const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase().slice(0, 40);
 $("zap").href = "https://wa.me/5512997621359?text=" + encodeURIComponent("Ol\u00e1! Tenho uma d\u00favida sobre o meu plano do LaMenu.");
 
 // Os valores aqui s\u00e3o s\u00f3 para exibir. Quem cobra \u00e9 o servidor.
 const PLANOS = [
-  {id: "basico", nivel: 1, nome: "B\u00e1sico", preco: "R$ 49,90/m\u00eas", desc: "Pedidos pelo celular na mesa ou no quarto, com painel em tempo real."},
-  {id: "profissional", nivel: 3, nome: "Profissional", preco: "R$ 79,90/m\u00eas", desc: "Tudo do B\u00e1sico, mais delivery e retirada, Pix, acompanhamento do pedido e mais mesas."}
+  {id: "basico", nivel: 1, valor: 49.90, nome: "B\u00e1sico", preco: "R$ 49,90/m\u00eas", desc: "Pedidos pelo celular na mesa ou no quarto, com painel em tempo real."},
+  {id: "profissional", nivel: 3, valor: 79.90, nome: "Profissional", preco: "R$ 79,90/m\u00eas", desc: "Tudo do B\u00e1sico, mais delivery e retirada, Pix, acompanhamento do pedido e mais mesas."}
 ];
 
 async function api(caminho, corpo){
@@ -166,6 +170,64 @@ function abrirForm(p){
   $("up-st").textContent = "";
   $("form-up").hidden = false;
   $("form-up").scrollIntoView({behavior: "smooth", block: "center"});
+  montarCartao(p);
+}
+// ===== Formulario de cartao do Mercado Pago (Card Payment Brick) =====
+async function montarCartao(p){
+  const st = $("up-st");
+  try{ if (BRICK){ await BRICK.unmount(); BRICK = null; } }catch(e){}
+  $("brick-cartao").replaceChildren();
+  if (!window.MercadoPago){ msg(st, "N\u00e3o foi poss\u00edvel carregar o pagamento. Recarregue a p\u00e1gina.", false); return; }
+  const mp = new MercadoPago(MP_PUBLIC_KEY, {locale: "pt-BR"});
+  const escuro = document.documentElement.getAttribute("data-tema") === "escuro";
+  try{
+    BRICK = await mp.bricks().create("cardPayment", "brick-cartao", {
+      initialization: {amount: p.valor},
+      customization: {
+        paymentMethods: {maxInstallments: 1, types: {excluded: ["debit_card", "prepaid_card"]}},
+        visual: {style: {theme: escuro ? "dark" : "default"}, texts: {formSubmit: "Assinar " + p.nome}}
+      },
+      callbacks: {
+        onReady: () => {},
+        onError: e => { console.warn(e); },
+        onSubmit: dadosCartao => assinarComCartao(dadosCartao)
+      }
+    });
+  }catch(e){ msg(st, "N\u00e3o foi poss\u00edvel carregar o formul\u00e1rio do cart\u00e3o. Recarregue a p\u00e1gina.", false); }
+}
+function assinarComCartao(dc){
+  return new Promise(async (ok, falha) => {
+    const st = $("up-st");
+    const email = $("email").value.trim() || (dc.payer && dc.payer.email) || "";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg(st, "Digite um e-mail v\u00e1lido acima do cart\u00e3o.", false); $("email").focus(); falha(); return; }
+    st.className = "st"; st.textContent = "Processando o pagamento\u2026";
+    try{
+      const {status, dados} = await api("saas-upgrade", {plano: ESCOLHIDO.id, email, token: dc.token});
+      if (status === 401){ sair(); falha(); return; }
+      if (status !== 200 || !dados || !dados.ok){ msg(st, (dados && dados.erro) || "N\u00e3o foi poss\u00edvel concluir. Tente de novo.", false); falha(); return; }
+      try{ localStorage.setItem("email", email); }catch(e){}
+      ok();
+      esperarAtivacao(ESCOLHIDO);
+    }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); falha(); }
+  });
+}
+async function esperarAtivacao(p){
+  const st = $("up-st");
+  st.className = "st ok"; st.textContent = "Cart\u00e3o aprovado! Liberando o plano " + p.nome + "\u2026";
+  for (let i = 0; i < 20; i++){
+    await new Promise(r => setTimeout(r, 4000));
+    try{
+      const {status, dados} = await api("saas-admin-plano", {});
+      if (status === 200 && dados && dados.plano === p.id && !dados.teste && dados.nivel > 0){
+        $("form-up").hidden = true;
+        desenhar(dados);
+        msg($("c-ok"), "Pronto! O plano " + p.nome + " est\u00e1 ativo. Obrigado por assinar o LaMenu.", true);
+        window.scrollTo({top: 0, behavior: "smooth"});
+        return;
+      }
+    }catch(e){}
+  }
+  st.className = "st ok"; st.textContent = "Pagamento recebido. A libera\u00e7\u00e3o pode levar alguns minutos; atualize esta p\u00e1gina daqui a pouco.";
 }
 $("c-abrir").addEventListener("click", () => { $("c-confirma").hidden = false; $("c-abrir").hidden = true; });
 $("c-nao").addEventListener("click", () => { $("c-confirma").hidden = true; $("c-abrir").hidden = false; });
@@ -188,22 +250,7 @@ $("c-sim").addEventListener("click", async () => {
   finally{ btn.disabled = false; }
 });
 $("up-cancelar").addEventListener("click", () => { $("form-up").hidden = true; ESCOLHIDO = null; });
-$("up-ir").addEventListener("click", async () => {
-  const st = $("up-st"), btn = $("up-ir");
-  const email = $("email").value.trim();
-  if (!ESCOLHIDO) return;
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg(st, "Digite um e-mail v\u00e1lido.", false); return; }
-  btn.disabled = true; st.className = "st"; st.textContent = "Preparando o pagamento\u2026";
-  try{
-    const {status, dados} = await api("saas-upgrade", {plano: ESCOLHIDO.id, email});
-    if (status === 401){ sair(); return; }
-    if (status === 400 && dados && dados.erro){ msg(st, dados.erro, false); return; }
-    if (status !== 200 || !dados || !dados.init_point) throw new Error("falha");
-    try{ localStorage.setItem("email", email); }catch(e){}
-    location.href = dados.init_point;
-  }catch(e){ msg(st, "N\u00e3o foi poss\u00edvel continuar. Tente de novo em instantes.", false); }
-  finally{ btn.disabled = false; }
-});
+
 
 async function carregar(){
   const {status, dados} = await api("saas-admin-plano", {});
