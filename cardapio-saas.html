@@ -110,6 +110,16 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 .bola.on{background:var(--price)}
 #i-txt{white-space:pre-line;margin:0 0 12px}
 #i-hor .linha.hoje{font-weight:700}
+#p-lista .pl{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"n p" "n c";gap:4px 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+#p-lista .pl-n{grid-area:n;min-width:0}
+#p-lista .pl-n span{font-weight:600}
+#p-lista .pl-n small{display:block}
+#p-lista .pl-p{grid-area:p;text-align:right;font-weight:700}
+#p-lista .pl-c{grid-area:c;display:flex;align-items:center;gap:8px;justify-content:flex-end}
+#p-lista .pl-c button{width:34px;height:34px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);font-size:1.05rem;line-height:1;display:flex;align-items:center;justify-content:center}
+#p-lista .pl-c button:last-child{background:var(--accent);border-color:var(--accent);color:#fff}
+#p-lista .pl-c button:disabled{opacity:.4}
+#p-lista .pl-q{min-width:18px;text-align:center;font-weight:800}
 </style>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
 </head>
@@ -586,13 +596,38 @@ function tsMontar(){
 }
 const tsToken = () => { try{ return (window.turnstile && tsId !== null && turnstile.getResponse(tsId)) || ""; }catch(e){ return ""; } };
 const tsReset = () => { try{ if (window.turnstile && tsId !== null) turnstile.reset(tsId); }catch(e){} };
-function abrirPainel(){
-  let linhas = "";
+// Lista do pedido com + / - / remover direto na janela
+function desenharLista(){
+  const box = $("p-lista"); box.replaceChildren();
   for (const [id, q] of carrinho){
-    const ops = catalogo[id].opcoes && catalogo[id].opcoes.length ? '<small class="p-op">' + escapa(catalogo[id].opcoes.map(o => o.nome).join(", ")) + '</small>' : '';
-    linhas += '<div class="linha"><span>' + q + 'x ' + escapa(catalogo[id].nome) + ops + '</span><span>' + reais(q * catalogo[id].preco) + '</span></div>';
+    const it = catalogo[id];
+    const l = document.createElement("div"); l.className = "pl";
+    const esq = document.createElement("div"); esq.className = "pl-n";
+    const n = document.createElement("span"); n.textContent = it.nome; esq.append(n);
+    if (it.opcoes && it.opcoes.length){ const s = document.createElement("small"); s.className = "p-op"; s.textContent = it.opcoes.map(o => o.nome).join(", "); esq.append(s); }
+    const pr = document.createElement("span"); pr.className = "pl-p"; pr.textContent = reais(q * it.preco);
+    const ctl = document.createElement("div"); ctl.className = "pl-c";
+    const bt = (txt, rot, fn) => { const b = document.createElement("button"); b.type = "button"; b.textContent = txt; b.setAttribute("aria-label", rot); b.addEventListener("click", fn); return b; };
+    const menos = bt(q === 1 ? "\u00d7" : "\u2212", q === 1 ? "Remover " + it.nome : "Tirar um " + it.nome, () => mudarLinha(id, -1));
+    const num = document.createElement("span"); num.className = "pl-q"; num.textContent = q;
+    const mais = bt("+", "Mais um " + it.nome, () => mudarLinha(id, 1));
+    mais.disabled = q >= 20;
+    ctl.append(menos, num, mais);
+    l.append(esq, pr, ctl); box.append(l);
   }
-  $("p-lista").innerHTML = linhas;
+}
+function mudarLinha(id, d){
+  if (expirado()) return expirou();
+  const q = Math.max(0, Math.min(20, (carrinho.get(id) || 0) + d));
+  if (q) carrinho.set(id, q); else carrinho.delete(id);
+  pintarQtd(baseDe(id));
+  atualizar();
+  if (!carrinho.size){ $("painel").close(); return; }
+  desenharLista();
+  atualizarDeliv();
+}
+function abrirPainel(){
+  desenharLista();
   const delivery = MODO === "delivery";
   $("ts-pedido").hidden = !delivery;
   if (delivery) tsMontar();
