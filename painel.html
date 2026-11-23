@@ -67,6 +67,13 @@ details.opc summary{cursor:pointer;font-weight:600}
 @media (max-width:560px){.og .g3{grid-template-columns:1fr}}
 .oprow{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;margin-top:6px}
 .oprow button{padding:9px 12px}
+.oprow .o-est{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.oprow .o-est select{width:auto;flex:1 1 160px;margin:0;padding:7px 8px;font-size:.85rem}
+.oprow .o-est input{width:90px;margin:0;padding:7px 8px;font-size:.85rem}
+.ficha .frow{display:grid;grid-template-columns:minmax(0,1fr) 100px 70px auto;gap:8px;align-items:center;margin-top:6px}
+.ficha .frow select,.ficha .frow input{margin:0}
+.ficha .frow span{color:var(--muted);font-size:.85rem}
+.ficha .frow button{padding:9px 12px}
 .og .acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px;justify-content:space-between}
 a.voltar{display:inline-block;padding:10px 16px;border:1px solid var(--line);border-radius:8px;color:var(--ink);text-decoration:none;font:inherit;font-weight:600;background:transparent}
 a.voltar:hover{border-color:var(--accent)}
@@ -217,6 +224,60 @@ async function tratarFoto(id, d){
 
 // ---- Editor de op\u00e7\u00f5es do item (tamanho, adicionais, borda...) ----
 function botao(texto, cls){ const b = document.createElement("button"); b.type = "button"; b.className = cls || "sec mini"; b.textContent = texto; return b; }
+// ---- Estoque: insumos e ficha tecnica (plano Profissional) ----
+let INSUMOS = null;
+const UNI_INS = {un: "un", fatia: "fatias", "por\u00e7\u00e3o": "por\u00e7\u00f5es", g: "g", kg: "kg", ml: "ml", l: "l"};
+async function carregarInsumos(){
+  try{
+    const {status, dados} = await api("saas-admin-estoque", {acao: "ver"});
+    INSUMOS = status === 200 && dados && dados.ok ? (dados.insumos || []) : null;
+  }catch(e){ INSUMOS = null; }
+}
+function selInsumo(valor, vazio){
+  const s = document.createElement("select");
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = vazio; s.append(o0);
+  for (const x of INSUMOS){ const o = document.createElement("option"); o.value = x.id; o.textContent = x.nome + " (" + (UNI_INS[x.unidade] || x.unidade) + ")"; s.append(o); }
+  s.value = valor && INSUMOS.some(x => x.id === valor) ? valor : "";
+  return s;
+}
+const qtdTxt = q => q ? String(q).replace(".", ",") : "";
+const qtdNum = v => { const n = Number(String(v || "").replace(",", ".")); return Number.isFinite(n) ? n : NaN; };
+function editorFicha(inicial){
+  const wrap = document.createElement("details"); wrap.className = "opc ficha";
+  const sum = document.createElement("summary");
+  const lista = document.createElement("div");
+  const pe = document.createElement("div"); pe.style.display = "flex"; pe.style.gap = "10px"; pe.style.alignItems = "center"; pe.style.flexWrap = "wrap"; pe.style.marginTop = "8px";
+  const add = botao("+ Insumo");
+  const lk = document.createElement("a"); lk.href = "estoque.html"; lk.textContent = "Cadastrar insumos"; lk.style.fontSize = ".88rem";
+  pe.append(add, lk);
+  wrap.append(sum, lista, pe);
+  const contar = () => { const n = lista.children.length; sum.textContent = n ? "Ficha t\u00e9cnica (estoque): " + n + (n === 1 ? " insumo" : " insumos") : "Ficha t\u00e9cnica (estoque)"; };
+  function linha(x){
+    const r = document.createElement("div"); r.className = "frow";
+    const s = selInsumo(x.i, "Escolha o insumo"); s.setAttribute("aria-label", "Insumo");
+    const q = input("text", qtdTxt(x.q), {inputMode: "decimal", placeholder: "Qtd."}); q.setAttribute("aria-label", "Quantidade usada");
+    const u = document.createElement("span");
+    const atual = () => { const ins = INSUMOS.find(y => y.id === s.value); u.textContent = ins ? (UNI_INS[ins.unidade] || ins.unidade) : ""; };
+    s.addEventListener("change", atual); atual();
+    const del = botao("\u00d7"); del.setAttribute("aria-label", "Remover insumo"); del.addEventListener("click", () => { r.remove(); contar(); });
+    r.append(s, q, u, del); r.ler = () => ({i: s.value, q: qtdNum(q.value)}); lista.append(r);
+  }
+  (Array.isArray(inicial) ? inicial : []).forEach(linha);
+  if (!INSUMOS.length){ const v = document.createElement("p"); v.className = "dica"; v.textContent = "Nenhum insumo cadastrado. Cadastre na p\u00e1gina Estoque."; lista.before(v); }
+  add.addEventListener("click", () => { linha({}); wrap.open = true; contar(); });
+  contar();
+  wrap.ler = () => {
+    const out = [];
+    for (const r of lista.children){
+      const x = r.ler(); if (!x.i) continue;
+      if (!(x.q > 0)) throw new Error("Quantidade inv\u00e1lida na ficha t\u00e9cnica.");
+      out.push(x);
+    }
+    return out;
+  };
+  return wrap;
+}
+
 function editorOpcoes(inicial){
   const wrap = document.createElement("details"); wrap.className = "opc";
   const sum = document.createElement("summary");
@@ -249,6 +310,16 @@ function editorOpcoes(inicial){
       if (rot && rot.nodeType === 3){ const s = document.createElement("span"); s.className = "o-rot-preco"; s.textContent = rot.nodeValue; rot.replaceWith(s); }
       else if (rot) rot.classList.add("o-rot-preco");
       row.append(campo("Op\u00e7\u00e3o", n), cp, x);
+      row.receitaOrig = o.receita || null;
+      if (INSUMOS && INSUMOS.length){
+        const r0 = Array.isArray(o.receita) && o.receita[0] ? o.receita[0] : {};
+        const est = document.createElement("div"); est.className = "o-est";
+        const s = selInsumo(r0.i, "N\u00e3o usa estoque"); s.className = "o-ins"; s.setAttribute("aria-label", "Insumo usado pela op\u00e7\u00e3o");
+        const q = input("text", qtdTxt(r0.q), {inputMode: "decimal", placeholder: "Qtd."}); q.className = "o-qtd"; q.setAttribute("aria-label", "Quantidade usada pela op\u00e7\u00e3o");
+        const vis2 = () => { q.hidden = !s.value; };
+        s.addEventListener("change", vis2); vis2();
+        est.append("Usa do estoque:", s, q); row.append(est);
+      }
       ops.append(row);
     }
     (Array.isArray(g.itens) && g.itens.length ? g.itens : [{}]).forEach(op);
@@ -277,10 +348,14 @@ function editorOpcoes(inicial){
     tipo.addEventListener("change", vis); vis();
     box.append(g3, ops, ac);
     box.ler = () => {
-      const itens = [...ops.querySelectorAll(".oprow")].map(r => ({
-        nome: r.querySelector(".o-nome").value.trim(),
-        preco: Number(String(r.querySelector(".o-preco").value || "0").replace(",", "."))
-      })).filter(o => o.nome);
+      const itens = [...ops.querySelectorAll(".oprow")].map(r => {
+        const o = {nome: r.querySelector(".o-nome").value.trim(), preco: Number(String(r.querySelector(".o-preco").value || "0").replace(",", "."))};
+        const s = r.querySelector(".o-ins");
+        if (s){
+          if (s.value){ const q = qtdNum(r.querySelector(".o-qtd").value); if (!(q > 0)) throw new Error("Quantidade de estoque inv\u00e1lida na op\u00e7\u00e3o " + (o.nome || "") + "."); o.receita = [{i: s.value, q}]; }
+        } else if (r.receitaOrig) o.receita = r.receitaOrig;
+        return o;
+      }).filter(o => o.nome);
       const gr = {nome: nome.value.trim(), min: obr.checked ? 1 : 0, max: tipo.value === "n" ? (Number(max.value) || itens.length || 1) : 1, itens};
       if (tipo.value === "n" && mai.checked) gr.regra = "maior";
       return gr;
@@ -356,6 +431,8 @@ function formItem(item, aoSalvar, textoBotao){
 
   const opc = editorOpcoes(item.opcoes);
   box.append(opc);
+  const fic = INSUMOS ? editorFicha(item.receita) : null;
+  if (fic) box.append(fic);
   const rod = document.createElement("div"); rod.className = "rodape";
   let disp = null;
   if (item.id){
@@ -379,12 +456,13 @@ function formItem(item, aoSalvar, textoBotao){
     if (!cat.value.trim()){ st.className = "st erro"; st.textContent = "Digite a categoria."; return; }
     if (!Number.isFinite(p) || p < 0){ st.className = "st erro"; st.textContent = "Pre\u00e7o inv\u00e1lido."; return; }
     let opcoes;
-    try{ opcoes = opc.ler(); }catch(e){ st.className = "st erro"; st.textContent = e.message; return; }
+    let receita;
+    try{ opcoes = opc.ler(); receita = fic ? fic.ler() : item.receita; }catch(e){ st.className = "st erro"; st.textContent = e.message; return; }
     btn.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
     try{
       const dados = {
         id: item.id, nome: nome.value, descricao: desc.value,
-        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true, opcoes, setor: setor.value || null,
+        categoria: cat.value, preco: p, disponivel: disp ? disp.checked : true, opcoes, setor: setor.value || null, receita: receita || null,
         foto_pendente: pendente, remover_foto: removerFoto && !pendente
       };
       const ok = await aoSalvar(dados);
@@ -664,6 +742,7 @@ async function carregar(){
   if (status !== 200 || !dados) throw new Error("falha");
   $("a-nome").textContent = dados.restaurante.nome;
   mostrarLogo(dados.restaurante.logo);
+  await carregarInsumos();
   desenhar(dados.itens || []);
 }
 

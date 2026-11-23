@@ -69,6 +69,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <a class="tile" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span>Veja os pedidos chegando, avance o status e feche as contas.</span></a>
     <a class="tile" id="t-painel" href="painel.html"><strong>Painel do card&#225;pio</strong><span>Mude pre&#231;os, ligue e desligue itens e adicione novos.</span></a>
     <a class="tile" id="t-caixa" href="caixa.html"><strong>Caixa do dia</strong><span>Abertura, sangria, fechamento e quanto entrou em cada forma de pagamento.</span></a>
+    <a class="tile" id="t-estoque" href="estoque.html"><strong>Estoque</strong><span>Ingredientes que descontam sozinhos a cada venda. Acabou, sai do card&#225;pio.</span></a>
     <a class="tile" id="t-relatorio" href="relatorio.html"><strong>Relat&#243;rio de vendas</strong><span>Faturamento, itens mais vendidos e hor&#225;rios de pico.</span></a>
     <a class="tile" id="t-plano" href="plano.html"><strong>Meu plano</strong><span>Veja o seu plano e libere mais recursos.</span></a>
     <a class="tile" id="t-delivery" href="delivery.html"><strong>Delivery</strong><span>Bairros, taxas, Pix e o link para pedidos de entrega.</span></a>
@@ -187,7 +188,7 @@ aplicarLimite();
     if (d && d.nivel === 0){
       av.hidden = false;
       $("aviso-txt").textContent = (d.teste_ate ? "O seu teste gr\u00e1tis terminou. " : "A sua assinatura terminou. ") + "Assine um plano para voltar a usar o painel e colocar o card\u00e1pio no ar. Os seus itens continuam guardados.";
-      for (const id of ["t-pedidos", "t-painel", "t-delivery", "t-pagamentos", "t-perfil", "t-cardapio", "t-relatorio", "t-caixa"]){ const e = $(id); if (e) e.hidden = true; }
+      for (const id of ["t-pedidos", "t-painel", "t-delivery", "t-pagamentos", "t-perfil", "t-cardapio", "t-relatorio", "t-caixa", "t-estoque"]){ const e = $(id); if (e) e.hidden = true; }
       const hl = $("h-links"); hl.hidden = true; if (hl.nextElementSibling) hl.nextElementSibling.hidden = true;
       document.querySelectorAll("main > h2").forEach(x => { if (x.textContent.trim() === "Seus clientes") x.hidden = true; });
     } else if (d && d.teste){

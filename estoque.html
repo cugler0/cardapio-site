@@ -1,0 +1,243 @@
+<title>Estoque - LaMenu</title>
+<style>
+[hidden]{display:none!important}
+:root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--ok:#4cc38a;--warn:#f0a43a;--surface:#171112;--on-accent:#160504}
+:root[data-tema="claro"] body{background:radial-gradient(ellipse at 15% -10%,rgba(207,69,38,.08),transparent 55%),var(--bg)}
+[data-tema="claro"] .card{box-shadow:0 1px 2px rgba(60,30,10,.05),0 4px 14px rgba(60,30,10,.06)}
+:root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.45}
+main{max-width:860px;margin:0 auto;padding:22px 16px 40px}
+h1{margin:0;font-size:1.4rem}
+h2{margin:26px 0 10px;font-size:.95rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+.linha{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+label{font-size:.85rem;color:var(--muted)}
+input,select{display:block;margin-top:4px;width:150px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input.lg{width:240px}
+button,a.bt{padding:10px 16px;border:0;border-radius:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+.sec{background:transparent!important;border:1px solid var(--line)!important;color:var(--ink)!important}
+button:disabled{opacity:.55;cursor:default}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.st{font-size:.9rem;min-height:1.2em;margin:8px 0 0}
+.st.erro{color:var(--accent)} .st.ok{color:var(--ok)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.tile{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+.tile span{display:block;color:var(--muted);font-size:.82rem}
+.tile strong{display:block;font-size:1.15rem;margin-top:2px;font-variant-numeric:tabular-nums}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:6px}
+.total strong{font-size:2rem;font-variant-numeric:tabular-nums}
+.conta{display:grid;grid-template-columns:1fr auto;gap:4px 14px;margin-top:8px;font-variant-numeric:tabular-nums}
+.conta .r{text-align:right}
+.conta .tt{font-weight:800;border-top:1px solid var(--line);padding-top:6px}
+.mv{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.mv:last-child{border-bottom:0}
+.mv .m{color:var(--muted)}
+.dif.pos{color:var(--ok)} .dif.neg{color:var(--accent)} .dif.zero{color:var(--muted)}
+.hist{display:grid;grid-template-columns:1fr auto auto auto;gap:6px 14px;align-items:center;font-size:.92rem;font-variant-numeric:tabular-nums}
+.hist .cab{color:var(--muted);font-size:.8rem}
+.vazio{color:var(--muted);font-size:.92rem}
+.so-imp{display:none}
+@media print{
+  body{background:#fff!important;color:#000!important}
+  .nao-imp{display:none!important}
+  .so-imp{display:block}
+  .card{border:1px solid #999;box-shadow:none;background:#fff}
+  .tile{background:#fff;border-color:#bbb}
+  main{max-width:none;padding:0}
+}
+
+.ins{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.ins:first-child{border-top:0}
+.ins .n{font-weight:700;font-size:1.05rem}
+.ins .m{color:var(--muted);font-size:.85rem}
+.ins .q{font-weight:800;font-size:1.4rem;text-align:right;font-variant-numeric:tabular-nums}
+.ins .q small{font-weight:600;font-size:.85rem;color:var(--muted);margin-left:4px}
+.ins .bts{grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap}
+.ins .bts button{padding:7px 12px;font-size:.88rem}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:800;margin-left:8px;vertical-align:middle}
+.pill.ok{background:rgba(76,195,138,.15);color:var(--ok)}
+.pill.bx{background:rgba(240,164,58,.18);color:var(--warn)}
+.pill.zr{background:rgba(255,74,61,.15);color:var(--accent)}
+dialog#dlg{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(440px,94vw);padding:18px}
+dialog#dlg::backdrop{background:rgba(0,0,0,.55)}
+#busca{width:100%}
+</style>
+</head>
+<body>
+<main>
+  <div class="nao-imp" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+    <a class="sec bt" id="voltar" href="app.html">&larr; Menu</a>
+    <a class="sec bt" id="ir-painel" href="painel.html">Painel do card&#225;pio</a>
+    <button type="button" class="sec" id="tema-btn" style="margin-left:auto">Tema</button>
+  </div>
+  <h1>Estoque</h1>
+  <p class="sub" id="nome-bar"></p>
+  <p class="st" id="st" role="status"></p>
+
+  <section id="sem-plano" hidden>
+    <div class="card"><strong>O controle de estoque faz parte do plano Profissional.</strong>
+    <p class="sub">Com ele, cada venda desconta os ingredientes sozinha e o item sai do card&#225;pio quando acaba.</p>
+    <a class="bt" href="plano.html" style="margin-top:12px">Ver planos</a></div>
+  </section>
+
+  <section id="tudo" hidden>
+    <div class="card" id="alertas" hidden></div>
+
+    <div class="card" id="como">
+      <strong>Como funciona</strong>
+      <p class="sub">1. Cadastre aqui os insumos (carne, queijo, p&#227;o...) com a quantidade que voc&#234; tem.<br>2. No Painel do card&#225;pio, abra cada item e preencha a <b>Ficha t&#233;cnica</b> (quanto de cada insumo ele usa). Adicionais tamb&#233;m podem usar estoque.<br>3. A cada pedido, o LaMenu desconta sozinho. Quando um insumo n&#227;o d&#225; mais, o item sai do card&#225;pio. Registre a compra e ele volta.</p>
+    </div>
+
+    <h2 id="h-novo">Novo insumo</h2>
+    <div class="card" id="novo">
+      <div class="linha">
+        <label>Nome<input id="n-nome" class="lg" maxlength="60" placeholder="Ex.: Carne de hamb&#250;rguer"></label>
+        <label>Unidade<select id="n-uni"><option value="un">unidade</option><option value="fatia">fatia</option><option value="por&#231;&#227;o">por&#231;&#227;o</option><option value="g">grama (g)</option><option value="kg">quilo (kg)</option><option value="ml">ml</option><option value="l">litro (l)</option></select></label>
+        <label>Tenho agora<input id="n-qtd" inputmode="decimal" placeholder="0"></label>
+        <label>Avisar com<input id="n-min" inputmode="decimal" placeholder="0"></label>
+        <button id="n-ok" type="button">Cadastrar</button>
+      </div>
+    </div>
+
+    <h2>Insumos</h2>
+    <div class="card">
+      <input id="busca" placeholder="Buscar insumo" aria-label="Buscar insumo">
+      <div id="lista" style="margin-top:8px"></div>
+    </div>
+  </section>
+  <dialog id="dlg">
+    <h3 id="d-tit" style="margin:0 0 6px"></h3>
+    <p class="sub" id="d-sub" style="margin:0 0 10px;font-size:.9rem"></p>
+    <div id="d-campos"></div>
+    <p class="st" id="d-st"></p>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="sec" type="button" id="d-cancelar">Cancelar</button><button type="button" id="d-ok">Salvar</button></div>
+  </dialog>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const URL_BASE = "https://n8n.automatikai.cloud/webhook/";
+let REST = "", CHAVE = "", NOME = "", PAPEL = "dono", INS = [], DONO = false;
+try{ REST = sessionStorage.getItem("rest") || ""; CHAVE = sessionStorage.getItem("chave") || ""; NOME = sessionStorage.getItem("nome") || ""; PAPEL = sessionStorage.getItem("papel") || "dono"; }catch(e){}
+if (!REST || !CHAVE) location.replace("entrar.html");
+$("voltar").hidden = PAPEL === "equipe";
+$("ir-painel").hidden = PAPEL === "equipe";
+$("nome-bar").textContent = NOME || REST;
+const UN = {un: "un", fatia: "fatias", "por\u00e7\u00e3o": "por\u00e7\u00f5es", g: "g", kg: "kg", ml: "ml", l: "l"};
+const fmt = n => Number(n).toLocaleString("pt-BR", {maximumFractionDigits: 3});
+const num = s => { let x = String(s ?? "").trim(); if (!x) return NaN; if (x.includes(",")) x = x.replace(/\./g, "").replace(",", "."); const n = Number(x); return Number.isFinite(n) ? n : NaN; };
+function msg(t, c){ $("st").className = "st " + (c || ""); $("st").textContent = t || ""; }
+async function api(corpo){
+  const r = await fetch(URL_BASE + "saas-admin-estoque", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})});
+  let d = null; try{ d = await r.json(); }catch(e){}
+  if (r.status === 401){ location.replace("entrar.html"); throw new Error("Acesso negado"); }
+  if (!r.ok || !d) throw new Error((d && d.erro) || "N\u00e3o foi poss\u00edvel falar com o servidor.");
+  return d;
+}
+function status(x){
+  if (x.estoque <= 0) return ["Acabou", "zr"];
+  if (x.minimo > 0 && x.estoque <= x.minimo) return ["Acabando", "bx"];
+  return ["OK", "ok"];
+}
+function desenhar(){
+  const q = $("busca").value.trim().toLowerCase();
+  const box = $("lista"); box.replaceChildren();
+  const lista = INS.filter(x => !q || x.nome.toLowerCase().includes(q));
+  if (!lista.length){ const v = document.createElement("p"); v.className = "vazio"; v.textContent = INS.length ? "Nenhum insumo encontrado." : "Nenhum insumo cadastrado ainda."; box.append(v); }
+  for (const x of lista){
+    const l = document.createElement("div"); l.className = "ins";
+    const esq = document.createElement("div");
+    const n = document.createElement("div"); n.className = "n"; n.textContent = x.nome;
+    const [tx, cl] = status(x); const p = document.createElement("span"); p.className = "pill " + cl; p.textContent = tx; n.append(p);
+    const m = document.createElement("div"); m.className = "m"; m.textContent = x.minimo > 0 ? "Avisa com " + fmt(x.minimo) + " " + UN[x.unidade] : "Sem aviso de m\u00ednimo";
+    esq.append(n, m);
+    const qv = document.createElement("div"); qv.className = "q"; qv.textContent = fmt(x.estoque); const s = document.createElement("small"); s.textContent = UN[x.unidade] || x.unidade; qv.append(s);
+    const bts = document.createElement("div"); bts.className = "bts";
+    const b1 = document.createElement("button"); b1.type = "button"; b1.textContent = "+ Entrada"; b1.addEventListener("click", () => abrir("entrada", x));
+    const b2 = document.createElement("button"); b2.type = "button"; b2.className = "sec"; b2.textContent = "Ajustar contagem"; b2.addEventListener("click", () => abrir("ajustar", x));
+    bts.append(b1, b2);
+    if (DONO){
+      const b3 = document.createElement("button"); b3.type = "button"; b3.className = "sec"; b3.textContent = "Editar"; b3.addEventListener("click", () => abrir("editar", x));
+      const b4 = document.createElement("button"); b4.type = "button"; b4.className = "sec"; b4.textContent = "Excluir"; b4.addEventListener("click", () => excluir(x));
+      bts.append(b3, b4);
+    }
+    l.append(esq, qv, bts); box.append(l);
+  }
+  const al = INS.filter(x => status(x)[1] !== "ok");
+  $("alertas").hidden = !al.length;
+  if (al.length){
+    $("alertas").replaceChildren();
+    const t = document.createElement("strong"); t.textContent = al.length === 1 ? "1 insumo precisa de aten\u00e7\u00e3o" : al.length + " insumos precisam de aten\u00e7\u00e3o"; $("alertas").append(t);
+    const p = document.createElement("p"); p.className = "sub"; p.textContent = al.map(x => x.nome + " (" + fmt(x.estoque) + " " + (UN[x.unidade] || "") + ")").join(" \u00b7 "); $("alertas").append(p);
+  }
+}
+async function carregar(){
+  try{
+    const d = await api({acao: "ver"});
+    if (d.plano){ $("sem-plano").hidden = false; $("tudo").hidden = true; msg(""); return; }
+    DONO = !!d.dono; INS = d.insumos || [];
+    $("tudo").hidden = false; $("novo").hidden = !DONO; $("h-novo").hidden = !DONO;
+    desenhar(); if ($("st").textContent === "Carregando\u2026") msg("");
+  }catch(e){ msg(e.message, "erro"); }
+}
+let MODO = null, ALVO = null;
+function campoDlg(rot, el){ const l = document.createElement("label"); l.style.display = "block"; l.style.marginTop = "8px"; l.append(rot, el); return l; }
+function abrir(modo, x){
+  MODO = modo; ALVO = x; const c = $("d-campos"); c.replaceChildren(); $("d-st").textContent = "";
+  const u = UN[x.unidade] || x.unidade;
+  if (modo === "entrada"){
+    $("d-tit").textContent = "Entrada de " + x.nome; $("d-sub").textContent = "Quanto chegou? Isso soma ao que j\u00e1 tem (" + fmt(x.estoque) + " " + u + ").";
+    const i = document.createElement("input"); i.id = "d-q"; i.inputMode = "decimal"; i.placeholder = "Ex.: 50"; c.append(campoDlg("Quantidade (" + u + ")", i));
+  } else if (modo === "ajustar"){
+    $("d-tit").textContent = "Ajustar " + x.nome; $("d-sub").textContent = "Contou o estoque? Digite quanto tem de verdade agora.";
+    const i = document.createElement("input"); i.id = "d-q"; i.inputMode = "decimal"; i.value = fmt(x.estoque); c.append(campoDlg("Tenho agora (" + u + ")", i));
+  } else {
+    $("d-tit").textContent = "Editar insumo"; $("d-sub").textContent = "";
+    const n = document.createElement("input"); n.id = "d-n"; n.maxLength = 60; n.value = x.nome; c.append(campoDlg("Nome", n));
+    const s = $("n-uni").cloneNode(true); s.id = "d-u"; s.value = x.unidade; c.append(campoDlg("Unidade", s));
+    const m = document.createElement("input"); m.id = "d-m"; m.inputMode = "decimal"; m.value = x.minimo ? fmt(x.minimo) : ""; c.append(campoDlg("Avisar quando chegar em", m));
+  }
+  $("dlg").showModal();
+  const f = c.querySelector("input"); if (f){ f.focus(); f.select && f.select(); }
+}
+$("d-cancelar").addEventListener("click", () => $("dlg").close());
+$("d-ok").addEventListener("click", async () => {
+  const b = $("d-ok"), st = $("d-st"); let corpo;
+  if (MODO === "entrada" || MODO === "ajustar"){
+    const q = num($("d-q").value);
+    if (!(MODO === "entrada" ? q > 0 : q >= 0)){ st.className = "st erro"; st.textContent = "Digite a quantidade."; return; }
+    corpo = {acao: MODO, id: ALVO.id, qtd: q};
+  } else {
+    corpo = {acao: "editar", id: ALVO.id, nome: $("d-n").value.trim(), unidade: $("d-u").value, minimo: $("d-m").value.trim() ? num($("d-m").value) : 0};
+  }
+  b.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
+  try{ await api(corpo); $("dlg").close(); msg("Salvo. O card\u00e1pio dos clientes atualiza em at\u00e9 1 minuto.", "ok"); await carregar(); }
+  catch(e){ st.className = "st erro"; st.textContent = e.message; }
+  finally{ b.disabled = false; }
+});
+async function excluir(x){
+  if (!confirm("Excluir " + x.nome + "? As fichas t\u00e9cnicas que usam esse insumo v\u00e3o ignor\u00e1-lo.")) return;
+  try{ await api({acao: "excluir", id: x.id}); msg("Insumo exclu\u00eddo.", "ok"); await carregar(); }catch(e){ msg(e.message, "erro"); }
+}
+$("n-ok").addEventListener("click", async () => {
+  const nome = $("n-nome").value.trim();
+  if (nome.length < 2) return msg("Digite o nome do insumo.", "erro");
+  const qtd = $("n-qtd").value.trim() ? num($("n-qtd").value) : 0, min = $("n-min").value.trim() ? num($("n-min").value) : 0;
+  if (!(qtd >= 0) || !(min >= 0)) return msg("Quantidade inv\u00e1lida.", "erro");
+  $("n-ok").disabled = true; msg("Salvando\u2026");
+  try{ await api({acao: "criar", nome, unidade: $("n-uni").value, estoque: qtd, minimo: min}); $("n-nome").value = ""; $("n-qtd").value = ""; $("n-min").value = ""; msg("Insumo cadastrado.", "ok"); await carregar(); }
+  catch(e){ msg(e.message, "erro"); }
+  finally{ $("n-ok").disabled = false; }
+});
+$("busca").addEventListener("input", desenhar);
+(function(){
+  const b = $("tema-btn");
+  const rot = () => { b.textContent = document.documentElement.getAttribute("data-tema") === "escuro" ? "Tema: escuro" : "Tema: claro"; };
+  rot();
+  b.addEventListener("click", () => { const n = document.documentElement.getAttribute("data-tema") === "escuro" ? "claro" : "escuro"; document.documentElement.setAttribute("data-tema", n); try{ localStorage.setItem("tema", n); }catch(e){} rot(); });
+})();
+if (REST){ msg("Carregando\u2026"); carregar(); }
+</script>
+</body>
+</html>
