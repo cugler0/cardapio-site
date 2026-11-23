@@ -67,9 +67,12 @@ details.opc summary{cursor:pointer;font-weight:600}
 @media (max-width:560px){.og .g3{grid-template-columns:1fr}}
 .oprow{display:grid;grid-template-columns:1fr 110px auto;gap:8px;align-items:end;margin-top:6px}
 .oprow button{padding:9px 12px}
-.oprow .o-est{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
-.oprow .o-est select{width:auto;flex:1 1 160px;margin:0;padding:7px 8px;font-size:.85rem}
-.oprow .o-est input{width:90px;margin:0;padding:7px 8px;font-size:.85rem}
+.oprow .o-est{grid-column:1 / -1;display:flex;gap:6px 8px;align-items:flex-start;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.oprow .o-est > span{padding-top:8px}
+.oprow .o-lins{display:flex;flex-direction:column;gap:6px;flex:1 1 260px}
+.oprow .o-lin{display:grid;grid-template-columns:minmax(0,1fr) 80px 50px auto;gap:6px;align-items:center}
+.oprow .o-lin select,.oprow .o-lin input{margin:0;padding:7px 8px;font-size:.85rem}
+.oprow .o-est button.mini{padding:6px 10px;font-size:.85rem}
 .ficha .frow{display:grid;grid-template-columns:minmax(0,1fr) 100px 70px auto;gap:8px;align-items:center;margin-top:6px}
 .ficha .frow select,.ficha .frow input{margin:0}
 .ficha .frow span{color:var(--muted);font-size:.85rem}
@@ -312,13 +315,24 @@ function editorOpcoes(inicial){
       row.append(campo("Op\u00e7\u00e3o", n), cp, x);
       row.receitaOrig = o.receita || null;
       if (INSUMOS && INSUMOS.length){
-        const r0 = Array.isArray(o.receita) && o.receita[0] ? o.receita[0] : {};
         const est = document.createElement("div"); est.className = "o-est";
-        const s = selInsumo(r0.i, "N\u00e3o usa estoque"); s.className = "o-ins"; s.setAttribute("aria-label", "Insumo usado pela op\u00e7\u00e3o");
-        const q = input("text", qtdTxt(r0.q), {inputMode: "decimal", placeholder: "Qtd."}); q.className = "o-qtd"; q.setAttribute("aria-label", "Quantidade usada pela op\u00e7\u00e3o");
-        const vis2 = () => { q.hidden = !s.value; };
-        s.addEventListener("change", vis2); vis2();
-        est.append("Usa do estoque:", s, q); row.append(est);
+        const rot = document.createElement("span"); rot.textContent = "Usa do estoque:";
+        const lin = document.createElement("div"); lin.className = "o-lins";
+        const mais = document.createElement("button"); mais.type = "button"; mais.className = "sec mini"; mais.textContent = "+ insumo";
+        const umaLinha = x => {
+          const l = document.createElement("div"); l.className = "o-lin";
+          const s = selInsumo(x.i, "Escolha o insumo"); s.className = "o-ins"; s.setAttribute("aria-label", "Insumo usado pela op\u00e7\u00e3o");
+          const q = input("text", qtdTxt(x.q), {inputMode: "decimal", placeholder: "Qtd."}); q.className = "o-qtd"; q.setAttribute("aria-label", "Quantidade usada pela op\u00e7\u00e3o");
+          const u = document.createElement("span"); u.className = "o-uni";
+          const atual = () => { const ins = INSUMOS.find(y => y.id === s.value); u.textContent = ins ? (UNI_INS[ins.unidade] || ins.unidade) : ""; };
+          s.addEventListener("change", atual); atual();
+          const del = document.createElement("button"); del.type = "button"; del.className = "sec mini"; del.textContent = "\u00d7"; del.setAttribute("aria-label", "Remover insumo da op\u00e7\u00e3o");
+          del.addEventListener("click", () => l.remove());
+          l.append(s, q, u, del); lin.append(l);
+        };
+        (Array.isArray(o.receita) ? o.receita : []).forEach(umaLinha);
+        mais.addEventListener("click", () => umaLinha({}));
+        est.append(rot, lin, mais); est.dataset.ativo = "1"; row.append(est);
       }
       ops.append(row);
     }
@@ -350,9 +364,16 @@ function editorOpcoes(inicial){
     box.ler = () => {
       const itens = [...ops.querySelectorAll(".oprow")].map(r => {
         const o = {nome: r.querySelector(".o-nome").value.trim(), preco: Number(String(r.querySelector(".o-preco").value || "0").replace(",", "."))};
-        const s = r.querySelector(".o-ins");
-        if (s){
-          if (s.value){ const q = qtdNum(r.querySelector(".o-qtd").value); if (!(q > 0)) throw new Error("Quantidade de estoque inv\u00e1lida na op\u00e7\u00e3o " + (o.nome || "") + "."); o.receita = [{i: s.value, q}]; }
+        const est = r.querySelector(".o-est");
+        if (est){
+          const rec = [];
+          for (const l of est.querySelectorAll(".o-lin")){
+            const s = l.querySelector(".o-ins"); if (!s.value) continue;
+            const q = qtdNum(l.querySelector(".o-qtd").value);
+            if (!(q > 0)) throw new Error("Quantidade de estoque inv\u00e1lida na op\u00e7\u00e3o " + (o.nome || "") + ".");
+            rec.push({i: s.value, q});
+          }
+          if (rec.length) o.receita = rec;
         } else if (r.receitaOrig) o.receita = r.receitaOrig;
         return o;
       }).filter(o => o.nome);
