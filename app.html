@@ -16,6 +16,24 @@ h1{margin:0;font-size:1.6rem}
 .sub{margin:2px 0 0;color:var(--muted);font-size:.92rem}
 h2{margin:30px 0 12px;font-size:1rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.grid.dia{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:900px){.grid.dia{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:420px){a.tile.dia{padding:14px}a.tile.dia strong{font-size:1.02rem}a.tile.dia .vivo{font-size:.85rem}}
+a.tile.dia{padding:20px;border-width:2px;min-height:118px;display:flex;flex-direction:column;justify-content:space-between}
+a.tile.dia strong{font-size:1.2rem}
+a.tile.dia .vivo{display:block;margin-top:10px;font-weight:700;font-size:.95rem;color:var(--muted)}
+a.tile.dia .vivo.bom{color:var(--ok,#16a34a)}
+a.tile.dia .vivo.alerta{color:#d97706}
+a.tile.dia .vivo.urgente{color:var(--accent)}
+a.tile.dia.pulsa{border-color:var(--accent)}
+details.cfg{margin-top:30px;border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--surface)}
+details.cfg summary{cursor:pointer;list-style:none;display:flex;flex-direction:column;gap:2px}
+details.cfg summary::-webkit-details-marker{display:none}
+details.cfg summary span{font-weight:800;font-size:1.05rem}
+details.cfg summary span::before{content:"\25B8  ";color:var(--accent)}
+details.cfg[open] summary span::before{content:"\25BE  "}
+details.cfg summary small{color:var(--muted);font-size:.85rem}
+details.cfg h2{margin-top:22px}
 a.tile{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;color:var(--ink);text-decoration:none}
 a.tile:hover{border-color:var(--accent)}
 a.tile strong{display:block;font-size:1.1rem;margin-bottom:4px}
@@ -65,19 +83,30 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 
   <div class="card" id="aviso-plano" hidden style="margin-bottom:16px"><p id="aviso-txt" style="margin:0 0 12px"></p><a id="aviso-btn" href="plano.html" style="display:inline-block;padding:10px 16px;border-radius:8px;background:var(--accent);color:#fff;font-weight:600;text-decoration:none">Ver planos</a></div>
   <h2>Dia a dia</h2>
-  <div class="grid">
-    <a class="tile" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span>Veja os pedidos chegando, avance o status e feche as contas.</span></a>
-    <a class="tile" id="t-painel" href="painel.html"><strong>Painel do card&#225;pio</strong><span>Mude pre&#231;os, ligue e desligue itens e adicione novos.</span></a>
-    <a class="tile" id="t-caixa" href="caixa.html"><strong>Caixa do dia</strong><span>Abertura, sangria, fechamento e quanto entrou em cada forma de pagamento.</span></a>
-    <a class="tile" id="t-estoque" href="estoque.html"><strong>Estoque</strong><span>Ingredientes que descontam sozinhos a cada venda. Acabou, sai do card&#225;pio.</span></a>
-    <a class="tile" id="t-relatorio" href="relatorio.html"><strong>Relat&#243;rio de vendas</strong><span>Faturamento, itens mais vendidos e hor&#225;rios de pico.</span></a>
-    <a class="tile" id="t-plano" href="plano.html"><strong>Meu plano</strong><span>Veja o seu plano e libere mais recursos.</span></a>
-    <a class="tile" id="t-delivery" href="delivery.html"><strong>Delivery</strong><span>Bairros, taxas, Pix e o link para pedidos de entrega.</span></a>
-    <a class="tile" id="t-pagamentos" href="pagamentos.html"><strong>Pagamento autom&#225;tico</strong><span>Conecte o Mercado Pago e o Pix do delivery &#233; confirmado sozinho.</span></a>
-    <a class="tile" id="t-perfil" href="perfil.html"><strong>Dados do bar</strong><span>Endere&#231;o, WhatsApp, Instagram, avalia&#231;&#227;o no Google e hor&#225;rio de funcionamento.</span></a>
+  <div class="grid dia">
+    <a class="tile dia" id="t-pedidos" href="pedidos.html"><strong>Pedidos em tempo real</strong><span class="vivo" id="v-pedidos">&#8230;</span></a>
+    <a class="tile dia" id="t-caixa" href="caixa.html"><strong>Caixa do dia</strong><span class="vivo" id="v-caixa">&#8230;</span></a>
+    <a class="tile dia" id="t-estoque" href="estoque.html"><strong>Estoque</strong><span class="vivo" id="v-estoque">&#8230;</span></a>
+    <a class="tile dia" id="t-relatorio" href="relatorio.html"><strong>Relat&#243;rio de vendas</strong><span class="vivo" id="v-relatorio">Faturamento e mais vendidos</span></a>
   </div>
 
-  <h2>Equipe</h2>
+  <h2 id="h-cardapio">Card&#225;pio</h2>
+  <div class="grid">
+    <a class="tile" id="t-painel" href="painel.html"><strong>Painel do card&#225;pio</strong><span>Pre&#231;os, itens, fotos, op&#231;&#245;es e ficha t&#233;cnica.</span></a>
+    <a class="tile" id="t-qr" href="qrcodes.html"><strong>Imprimir QR codes</strong><span>Cart&#245;es das mesas prontos para imprimir.</span></a>
+    <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o card&#225;pio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
+  </div>
+
+  <details class="cfg" id="cfg">
+    <summary><span>Configura&#231;&#245;es</span><small>Dados do bar, delivery, pagamento, equipe, links das mesas e plano</small></summary>
+    <div class="grid" style="margin-top:12px">
+      <a class="tile" id="t-perfil" href="perfil.html"><strong>Dados do bar</strong><span>Endere&#231;o, WhatsApp, Instagram, avalia&#231;&#227;o no Google e hor&#225;rio de funcionamento.</span></a>
+      <a class="tile" id="t-delivery" href="delivery.html"><strong>Delivery</strong><span>Bairros, taxas, Pix e o link para pedidos de entrega.</span></a>
+      <a class="tile" id="t-pagamentos" href="pagamentos.html"><strong>Pagamento autom&#225;tico</strong><span>Conecte o Mercado Pago e o Pix &#233; confirmado sozinho.</span></a>
+      <a class="tile" id="t-plano" href="plano.html"><strong>Meu plano</strong><span>Veja o seu plano e libere mais recursos.</span></a>
+    </div>
+
+    <h2>Equipe</h2>
   <div class="card" id="equipe">
     <p style="margin:0 0 8px"><strong>Chave da equipe</strong></p>
     <p class="dica" style="margin:0 0 10px">Para gar&#231;ons e cozinha. Com ela, a pessoa entra pela mesma tela de login e s&#243; acessa o painel de pedidos: muda status, atende chamados, fecha contas e imprime. N&#227;o mexe em pre&#231;os, card&#225;pio, plano nem relat&#243;rio, e n&#227;o apaga pedidos.</p>
@@ -90,11 +119,6 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <p class="dica" id="eq-st" role="status" style="margin:8px 0 0"></p>
   </div>
 
-  <h2>Seus clientes</h2>
-  <div class="grid">
-    <a class="tile" id="t-cardapio" href="cardapio-saas.html" target="_blank" rel="noopener"><strong>Ver o card&#225;pio</strong><span>Como o cliente enxerga, sem fazer pedido.</span></a>
-  </div>
-
   <h2 id="h-links">Links das mesas</h2>
   <div class="card">
     <div class="linha">
@@ -105,6 +129,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
     <p class="dica" id="dica-links">Grave cada link na tag NFC correspondente, ou use no gerador de QR code.</p>
     <div class="links" id="links"></div>
   </div>
+  </details>
 <footer class="legal"><p><a href="privacidade.html">Privacidade</a> &middot; <a href="termos.html">Termos de uso</a> &middot; <a href="reembolso.html">Cancelamento e reembolso</a></p><p><button type="button" class="tema-btn" id="tema-btn">Tema</button></p></footer>
 </main>
 <script>
@@ -153,6 +178,8 @@ $("t-perfil").href = "perfil.html?r=" + encodeURIComponent(rest);
 $("t-relatorio").href = "relatorio.html?r=" + encodeURIComponent(rest);
 $("t-plano").href = "plano.html?r=" + encodeURIComponent(rest);
 $("t-cardapio").href = "cardapio-saas.html?r=" + encodeURIComponent(rest);
+$("t-caixa").href = "caixa.html"; $("t-estoque").href = "estoque.html";
+$("t-qr").addEventListener("click", ev => { ev.preventDefault(); if (NIVEL === 0) return; const teto = tetoDe(NIVEL < 0 ? 1 : NIVEL); location.href = "qrcodes.html?n=" + Math.min(teto, Number($("qtd").value) || 10) + "&max=" + teto + "&del=" + (NIVEL >= 2 ? "1" : "0"); });
 
 function aplicarLimite(){
   const p = ROT.toLowerCase(), ps = p + "s";
@@ -188,9 +215,11 @@ aplicarLimite();
     if (d && d.nivel === 0){
       av.hidden = false;
       $("aviso-txt").textContent = (d.teste_ate ? "O seu teste gr\u00e1tis terminou. " : "A sua assinatura terminou. ") + "Assine um plano para voltar a usar o painel e colocar o card\u00e1pio no ar. Os seus itens continuam guardados.";
-      for (const id of ["t-pedidos", "t-painel", "t-delivery", "t-pagamentos", "t-perfil", "t-cardapio", "t-relatorio", "t-caixa", "t-estoque"]){ const e = $(id); if (e) e.hidden = true; }
+      for (const id of ["t-pedidos", "t-painel", "t-delivery", "t-pagamentos", "t-perfil", "t-cardapio", "t-relatorio", "t-caixa", "t-estoque", "t-qr"]){ const e = $(id); if (e) e.hidden = true; }
       const hl = $("h-links"); hl.hidden = true; if (hl.nextElementSibling) hl.nextElementSibling.hidden = true;
-      document.querySelectorAll("main > h2").forEach(x => { if (x.textContent.trim() === "Seus clientes") x.hidden = true; });
+      $("h-cardapio").hidden = true;
+      document.querySelectorAll("main > h2").forEach(x => { if (x.textContent.trim() === "Dia a dia") x.hidden = true; });
+      $("cfg").open = true;
     } else if (d && d.teste){
       const n = Number(d.teste_dias) || 1;
       av.hidden = false;
@@ -199,6 +228,50 @@ aplicarLimite();
     }
   }catch(e){}
 })();
+
+// ===== Resumo ao vivo nos botoes do dia a dia =====
+const brlCurto = v => "R$ " + Number(v || 0).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function vivo(id, txt, cls){ const e = $(id); if (!e) return; e.textContent = txt; e.className = "vivo" + (cls ? " " + cls : ""); }
+async function post(caminho, corpo){
+  const r = await fetch("https://n8n.automatikai.cloud/webhook/" + caminho, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: rest, chave: sessionStorage.getItem("chave") || "", ...corpo})});
+  if (!r.ok) throw new Error(String(r.status));
+  return r.json();
+}
+async function resumos(){
+  if (!rest || NIVEL === 0) return;
+  // pedidos
+  post("saas-admin-pedidos", {}).then(d => {
+    const ps = Array.isArray(d.pedidos) ? d.pedidos : [];
+    const novos = ps.filter(p => p.status === "novo").length;
+    const prep = ps.filter(p => p.status === "preparando").length;
+    const ch = Array.isArray(d.chamados) ? d.chamados.length : 0;
+    const partes = [];
+    if (novos) partes.push(novos + (novos === 1 ? " novo" : " novos"));
+    if (prep) partes.push(prep + " em preparo");
+    if (ch) partes.push(ch + (ch === 1 ? " chamado" : " chamados"));
+    vivo("v-pedidos", partes.length ? partes.join(" \u00b7 ") : "Nenhum pedido em aberto", novos || ch ? "urgente" : "");
+    $("t-pedidos").classList.toggle("pulsa", !!(novos || ch));
+  }).catch(() => vivo("v-pedidos", "Veja os pedidos chegando"));
+  // caixa
+  post("saas-admin-caixa", {acao: "ver"}).then(d => {
+    if (d && d.aberto) vivo("v-caixa", "Aberto \u00b7 " + brlCurto(d.aberto.resumo && d.aberto.resumo.total) + " hoje", "bom");
+    else vivo("v-caixa", "Fechado \u00b7 toque para abrir", "alerta");
+  }).catch(() => vivo("v-caixa", "Abertura, sangria e fechamento"));
+  // estoque
+  post("saas-admin-estoque", {acao: "ver"}).then(d => {
+    if (!d || d.plano){ vivo("v-estoque", "No plano Profissional"); return; }
+    const ins = d.insumos || [];
+    if (!ins.length){ vivo("v-estoque", "Cadastre seus insumos"); return; }
+    const zer = ins.filter(x => x.estoque <= 0).length;
+    const bx = ins.filter(x => x.estoque > 0 && x.minimo > 0 && x.estoque <= x.minimo).length;
+    if (zer) vivo("v-estoque", "\u26a0 " + zer + (zer === 1 ? " insumo acabou" : " insumos acabaram") + (bx ? " \u00b7 " + bx + " acabando" : ""), "urgente");
+    else if (bx) vivo("v-estoque", "\u26a0 " + bx + (bx === 1 ? " insumo acabando" : " insumos acabando"), "alerta");
+    else vivo("v-estoque", "Tudo em dia", "bom");
+  }).catch(() => vivo("v-estoque", "Ingredientes que descontam sozinhos"));
+}
+setTimeout(resumos, 300);
+setInterval(() => { if (document.visibilityState === "visible") resumos(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") resumos(); });
 
 $("sair").addEventListener("click", () => {
   try{ sessionStorage.removeItem("rest"); sessionStorage.removeItem("chave"); sessionStorage.removeItem("nome"); sessionStorage.removeItem("rot"); }catch(e){}
