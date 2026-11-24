@@ -35,6 +35,12 @@ a.voltar:hover{border-color:var(--accent)}
 .tag{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--ok);color:var(--on-ok);font-size:.78rem;font-weight:700}
 a.zap{color:#25d366;font-weight:600}
 [hidden]{display:none!important}
+.abas{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+.abas button{flex:1;min-width:140px;background:transparent;border:1px solid var(--line);color:var(--ink)}
+.abas button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.qr{display:block;width:220px;max-width:100%;margin:14px auto 8px;background:#fff;padding:8px;border-radius:10px}
+textarea{width:100%;margin-top:6px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:.8rem;resize:none}
+.aviso-perto{border-color:var(--accent)!important}
 footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted);line-height:1.5}footer.legal p{margin:0 0 6px;color:var(--muted)}footer.legal a{color:var(--muted);text-decoration:underline}footer.legal a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ===== Tema claro ===== */
@@ -69,22 +75,39 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 
   <section id="app" hidden>
     <div class="topo">
-      <div><h1 id="a-nome"></h1><p class="sub">Escolha o plano ideal para o seu neg&#243;cio.</p></div>
+      <div><h1 id="a-nome"></h1><p class="sub">Um plano com tudo do LaMenu. Pague no cart&#227;o ou no Pix.</p></div>
       <div class="acoes"><a class="voltar" href="app.html">&larr; Menu</a><button class="sec" id="a-sair">Sair</button></div>
     </div>
 
     <div id="c-ok" class="st" role="status"></div>
     <div id="aviso-fim" class="card" hidden></div>
-    <h2>Planos</h2>
+    <h2>Plano</h2>
     <div id="planos"></div>
 
     <div class="card" id="form-up" hidden>
       <strong id="up-titulo"></strong>
-      <p class="sub">Pagamento com cart&#227;o de cr&#233;dito, processado pelo Mercado Pago. A cobran&#231;a &#233; mensal e voc&#234; cancela quando quiser. Quando o pagamento for confirmado, o novo plano &#233; liberado sozinho.</p>
-      <label>E-mail para a cobran&#231;a<input id="email" type="email" maxlength="120" autocomplete="email"></label>
-      <div id="brick-cartao" style="margin-top:14px;min-height:120px"></div>
-      <p class="sub seguro" style="font-size:.82rem;margin-top:8px">&#128274; Os dados do cart&#227;o v&#227;o direto para o Mercado Pago. O LaMenu n&#227;o v&#234; nem guarda o n&#250;mero do cart&#227;o.</p>
-      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><button class="sec" id="up-cancelar">Cancelar</button></div>
+      <label>E-mail para os recibos<input id="email" type="email" maxlength="120" autocomplete="email"></label>
+      <div class="abas" role="tablist" aria-label="Forma de pagamento">
+        <button type="button" role="tab" id="aba-cartao" aria-selected="true" aria-controls="pg-cartao">Cart&#227;o de cr&#233;dito</button>
+        <button type="button" role="tab" id="aba-pix" aria-selected="false" aria-controls="pg-pix">Pix</button>
+      </div>
+      <div id="pg-cartao" role="tabpanel" aria-labelledby="aba-cartao">
+        <p class="sub" style="margin-top:12px">Renova sozinho todo m&#234;s. Voc&#234; cancela quando quiser. Dica: se o banco recusar, use o <b>cart&#227;o virtual</b> do app do seu banco.</p>
+        <div id="brick-cartao" style="margin-top:10px;min-height:120px"></div>
+        <p class="sub seguro" style="font-size:.82rem;margin-top:8px">&#128274; Os dados do cart&#227;o v&#227;o direto para o Mercado Pago. O LaMenu n&#227;o v&#234; nem guarda o n&#250;mero do cart&#227;o.</p>
+      </div>
+      <div id="pg-pix" role="tabpanel" aria-labelledby="aba-pix" hidden>
+        <p class="sub" style="margin-top:12px">Voc&#234; paga <b>30 dias por vez</b>. O Pix n&#227;o renova sozinho: quando estiver perto de vencer, o painel avisa e voc&#234; paga mais 30 dias aqui.</p>
+        <button type="button" id="pix-gerar" style="margin-top:8px">Gerar Pix</button>
+        <div id="pix-res" hidden>
+          <img id="pix-qr" class="qr" alt="QR code do Pix">
+          <label for="pix-cod">Pix copia e cola</label>
+          <textarea id="pix-cod" rows="3" readonly></textarea>
+          <button type="button" class="sec" id="pix-copiar" style="margin-top:8px">Copiar c&#243;digo</button>
+          <p class="sub" style="font-size:.82rem;margin-top:8px">Abra o app do seu banco, escolha Pix e leia o QR code ou cole o c&#243;digo. Deixe esta p&#225;gina aberta: o plano &#233; liberado sozinho assim que o pagamento cair.</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap"><button class="sec" id="up-cancelar">Fechar</button></div>
       <div id="up-st" class="st" role="status"></div>
     </div>
 
@@ -114,9 +137,10 @@ $("zap").href = "https://wa.me/5512997621359?text=" + encodeURIComponent("Ol\u00
 
 // Os valores aqui s\u00e3o s\u00f3 para exibir. Quem cobra \u00e9 o servidor.
 const PLANOS = [
-  {id: "basico", nivel: 1, valor: 49.90, nome: "B\u00e1sico", preco: "R$ 49,90/m\u00eas", desc: "Pedidos pelo celular na mesa ou no quarto, com painel em tempo real."},
-  {id: "profissional", nivel: 3, valor: 79.90, nome: "Profissional", preco: "R$ 79,90/m\u00eas", desc: "Tudo do B\u00e1sico, mais delivery e retirada, Pix, acompanhamento do pedido e mais mesas."}
+  {id: "profissional", nivel: 3, valor: 69.90, nome: "Profissional", preco: "R$ 69,90/m\u00eas", desc: "Pedidos na mesa ou no quarto, delivery e retirada, Pix, acompanhamento do pedido, estoque, caixa e QR codes. Tudo do LaMenu."}
 ];
+let PIX_TIMER = null, PIX_PID = "", ULTIMO = null;
+const dataBR = d => new Date(d).toLocaleDateString("pt-BR");
 
 async function api(caminho, corpo){
   const r = await fetch(URL_BASE + caminho, {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({r: REST, chave: CHAVE, ...corpo})});
@@ -126,46 +150,57 @@ async function api(caminho, corpo){
 const msg = (el, t, ok) => { el.className = "st " + (ok ? "ok" : "erro"); el.textContent = t; };
 
 function desenhar(d){
+  ULTIMO = d;
   $("a-nome").textContent = d.nome || REST;
   const bloqueado = d.nivel === 0;
   const emTeste = !!d.teste && !bloqueado;
   const fim = d.plano_ate ? new Date(d.plano_ate) : null;
   d.fim = (fim && fim > new Date() && !bloqueado && !emTeste) ? fim : null;
+  d.pix = !!d.fim && d.pago_via === "pix";
   const pagando = !bloqueado && !emTeste && !d.fim;
   $("bloco-cancelar").hidden = !pagando;
   const av = $("aviso-fim");
-  av.hidden = false;
+  av.hidden = false; av.classList.remove("aviso-perto");
   if (bloqueado){
-    av.textContent = (d.teste_ate ? "O seu teste gr\u00e1tis terminou. " : "A sua assinatura terminou. ") + "Para voltar a usar o painel e colocar o card\u00e1pio no ar de novo, assine um dos planos abaixo. Os seus itens e configura\u00e7\u00f5es continuam guardados.";
+    av.textContent = (d.teste_ate ? "O seu teste gr\u00e1tis terminou. " : "O seu plano terminou. ") + "Para voltar a usar o painel e colocar o card\u00e1pio no ar de novo, assine abaixo, no cart\u00e3o ou no Pix. Os seus itens e configura\u00e7\u00f5es continuam guardados.";
   } else if (emTeste){
     const n = Number(d.teste_dias) || 1;
-    av.textContent = "Voc\u00ea est\u00e1 no teste gr\u00e1tis do plano Profissional. " + (n === 1 ? "Falta 1 dia" : "Faltam " + n + " dias") + " (at\u00e9 " + new Date(d.teste_ate).toLocaleDateString("pt-BR") + "). Assine um plano para continuar depois do teste.";
+    av.textContent = "Voc\u00ea est\u00e1 no teste gr\u00e1tis do plano Profissional. " + (n === 1 ? "Falta 1 dia" : "Faltam " + n + " dias") + " (at\u00e9 " + dataBR(d.teste_ate) + "). Assine para continuar depois do teste. Se pagar agora, os dias que faltam do teste n\u00e3o se perdem no Pix.";
+  } else if (d.pix){
+    const dias = Math.max(0, Math.ceil((d.fim - new Date()) / 86400000));
+    av.textContent = "Plano pago com Pix at\u00e9 " + d.fim.toLocaleDateString("pt-BR") + (dias <= 5 ? " (" + (dias <= 1 ? "vence amanh\u00e3 ou hoje" : "faltam " + dias + " dias") + ")" : "") + ". O Pix n\u00e3o renova sozinho: pague mais 30 dias abaixo antes dessa data, ou passe para o cart\u00e3o e a renova\u00e7\u00e3o fica autom\u00e1tica.";
+    if (dias <= 5) av.classList.add("aviso-perto");
   } else if (d.fim){
     av.textContent = "Assinatura cancelada. O seu plano continua ativo at\u00e9 " + d.fim.toLocaleDateString("pt-BR") + ". Depois dessa data o painel e o card\u00e1pio ficam bloqueados at\u00e9 voc\u00ea assinar de novo, e n\u00e3o haver\u00e1 nova cobran\u00e7a. Se mudar de ideia, assine de novo abaixo.";
   } else { av.hidden = true; av.textContent = ""; }
   const caixa = $("planos"); caixa.replaceChildren();
   for (const p of PLANOS){
-    const atual = !bloqueado && p.id === d.plano;
+    const atual = !bloqueado && d.nivel > 0;
     const c = document.createElement("div"); c.className = "card plano" + (atual ? " atual" : "");
     const t = document.createElement("div");
     const s = document.createElement("strong"); s.textContent = p.nome + " \u00b7 " + p.preco;
     const sm = document.createElement("small"); sm.textContent = p.desc;
     t.append(s, sm); c.append(t);
     if (atual){
-      const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = emTeste ? "Em teste" : "Plano atual"; c.append(tag);
+      const tag = document.createElement("span"); tag.className = "tag";
+      tag.textContent = emTeste ? "Em teste" : (d.pix ? "Pago no Pix" : (pagando ? "Ativo no cart\u00e3o" : "Plano atual"));
+      c.append(tag);
     }
-    if (!(atual && pagando)){
+    if (!pagando){
       const b = document.createElement("button");
-      b.textContent = (atual && d.fim) ? "Reativar" : (pagando ? "Mudar para este" : "Assinar");
-      b.addEventListener("click", () => abrirForm(p)); c.append(b);
+      b.textContent = d.pix ? "Pagar mais 30 dias" : (d.fim ? "Reativar" : "Assinar");
+      b.addEventListener("click", () => abrirForm(p, d.pix ? "pix" : "cartao")); c.append(b);
     }
     caixa.append(c);
   }
 }
 
-function abrirForm(p){
+function abrirForm(p, modo){
   ESCOLHIDO = p;
-  $("up-titulo").textContent = "Assinar o plano " + p.nome + " (" + p.preco + ")";
+  $("up-titulo").textContent = "Plano " + p.nome + " (" + p.preco + ")";
+  $("pix-gerar").textContent = "Gerar Pix de " + brl(p.valor) + " (30 dias)";
+  pararPix(); $("pix-res").hidden = true;
+  mostrarAba(modo === "pix" ? "pix" : "cartao");
   try{ $("email").value = $("email").value || localStorage.getItem("email") || ""; }catch(e){}
   $("up-st").textContent = "";
   $("form-up").hidden = false;
@@ -218,7 +253,7 @@ async function esperarAtivacao(p){
     await new Promise(r => setTimeout(r, 4000));
     try{
       const {status, dados} = await api("saas-admin-plano", {});
-      if (status === 200 && dados && dados.plano === p.id && !dados.teste && dados.nivel > 0){
+      if (status === 200 && dados && dados.plano === p.id && !dados.teste && dados.nivel > 0 && dados.pago_via === "cartao" && !dados.plano_ate){
         $("form-up").hidden = true;
         desenhar(dados);
         msg($("c-ok"), "Pronto! O plano " + p.nome + " est\u00e1 ativo. Obrigado por assinar o LaMenu.", true);
@@ -229,6 +264,64 @@ async function esperarAtivacao(p){
   }
   st.className = "st ok"; st.textContent = "Pagamento recebido. A libera\u00e7\u00e3o pode levar alguns minutos; atualize esta p\u00e1gina daqui a pouco.";
 }
+// ===== Pix (30 dias por vez) =====
+const brl = v => "R$ " + Number(v || 0).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+function mostrarAba(qual){
+  const pix = qual === "pix";
+  $("aba-pix").setAttribute("aria-selected", pix ? "true" : "false");
+  $("aba-cartao").setAttribute("aria-selected", pix ? "false" : "true");
+  $("pg-pix").hidden = !pix; $("pg-cartao").hidden = pix;
+  $("up-st").textContent = "";
+}
+$("aba-cartao").addEventListener("click", () => mostrarAba("cartao"));
+$("aba-pix").addEventListener("click", () => mostrarAba("pix"));
+function pararPix(){ if (PIX_TIMER){ clearTimeout(PIX_TIMER); PIX_TIMER = null; } PIX_PID = ""; }
+$("pix-gerar").addEventListener("click", async () => {
+  const st = $("up-st"), btn = $("pix-gerar");
+  const email = $("email").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ msg(st, "Digite um e-mail v\u00e1lido para o recibo.", false); $("email").focus(); return; }
+  btn.disabled = true; st.className = "st"; st.textContent = "Gerando o Pix\u2026";
+  try{
+    const {status, dados} = await api("saas-plano-pix", {acao: "gerar", email});
+    if (status === 401){ sair(); return; }
+    if (status !== 200 || !dados || !dados.pid || !dados.copia_cola){ msg(st, (dados && dados.erro) || "N\u00e3o foi poss\u00edvel gerar o Pix. Tente de novo.", false); return; }
+    try{ localStorage.setItem("email", email); }catch(e){}
+    pararPix();
+    PIX_PID = dados.pid;
+    if (dados.qr_base64){ $("pix-qr").src = "data:image/png;base64," + dados.qr_base64; $("pix-qr").hidden = false; } else $("pix-qr").hidden = true;
+    $("pix-cod").value = dados.copia_cola;
+    $("pix-res").hidden = false;
+    st.className = "st"; st.textContent = "Aguardando o pagamento de " + brl(dados.valor) + "\u2026";
+    esperarPix(PIX_PID, Date.now());
+  }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); }
+  finally{ btn.disabled = false; }
+});
+$("pix-copiar").addEventListener("click", async () => {
+  const t = $("pix-cod"), b = $("pix-copiar");
+  try{ await navigator.clipboard.writeText(t.value); }catch(e){ t.select(); try{ document.execCommand("copy"); }catch(_){} }
+  b.textContent = "Copiado!"; setTimeout(() => { b.textContent = "Copiar c\u00f3digo"; }, 2000);
+});
+function esperarPix(pid, inicio){
+  PIX_TIMER = setTimeout(async () => {
+    if (pid !== PIX_PID) return;
+    const st = $("up-st");
+    if (Date.now() - inicio > 30 * 60000){ st.className = "st"; st.textContent = "Ainda n\u00e3o recebemos o Pix. Se j\u00e1 pagou, atualize a p\u00e1gina daqui a pouco. Se n\u00e3o, gere um Pix novo."; return; }
+    try{
+      const {status, dados} = await api("saas-plano-pix", {acao: "consultar", pid});
+      if (pid !== PIX_PID) return;
+      if (status === 200 && dados && dados.pago){
+        pararPix();
+        $("form-up").hidden = true;
+        try{ await carregar(); }catch(e){}
+        msg($("c-ok"), "Pix recebido! O plano est\u00e1 ativo" + (dados.plano_ate ? " at\u00e9 " + dataBR(dados.plano_ate) : "") + ". Obrigado por assinar o LaMenu.", true);
+        window.scrollTo({top: 0, behavior: "smooth"});
+        return;
+      }
+    }catch(e){}
+    esperarPix(pid, inicio);
+  }, 5000);
+}
+
 $("c-abrir").addEventListener("click", () => { $("c-confirma").hidden = false; $("c-abrir").hidden = true; });
 $("c-nao").addEventListener("click", () => { $("c-confirma").hidden = true; $("c-abrir").hidden = false; });
 $("c-sim").addEventListener("click", async () => {
@@ -249,7 +342,7 @@ $("c-sim").addEventListener("click", async () => {
   }catch(e){ msg(st, "Sem conex\u00e3o. Tente de novo.", false); }
   finally{ btn.disabled = false; }
 });
-$("up-cancelar").addEventListener("click", () => { $("form-up").hidden = true; ESCOLHIDO = null; });
+$("up-cancelar").addEventListener("click", () => { pararPix(); $("form-up").hidden = true; ESCOLHIDO = null; });
 
 
 async function carregar(){

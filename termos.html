@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>(function(){try{var t=localStorage.getItem("tema");if(t!=="claro"&&t!=="escuro")t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"escuro":"claro";document.documentElement.setAttribute("data-tema",t);}catch(e){document.documentElement.setAttribute("data-tema","claro");}})();</script>
 <title>Termos de Uso - LaMenu</title>
 <style>
 :root{color-scheme:dark;--bg:#0d0b0c;--ink:#f4efe8;--muted:#b0a7a0;--line:#4a2f31;--accent:#ff4a3d;--surface:#171112}
@@ -11,10 +10,10 @@
 body{margin:0;padding:24px 16px 60px;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6}
 main{max-width:760px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 24px}
 h1{margin:0 0 4px;font-size:1.8rem}
-h2{margin:28px 0 8px;font-size:1.15rem;color:var(--h2c,#ff8a80)}
+h2{margin:28px 0 8px;font-size:1.15rem;color:#ff8a80}
 p,li{color:var(--ink)}
 .leve{color:var(--muted);font-size:.92rem}
-a{color:var(--lnk,#7fe9ff)}
+a{color:#7fe9ff}
 a:focus-visible{outline:2px solid #7fe9ff;outline-offset:2px}
 table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.93rem}
 th,td{text-align:left;vertical-align:top;padding:8px;border:1px solid var(--line)}
@@ -22,31 +21,12 @@ th{background:var(--bg)}
 .tab{overflow-x:auto}
 nav{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:.92rem}
 nav a{margin-right:14px}
-
-/* ===== Tema claro ===== */
-:root{--on-accent:#160504;--on-ok:#04210f}
-:root[data-tema="claro"]{color-scheme:light;--bg:#f7f3ee;--ink:#2b1a16;--muted:#6b5d56;--line:#e2d6ca;--grid:#eee5db;--accent:#cf4526;--ok:#15803d;--warn:#b45309;--surface:#ffffff;--on-accent:#ffffff;--on-ok:#ffffff}
-:root[data-tema="claro"] body{background:radial-gradient(ellipse at 15% -10%,rgba(207,69,38,.08),transparent 55%),var(--bg)!important}
-[data-tema="claro"] .aviso,[data-tema="claro"] .obs{background:#fff6e5!important;border-color:#efd6a3!important;color:var(--ink)}
-[data-tema="claro"] .card,[data-tema="claro"] .ped,[data-tema="claro"] .conta,[data-tema="claro"] .tile{box-shadow:0 1px 2px rgba(60,30,10,.05),0 4px 14px rgba(60,30,10,.06)}
-[data-tema="claro"] .barra .dica{background:#2b1a16!important;color:#fff!important;border-color:#2b1a16!important}
-[data-tema="claro"] .col.saiu h2{color:#0369a1!important}
-[data-tema="claro"] .col.saiu .ped{border-left-color:#0369a1!important}
-[data-tema="claro"] .ped.destaque{animation-name:piscaClaro}
-@keyframes piscaClaro{50%{background:#fde3dc}}
-[data-tema="claro"] .chamado{background:#fff4dc}
-[data-tema="claro"] .chamado.conta{background:#e8f6ee}
-[data-tema="claro"] h1[style*="00e5ff"],[data-tema="claro"] main > .card > h1{color:var(--accent)!important;text-shadow:none!important}
-[data-tema="claro"] .aceite a,[data-tema="claro"] .legal-txt a{color:#0369a1}
-[data-tema="claro"] p a.zap{color:#15803d}
-button.tema-btn{background:transparent!important;border:1px solid var(--line)!important;color:var(--muted)!important;padding:6px 12px!important;border-radius:999px!important;font-size:.8rem!important;font-weight:600;margin:10px auto 0;display:inline-block;cursor:pointer}
-:root[data-tema="claro"]{--h1:var(--accent);--h1s:none;--h2c:var(--accent);--lnk:#0369a1}
 </style>
 </head>
 <body>
 <main>
 <h1>Termos de Uso</h1>
-<p class="leve">&#218;ltima atualiza&#231;&#227;o: 13 de novembro de 2026</p>
+<p class="leve">&#218;ltima atualiza&#231;&#227;o: 24 de novembro de 2026</p>
 
 <p>Estes termos valem para quem cria uma conta no LaMenu. Ao marcar o aceite no cadastro, voc&#234; concorda com eles e com a <a href="privacidade.html">Pol&#237;tica de Privacidade</a>.</p>
 <h2>1. Quem oferece o servi&#231;o</h2>
@@ -57,12 +37,11 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 <h2>3. Planos e pre&#231;os</h2>
 <ul>
 <li><strong>Teste gr&#225;tis</strong>: toda conta nova usa o plano Profissional por 7 dias, sem cart&#227;o. Sem assinatura ao fim do teste, o painel e o card&#225;pio ficam bloqueados at&#233; a contrata&#231;&#227;o de um plano.</li>
-<li><strong>B&#225;sico</strong>, R$ 49,90 por m&#234;s: pedidos pelo celular do cliente na mesa ou no quarto, com painel em tempo real.</li>
-<li><strong>Profissional</strong>, R$ 79,90 por m&#234;s: tudo do B&#225;sico, mais delivery, retirada, Pix e acompanhamento do pedido.</li>
+<li><strong>Profissional</strong>, R$ 69,90 por m&#234;s: pedidos na mesa ou no quarto, delivery, retirada, Pix, acompanhamento do pedido e todos os outros recursos do LaMenu.</li>
 </ul>
 <p>Os pre&#231;os exibidos no cadastro s&#227;o os valores totais cobrados. Qualquer reajuste ser&#225; avisado por e-mail com pelo menos 30 dias de anteced&#234;ncia, e voc&#234; pode cancelar antes de ele valer.</p>
 <h2>4. Pagamento e renova&#231;&#227;o</h2>
-<p>Os planos pagos s&#227;o assinaturas mensais cobradas pelo Mercado Pago, renovadas automaticamente a cada m&#234;s at&#233; voc&#234; cancelar. Se a cobran&#231;a n&#227;o for aprovada, o painel e o card&#225;pio podem ficar bloqueados at&#233; a regulariza&#231;&#227;o.</p>
+<p>Voc&#234; pode pagar de dois jeitos, pelo Mercado Pago: no <strong>cart&#227;o de cr&#233;dito</strong>, como assinatura mensal renovada automaticamente at&#233; voc&#234; cancelar; ou no <strong>Pix</strong>, que libera 30 dias por pagamento e n&#227;o renova sozinho. No Pix, se o pr&#243;ximo pagamento n&#227;o for feito at&#233; o fim dos 30 dias, o painel e o card&#225;pio ficam bloqueados at&#233; um novo pagamento. Se a cobran&#231;a n&#227;o for aprovada, o painel e o card&#225;pio podem ficar bloqueados at&#233; a regulariza&#231;&#227;o.</p>
 <h2>5. Cancelamento e reembolso</h2>
 <p>Voc&#234; cancela quando quiser, sozinho, na p&#225;gina "Meu plano". As regras completas, inclusive o direito de arrependimento de 7 dias, est&#227;o na <a href="reembolso.html">Pol&#237;tica de Cancelamento e Reembolso</a>.</p>
 <h2>6. Sua conta e chave de acesso</h2>
