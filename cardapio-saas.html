@@ -526,7 +526,7 @@ async function carregar(){
       im.onerror = () => { capa.hidden = true; document.body.classList.remove("com-capa"); };
       im.onload = () => {
         // imagem larga (foto de fachada, banner): ocupa a capa inteira; logo quadrada: fica no centro sobre o fundo desfocado
-        if (im.naturalWidth >= im.naturalHeight * 1.25) capa.classList.add("larga");
+        capa.classList.add("larga"); // a imagem ocupa a capa inteira, de ponta a ponta
         $("capa-bg").style.backgroundImage = 'url("' + im.src.replace(/"/g, "%22") + '")';
         capa.hidden = false; document.body.classList.add("com-capa");
       };
