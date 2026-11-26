@@ -14,6 +14,19 @@ main{max-width:1020px;margin:0 auto;padding:22px 16px 130px}
 .topo{display:flex;align-items:center;gap:14px;margin-bottom:14px}
 .logo{width:56px;height:56px;flex:none;object-fit:cover;border-radius:16px;background:var(--surface);box-shadow:var(--sombra)}
 .logo[hidden]{display:none}
+.capa{position:relative;margin:-22px -16px 62px;height:200px}
+.capa[hidden]{display:none}
+.capa-in{position:absolute;inset:0;overflow:hidden;border-radius:0 0 26px 26px;background:var(--surface)}
+.capa-bg{position:absolute;inset:-30px;background-size:cover;background-position:center;filter:blur(22px) saturate(1.25);opacity:.9}
+.capa-in::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 40%,rgba(0,0,0,.18))}
+.capa .logo{position:absolute;left:50%;bottom:-52px;transform:translateX(-50%);width:116px;height:116px;border-radius:28px;border:4px solid var(--bg);background:#fff;box-shadow:0 8px 24px rgba(60,30,10,.18)}
+.capa.larga{margin-bottom:18px;height:220px}
+.capa.larga .capa-bg{inset:0;filter:none;opacity:1}
+.capa.larga .capa-in::after{display:none}
+.capa.larga .logo{display:none}
+body.com-capa .topo{flex-direction:column;text-align:center;gap:2px}
+body.com-capa .topo .logo{display:none}
+@media (min-width:720px){.capa{margin:-6px 0 62px;height:240px}.capa-in{border-radius:26px}.capa.larga{height:280px;margin-bottom:22px}}
 h1{font-size:1.7rem;line-height:1.15;margin:0 0 2px;font-weight:800;letter-spacing:-.01em}
 .sub{margin:0;color:var(--muted);font-size:.95rem}
 nav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:10px 16px;margin:0 -16px 14px;position:sticky;top:0;background:rgba(250,246,240,.94);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:1}
@@ -125,8 +138,8 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
 </head>
 <body>
 <main>
+  <div id="capa" class="capa" hidden><div class="capa-in"><div class="capa-bg" id="capa-bg"></div></div><img id="logo" class="logo" width="116" height="116" alt=""></div>
   <header class="topo">
-    <img id="logo" class="logo" width="64" height="64" alt="" hidden>
     <div>
       <h1 id="titulo">Card&#225;pio</h1>
       <p class="sub" id="sub"></p>
@@ -508,10 +521,16 @@ async function carregar(){
     document.title = resposta.restaurante.nome;
     const lg = limpa(resposta.restaurante.logo);
     if (/^https:\/\//i.test(lg)){
-      const im = $("logo");
+      const im = $("logo"), capa = $("capa");
       im.alt = "Logo de " + resposta.restaurante.nome;
-      im.onerror = () => im.remove();
-      im.src = lg; im.hidden = false;
+      im.onerror = () => { capa.hidden = true; document.body.classList.remove("com-capa"); };
+      im.onload = () => {
+        // imagem larga (foto de fachada, banner): ocupa a capa inteira; logo quadrada: fica no centro sobre o fundo desfocado
+        if (im.naturalWidth >= im.naturalHeight * 1.6) capa.classList.add("larga");
+        $("capa-bg").style.backgroundImage = 'url("' + im.src.replace(/"/g, "%22") + '")';
+        capa.hidden = false; document.body.classList.add("com-capa");
+      };
+      im.src = lg;
     }
     ROT = limpa(resposta.restaurante.rotulo_local) || "Mesa";
     $("c-pagar").hidden = !(MESA && resposta.restaurante.pagar_mesa);
