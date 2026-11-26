@@ -285,6 +285,7 @@ const limpaSlug = v => String(v || "").replace(/[^0-9a-z-]/gi, "").toLowerCase()
 
 let ROT = "Mesa"; const fem = () => /o$/i.test(ROT) ? "o" : "a";
 try{ ROT = sessionStorage.getItem("rot") || "Mesa"; }catch(e){}
+let VERSAO = null, ULT_COMPLETO = 0;
 let ULTIMOS = [], REST = "", CHAVE = "", conhecidos = null, somLigado = true, ocupado = false, timer = null, ctx = null, wake = null;
 
 async function api(caminho, corpo){
@@ -1043,9 +1044,13 @@ async function atualizar(){
   if (ocupado) return;
   ocupado = true;
   try{
-    const {status, dados} = await api("saas-admin-pedidos", {});
+    // so pergunta "mudou algo?" (resposta minuscula); a lista inteira so vem quando mudou, ou a cada 3 min por garantia
+    const completo = VERSAO === null || Date.now() - ULT_COMPLETO > 180000;
+    const {status, dados} = await api("saas-admin-pedidos", completo ? {} : {v: VERSAO});
     if (status === 401) return sair();
     if (status !== 200 || !dados) throw new Error("falha");
+    if (dados.mudou === false) return;
+    VERSAO = dados.v != null ? String(dados.v) : null; ULT_COMPLETO = Date.now();
     const pedidos = dados.pedidos || [];
     ULTIMOS = pedidos;
     const ids = new Set(pedidos.map(p => p.id));
