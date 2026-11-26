@@ -32,6 +32,10 @@ button:disabled{opacity:.6;cursor:wait}
 .st.erro{color:var(--accent)}
 .off{opacity:.6}
 .foto-bloco{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.capa-ed{position:relative;width:100%;max-width:420px;aspect-ratio:390/230;border-radius:16px;overflow:hidden;background:var(--bg);border:1px solid var(--line);touch-action:none;cursor:grab;margin-top:10px}
+.capa-ed:active{cursor:grabbing}
+.capa-ed div{position:absolute;inset:0;background-size:cover;background-repeat:no-repeat;pointer-events:none}
+.capa-ed span{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:.75rem;padding:3px 8px;border-radius:999px;pointer-events:none}
 .foto-bloco .prev{width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:var(--bg);flex:none}
 .foto-bloco .col{flex:1;min-width:190px}
 .foto-bloco input[type=file]{padding:8px;font-size:.85rem}
@@ -121,7 +125,7 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
 
     <div class="card" id="logo-bloco">
       <strong>Logo do estabelecimento</strong>
-      <p class="sub">Aparece ao lado do nome no card&#225;pio. Use uma imagem quadrada, de prefer&#234;ncia com fundo transparente. Ela &#233; reduzida automaticamente. Envie apenas uma imagem que voc&#234; tem o direito de usar.</p>
+      <p class="sub">Aparece como capa no topo do card&#225;pio. Funciona melhor com uma imagem deitada (mais larga que alta), como uma foto da fachada ou um banner. Envie apenas uma imagem que voc&#234; tem o direito de usar.</p>
       <div class="foto-bloco">
         <img id="logo-prev" class="prev" alt="Logo atual" hidden>
         <div class="col">
@@ -134,6 +138,17 @@ button.tema-btn{background:transparent!important;border:1px solid var(--line)!im
         <button class="sec" id="logo-remover" type="button" hidden>Remover logo</button>
       </div>
       <p id="logo-st" class="st" role="status"></p>
+      <div id="capa-bloco" hidden>
+        <strong style="display:block;margin-top:16px">Posi&#231;&#227;o na capa</strong>
+        <p class="sub">Arraste a imagem para escolher a parte que aparece no topo do card&#225;pio. Use o zoom para aproximar.</p>
+        <div class="capa-ed" id="capa-ed"><div id="capa-img"></div><span>arraste para posicionar</span></div>
+        <label style="display:block;margin-top:10px;max-width:420px">Zoom<input id="capa-zoom" type="range" min="100" max="300" step="5" value="100" style="width:100%"></label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button id="capa-salvar" type="button">Salvar posi&#231;&#227;o</button>
+          <button class="sec" id="capa-centro" type="button">Centralizar</button>
+        </div>
+        <p id="capa-st" class="st" role="status"></p>
+      </div>
     </div>
     <p id="aviso-foto" class="st erro" role="status"></p>
     <h2>Novo item</h2>
@@ -719,6 +734,58 @@ function mostrarLogo(url){
   im.hidden = !tem;
   $("logo-remover").hidden = !tem;
   $("logo-dica").textContent = tem ? "Logo atual. Escolha outra imagem para trocar." : "Nenhuma logo enviada.";
+  CAPA.url = tem ? im.src : ""; desenharCapa();
+}
+// ---- Posicao da imagem na capa do cardapio ----
+const CAPA = {url: "", x: 50, y: 50, z: 100};
+function lerPos(t){
+  const p = String(t || "").split(/\s+/).map(Number);
+  CAPA.x = Number.isFinite(p[0]) ? Math.min(100, Math.max(0, p[0])) : 50;
+  CAPA.y = Number.isFinite(p[1]) ? Math.min(100, Math.max(0, p[1])) : 50;
+  CAPA.z = Number.isFinite(p[2]) ? Math.min(300, Math.max(100, p[2])) : 100;
+}
+function desenharCapa(){
+  $("capa-bloco").hidden = !CAPA.url;
+  if (!CAPA.url) return;
+  const d = $("capa-img");
+  d.style.backgroundImage = 'url("' + CAPA.url.replace(/"/g, "%22") + '")';
+  d.style.backgroundPosition = CAPA.x + "% " + CAPA.y + "%";
+  d.style.transformOrigin = CAPA.x + "% " + CAPA.y + "%";
+  d.style.transform = "scale(" + (CAPA.z / 100) + ")";
+  $("capa-zoom").value = CAPA.z;
+}
+(function(){
+  const ed = $("capa-ed"); let ini = null;
+  ed.addEventListener("pointerdown", e => { ini = {px: e.clientX, py: e.clientY, x: CAPA.x, y: CAPA.y}; ed.setPointerCapture(e.pointerId); });
+  ed.addEventListener("pointermove", e => {
+    if (!ini) return;
+    const r = ed.getBoundingClientRect(), f = 100 / (CAPA.z / 100);
+    CAPA.x = Math.min(100, Math.max(0, ini.x - (e.clientX - ini.px) / r.width * f));
+    CAPA.y = Math.min(100, Math.max(0, ini.y - (e.clientY - ini.py) / r.height * f));
+    desenharCapa();
+  });
+  const fim = () => { ini = null; };
+  ed.addEventListener("pointerup", fim); ed.addEventListener("pointercancel", fim);
+  $("capa-zoom").addEventListener("input", () => { CAPA.z = Number($("capa-zoom").value) || 100; desenharCapa(); });
+  $("capa-centro").addEventListener("click", () => { CAPA.x = 50; CAPA.y = 50; CAPA.z = 100; desenharCapa(); });
+  $("capa-salvar").addEventListener("click", async () => {
+    const st = $("capa-st"), b = $("capa-salvar");
+    b.disabled = true; st.className = "st"; st.textContent = "Salvando\u2026";
+    try{
+      const pos = Math.round(CAPA.x) + " " + Math.round(CAPA.y) + " " + Math.round(CAPA.z);
+      const {status, dados} = await api("saas-admin-perfil", {acao: "capa", capa_pos: pos});
+      if (status === 401){ sair(); return; }
+      if (status === 200 && dados && dados.ok === true){ st.className = "st ok"; st.textContent = "Posi\u00e7\u00e3o salva. O card\u00e1pio j\u00e1 mostra assim."; }
+      else { st.className = "st erro"; st.textContent = (dados && dados.erro) || "N\u00e3o foi poss\u00edvel salvar. Tente de novo."; }
+    }catch(e){ st.className = "st erro"; st.textContent = "Sem conex\u00e3o. Tente de novo."; }
+    finally{ b.disabled = false; }
+  });
+})();
+async function carregarCapa(){
+  try{
+    const {status, dados} = await api("saas-admin-perfil", {});
+    if (status === 200 && dados) { lerPos(dados.capa_pos); desenharCapa(); }
+  }catch(e){}
 }
 $("logo-arq").addEventListener("change", async () => {
   const arq = $("logo-arq").files[0], st = $("logo-st");
@@ -726,8 +793,9 @@ $("logo-arq").addEventListener("change", async () => {
   if (!arq) return;
   if (!/^image\//.test(arq.type)){ st.className = "st erro"; st.textContent = "Escolha um arquivo de imagem."; return; }
   try{
-    logoPendente = await comprimir(arq, 192, 15000, 40000);
+    logoPendente = await comprimir(arq, 1080, 100000, 145000);
     const im = $("logo-prev"); im.src = logoPendente; im.hidden = false;
+    CAPA.url = logoPendente; desenharCapa();
     $("logo-dica").textContent = "Pr\u00e9via (" + kb(logoPendente) + " KB). Toque em Salvar logo.";
     $("logo-salvar").disabled = false;
   }catch(e){
@@ -764,6 +832,7 @@ async function carregar(){
   if (status !== 200 || !dados) throw new Error("falha");
   $("a-nome").textContent = dados.restaurante.nome;
   mostrarLogo(dados.restaurante.logo);
+  carregarCapa();
   await carregarInsumos();
   desenhar(dados.itens || []);
 }
