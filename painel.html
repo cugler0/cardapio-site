@@ -793,7 +793,7 @@ $("logo-arq").addEventListener("change", async () => {
   if (!arq) return;
   if (!/^image\//.test(arq.type)){ st.className = "st erro"; st.textContent = "Escolha um arquivo de imagem."; return; }
   try{
-    logoPendente = await comprimir(arq, 1080, 100000, 145000);
+    logoPendente = await comprimir(arq, 1080, 60000, 145000);
     const im = $("logo-prev"); im.src = logoPendente; im.hidden = false;
     CAPA.url = logoPendente; desenharCapa();
     $("logo-dica").textContent = "Pr\u00e9via (" + kb(logoPendente) + " KB). Toque em Salvar logo.";
