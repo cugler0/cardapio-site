@@ -322,7 +322,7 @@ function mudar(id, d){
 }
 function addVariante(base, sel){
   const key = base + "|" + JSON.stringify(sel.map(s => [s.grupo, s.nome]));
-  if (!catalogo[key]) catalogo[key] = {nome: catalogo[base].nome, preco: catalogo[base].preco + sel.reduce((a, s) => a + s.preco, 0), base, opcoes: sel};
+  if (!catalogo[key]) catalogo[key] = {nome: catalogo[base].nome, preco: Math.max(0, catalogo[base].preco + sel.reduce((a, s) => a + s.preco, 0)), base, opcoes: sel};
   carrinho.set(key, Math.min(20, (carrinho.get(key) || 0) + 1));
   pintarQtd(base);
   atualizar();
@@ -348,7 +348,7 @@ function abrirOpcoes(base){
       const esq = document.createElement("span"); esq.className = "l";
       const nm = document.createElement("span"); nm.textContent = o.nome;
       esq.append(i, nm);
-      const pr = document.createElement("span"); pr.textContent = o.preco > 0 ? (g.maior ? reais(o.preco) : "+ " + reais(o.preco)) : "";
+      const pr = document.createElement("span"); pr.textContent = o.preco > 0 ? (g.maior ? reais(o.preco) : "+ " + reais(o.preco)) : (o.preco < 0 ? "\u2212 " + reais(-o.preco) : "");
       l.append(esq, pr); sec.append(l);
     });
     caixa.append(sec);
@@ -375,7 +375,7 @@ function precoOpcoes(){
     document.querySelectorAll('#o-grupos input[data-g="' + gi + '"]').forEach(i => { i.disabled = cheio && !i.checked; });
   });
   const extra = grupos.reduce((a, g, gi) => a + precosGrupo(g, esc[gi]).reduce((x, o) => x + o.preco, 0), 0);
-  $("o-add").textContent = "Adicionar \u00b7 " + reais(catalogo[OPC_ATUAL].preco + extra);
+  $("o-add").textContent = "Adicionar \u00b7 " + reais(Math.max(0, catalogo[OPC_ATUAL].preco + extra));
 }
 $("o-grupos").addEventListener("change", e => {
   const i = e.target;
@@ -554,7 +554,7 @@ async function carregar(){
       })) : [];
       if (gs.length) OPC[id] = gs;
       if(!grupos.has(cat)) grupos.set(cat, []);
-      const aPartir = catalogo[id].preco + gs.filter(g => g.min > 0).reduce((a, g) => a + Math.min(...g.itens.map(o => o.preco)), 0);
+      const aPartir = Math.max(0, catalogo[id].preco + gs.filter(g => g.min > 0).reduce((a, g) => a + Math.min(...g.itens.map(o => o.preco)), 0));
       grupos.get(cat).push({id, nome, desc: limpa(linha.descricao), foto: limpa(linha.foto), preco: catalogo[id].preco, aPartir});
     }
     if(!grupos.size){ caixa.innerHTML = '<p class="msg">Nenhum item dispon\u00edvel no momento.</p>'; return; }
@@ -567,7 +567,7 @@ async function carregar(){
       for(const it of itens){
         html += '<div class="item"><div class="esq">' + imagem(it.foto, it.nome) + '<div><div class="nome">' + escapa(it.nome) + '</div>' +
           (it.desc ? '<div class="desc">' + escapa(it.desc) + '</div>' : '') + '</div></div>' +
-          '<div class="dir"><div class="preco">' + (it.aPartir > it.preco ? '<small class="ap">' + "a partir de" + '</small> ' + reais(it.aPartir) : reais(it.preco)) + (OPC[it.id] ? '<div class="mais-op">' + "com op\u00e7\u00f5es" + '</div>' : '') + '</div>' +
+          '<div class="dir"><div class="preco">' + (it.aPartir !== it.preco ? '<small class="ap">' + "a partir de" + '</small> ' + reais(it.aPartir) : reais(it.preco)) + (OPC[it.id] ? '<div class="mais-op">' + "com op\u00e7\u00f5es" + '</div>' : '') + '</div>' +
           '<div class="qtd"><button data-a="-1" data-k="' + it.id + '" aria-label="Remover um">\u2212</button>' +
           '<span data-q="' + it.id + '">0</span>' +
           '<button data-a="1" data-k="' + it.id + '" aria-label="Adicionar um">+</button></div></div></div>';

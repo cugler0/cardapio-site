@@ -955,7 +955,7 @@ function lnCarrinho(){
 }
 function lnAdd(it, sel){
   const k = it.nome + "|" + JSON.stringify(sel.map(s => [s.grupo, s.nome]));
-  const c = LN_CAR.get(k) || {nome: it.nome, preco: Number(it.preco) + sel.reduce((a, s) => a + s.preco, 0), opcoes: sel, qtd: 0};
+  const c = LN_CAR.get(k) || {nome: it.nome, preco: Math.max(0, Number(it.preco) + sel.reduce((a, s) => a + s.preco, 0)), opcoes: sel, qtd: 0};
   c.qtd = Math.min(50, c.qtd + 1); LN_CAR.set(k, c); lnCarrinho();
 }
 function lnOpcoes(it, linha){
@@ -967,7 +967,7 @@ function lnOpcoes(it, linha){
     g.itens.forEach((o, oi) => {
       const l = document.createElement("label");
       const i = document.createElement("input"); i.type = g.max === 1 ? "radio" : "checkbox"; i.name = "lno" + gi; i.dataset.g = gi; i.dataset.o = oi;
-      l.append(i, o.nome + (o.preco > 0 ? (g.maior ? " (" + reais(o.preco) + ")" : " (+ " + reais(o.preco) + ")") : "")); box.append(l);
+      l.append(i, o.nome + (o.preco > 0 ? (g.maior ? " (" + reais(o.preco) + ")" : " (+ " + reais(o.preco) + ")") : (o.preco < 0 ? " (\u2212 " + reais(-o.preco) + ")" : ""))); box.append(l);
     });
   });
   const ok = document.createElement("button"); ok.type = "button"; ok.textContent = "Adicionar"; ok.style.marginTop = "8px";
@@ -996,8 +996,8 @@ function lnLista(){
   for (const it of lista){
     if (it.categoria !== cat){ cat = it.categoria; const c = document.createElement("div"); c.className = "cat"; c.textContent = cat; caixa.append(c); }
     const d = document.createElement("div"); d.className = "it";
-    const n = document.createElement("span"); const ap = it.preco + it.opcoes.filter(g => g.min > 0).reduce((a, g) => a + Math.min(...g.itens.map(o => o.preco)), 0);
-    n.textContent = it.nome + " \u00b7 " + (ap > it.preco ? "a partir de " : "") + reais(ap) + (it.opcoes.length ? " \u00b7 com op\u00e7\u00f5es" : "");
+    const n = document.createElement("span"); const ap = Math.max(0, it.preco + it.opcoes.filter(g => g.min > 0).reduce((a, g) => a + Math.min(...g.itens.map(o => o.preco)), 0));
+    n.textContent = it.nome + " \u00b7 " + (ap !== it.preco ? "a partir de " : "") + reais(ap) + (it.opcoes.length ? " \u00b7 com op\u00e7\u00f5es" : "");
     const b = document.createElement("button"); b.type = "button"; b.textContent = "+";
     b.addEventListener("click", () => it.opcoes.length ? lnOpcoes(it, d) : lnAdd(it, []));
     d.append(n, b); caixa.append(d);

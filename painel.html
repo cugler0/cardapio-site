@@ -305,7 +305,7 @@ function editorOpcoes(inicial){
     function op(o){
       const row = document.createElement("div"); row.className = "oprow";
       const n = input("text", o.nome, {maxLength: 40, placeholder: "Ex.: Grande"}); n.className = "o-nome";
-      const p = input("text", o.preco ? String(o.preco).replace(".", ",") : "", {inputMode: "decimal", placeholder: "+ R$ 0,00"}); p.className = "o-preco";
+      const p = input("text", o.preco ? String(o.preco).replace(".", ",") : "", {inputMode: "decimal", placeholder: "Ex.: 5 ou -15"}); p.className = "o-preco";
       const x = botao("\u00d7"); x.setAttribute("aria-label", "Remover op\u00e7\u00e3o");
       x.addEventListener("click", () => row.remove());
       const cp = campo("Acr\u00e9scimo", p);
@@ -355,8 +355,8 @@ function editorOpcoes(inicial){
     const vis = () => {
       lmax.hidden = tipo.value !== "n"; lmai.hidden = tipo.value !== "n";
       const m = tipo.value === "n" && mai.checked;
-      ops.querySelectorAll(".o-rot-preco").forEach(s => { s.textContent = m ? "Pre\u00e7o" : "Acr\u00e9scimo"; });
-      ops.querySelectorAll(".o-preco").forEach(p => { p.placeholder = m ? "R$ 0,00" : "+ R$ 0,00"; });
+      ops.querySelectorAll(".o-rot-preco").forEach(s => { s.textContent = m ? "Pre\u00e7o" : "Acr\u00e9scimo (- desconta)"; });
+      ops.querySelectorAll(".o-preco").forEach(p => { p.placeholder = m ? "R$ 0,00" : "Ex.: 5 ou -15"; });
     };
     mai.addEventListener("change", vis);
     tipo.addEventListener("change", vis); vis();
@@ -391,7 +391,8 @@ function editorOpcoes(inicial){
     for (const g of gs){
       if (!g.nome) throw new Error("D\u00ea um nome a cada grupo de op\u00e7\u00f5es.");
       if (!g.itens.length) throw new Error("O grupo " + g.nome + " precisa de pelo menos uma op\u00e7\u00e3o.");
-      if (g.itens.some(o => !Number.isFinite(o.preco) || o.preco < 0)) throw new Error("Acr\u00e9scimo inv\u00e1lido no grupo " + g.nome + ".");
+      if (g.itens.some(o => !Number.isFinite(o.preco) || o.preco > 999 || o.preco < -999)) throw new Error("Valor inv\u00e1lido no grupo " + g.nome + ".");
+      if (g.regra === "maior" && g.itens.some(o => o.preco < 0)) throw new Error("No meio a meio o pre\u00e7o das op\u00e7\u00f5es n\u00e3o pode ser negativo (grupo " + g.nome + ").");
       g.max = Math.max(1, Math.min(g.max, g.itens.length, 20));
     }
     return gs;
