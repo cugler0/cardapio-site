@@ -22,7 +22,7 @@ h2{margin:22px 0 8px;font-size:.95rem;color:var(--accent);text-transform:upperca
 .mais{padding:12px 14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.9rem}
 .mais a{color:#25d366;font-weight:600}
 label.f{display:block;font-size:.85rem;color:var(--muted);margin-top:14px}
-input[type=text],input[type=email],select{width:100%;margin-top:4px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+input[type=text],input[type=email],input[type=tel],select{width:100%;margin-top:4px;padding:12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
 input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dica{margin:4px 0 0;color:var(--muted);font-size:.82rem}
 button,a.btn{display:block;width:100%;margin-top:18px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#160504;font:inherit;font-weight:600;text-align:center;text-decoration:none;cursor:pointer}
@@ -80,6 +80,8 @@ footer.legal{margin-top:18px;text-align:center;font-size:.8rem;color:var(--muted
     </label>
     <p class="dica">S&#243; letras min&#250;sculas, n&#250;meros e h&#237;fen. Vai aparecer nos links, por exemplo <b id="ex">meu-bar</b>.</p>
     <label class="f">Seu e-mail<input id="email" type="email" maxlength="120" required></label>
+    <label class="f">Seu WhatsApp<input id="whatsapp" type="tel" inputmode="tel" maxlength="20" placeholder="(67) 99999-9999" required></label>
+    <p class="dica">Para te ajudar a montar o card&#225;pio e avisar sobre o seu teste.</p>
 
     <label class="aceite"><input id="aceite" type="checkbox" required> <span>Li e aceito os <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a>, a <a href="privacidade.html" target="_blank" rel="noopener">Pol&#237;tica de Privacidade</a> e a <a href="reembolso.html" target="_blank" rel="noopener">Pol&#237;tica de Cancelamento e Reembolso</a>.</span></label>
     <p class="dica">Planos pagos s&#227;o assinaturas mensais com renova&#231;&#227;o autom&#225;tica. Voc&#234; pode cancelar quando quiser e desistir em at&#233; 7 dias com reembolso total.</p>
@@ -114,6 +116,8 @@ const $ = id => document.getElementById(id);
 const semAcento = t => t.normalize("NFD").replace(/[^\x00-\x7f]/g, "");
 const slugar = t => semAcento(String(t || "").toLowerCase()).replace(/[^0-9a-z]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 const planoAtual = () => "free"; // toda conta nova entra em teste gratis
+const ORIGEM = (() => { const q = new URLSearchParams(location.search); return q.get("origem") || q.get("utm_source") || "criar-conta"; })();
+const avisarFunil = d => { try{ fetch(URL_BASE + "funil-lead", {method: "POST", headers: {"Content-Type": "application/json"}, keepalive: true, body: JSON.stringify(Object.assign({produto: "lamenu", conta: true, origem: ORIGEM}, d))}).catch(() => {}); }catch(e){} };
 
 const TS_KEY = "0x4AAAAAAF8srzdkcuWqirXg";
 let tsId = null;
@@ -139,8 +143,10 @@ $("f").addEventListener("submit", async e => {
   e.preventDefault();
   const st = $("st"), btn = $("ok");
   const nome = $("nome").value.trim(), slug = $("slug").value.trim(), email = $("email").value.trim();
+  const whatsapp = $("whatsapp").value.trim();
   const plano = planoAtual();
   if (slug.length < 2){ st.style.color = "var(--accent)"; st.textContent = "O endere\u00e7o precisa ter pelo menos 2 caracteres."; return; }
+  if (whatsapp.replace(/\D/g, "").length < 10){ st.style.color = "var(--accent)"; st.textContent = "Coloque o seu WhatsApp com DDD."; return; }
   if (!$("aceite").checked){ st.style.color = "var(--accent)"; st.textContent = "Para continuar, marque que leu e aceita os termos."; return; }
   const tk = tsToken();
   if (!tk){ st.style.color = "var(--accent)"; st.textContent = "Aguarde a verifica\u00e7\u00e3o de seguran\u00e7a e tente de novo."; return; }
@@ -150,13 +156,14 @@ $("f").addEventListener("submit", async e => {
     const r = await fetch(URL_BASE + "saas-criar-conta", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({nome, slug, email, plano, tipo_estabelecimento: $("tipo").value, rotulo_local: $("rotulo").value, turnstile: tk, aceite_termos: true, versao_termos: "2026-11-13"})
+      body: JSON.stringify({nome, slug, email, whatsapp, plano, tipo_estabelecimento: $("tipo").value, rotulo_local: $("rotulo").value, turnstile: tk, aceite_termos: true, versao_termos: "2026-11-13"})
     });
     let d = null; try{ d = await r.json(); }catch(err){}
     if (r.status === 409 || r.status === 400){
       st.style.color = "var(--accent)"; st.textContent = (d && d.erro) || "Confira os dados e tente de novo."; return;
     }
     if (!r.ok || !d) throw new Error("falha");
+    avisarFunil({nome, email, whatsapp, negocio: $("tipo").options[$("tipo").selectedIndex].text});
     if (d.gratis && d.confirmar){
       $("a-email").textContent = d.email || email;
       $("f").hidden = true; $("aguardando").hidden = false;

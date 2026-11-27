@@ -106,7 +106,7 @@
   const CONFIG = {
     produto: 'lamenu',
     webhook: 'https://n8n.automatikai.cloud/webhook/funil-lead',
-    linkTeste: 'https://cardapio.automatikai.cloud'
+    linkTeste: 'https://cardapio.automatikai.cloud/criar-conta.html'
   };
   // ==========================================================
 
@@ -114,7 +114,7 @@
   const origem = q.get('origem') || q.get('utm_source') || (document.referrer ? new URL(document.referrer).hostname : 'direto');
   const campanha = q.get('c') || q.get('utm_campaign') || '';
 
-  document.getElementById('linkTeste').href = CONFIG.linkTeste;
+  document.getElementById('linkTeste').href = CONFIG.linkTeste + '?origem=' + encodeURIComponent(origem);
 
   const form = document.getElementById('form');
   const erro = document.getElementById('erro');
