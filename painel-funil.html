@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Painel do Funil</title>
+<style>
+  :root{--cor:#00c2d1;--fundo:#0f1115;--cartao:#181b21;--texto:#f2f4f7;--suave:#a3aab5;--borda:#2a2f38;
+        --novo:#8aa4ff;--contatado:#f5c451;--teste:#00c2d1;--cliente:#3ddc84;--perdido:#ff7a7a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fundo);color:var(--texto);line-height:1.4}
+  .wrap{max-width:960px;margin:0 auto;padding:20px 16px 48px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+  h1{font-size:22px}
+  h2{font-size:16px;margin:26px 0 10px;color:var(--suave);font-weight:600}
+  select,input,button{font:inherit;color:var(--texto);background:var(--cartao);border:1px solid var(--borda);border-radius:10px;padding:9px 12px}
+  button{cursor:pointer}
+  button.pri{background:var(--cor);color:#00262a;border:0;font-weight:700}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+  .card{background:var(--cartao);border:1px solid var(--borda);border-radius:12px;padding:14px}
+  .card .n{font-size:28px;font-weight:800}
+  .card .l{color:var(--suave);font-size:13px}
+  table{width:100%;border-collapse:collapse;background:var(--cartao);border:1px solid var(--borda);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--borda);font-size:14px}
+  th{color:var(--suave);font-weight:600}
+  tr:last-child td{border-bottom:0}
+  .lead{background:var(--cartao);border:1px solid var(--borda);border-radius:12px;padding:14px;margin-bottom:10px}
+  .lead .topo{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .lead b{font-size:16px}
+  .lead .info{color:var(--suave);font-size:13px;margin-top:4px}
+  .lead .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .lead .acoes button,.lead .acoes select{padding:7px 10px;font-size:14px}
+  .tag{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+  .filtros{display:flex;gap:8px;flex-wrap:wrap}
+  #login{max-width:360px;margin:15vh auto;background:var(--cartao);border:1px solid var(--borda);border-radius:16px;padding:22px;display:none}
+  #login input{width:100%;margin:12px 0}
+  #login button{width:100%}
+  .msg{color:var(--suave);padding:20px 0}
+  .erro{color:var(--perdido)}
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>Painel do Funil</h1>
+  <p class="msg" style="padding:8px 0 0">Cole a chave do painel.</p>
+  <input id="chave" type="password" autocomplete="off">
+  <button class="pri" onclick="entrar()">Entrar</button>
+  <p class="erro" id="erroLogin"></p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <h1>Painel do Funil</h1>
+    <div class="filtros">
+      <select id="fProduto" onchange="render()"><option value="">Todos os produtos</option></select>
+      <select id="fPeriodo" onchange="render()">
+        <option value="7">Últimos 7 dias</option>
+        <option value="30" selected>Últimos 30 dias</option>
+        <option value="90">Últimos 90 dias</option>
+        <option value="0">Tudo</option>
+      </select>
+      <button onclick="carregar()">↻</button>
+    </div>
+  </header>
+
+  <div class="cards" id="cards"></div>
+
+  <h2>De onde vêm os leads</h2>
+  <table><thead><tr><th>Origem</th><th>Leads</th><th>Testando</th><th>Clientes</th><th>Conversão</th></tr></thead><tbody id="origens"></tbody></table>
+
+  <h2>Leads</h2>
+  <div class="filtros" style="margin-bottom:10px">
+    <select id="fEtapa" onchange="render()">
+      <option value="">Todas as etapas</option>
+      <option value="novo">Novo</option>
+      <option value="contatado">Contatado</option>
+      <option value="teste">Testando</option>
+      <option value="cliente">Cliente</option>
+      <option value="perdido">Perdido</option>
+    </select>
+  </div>
+  <div id="lista"></div>
+</div>
+
+<script>
+  const API = 'https://n8n.automatikai.cloud/webhook';
+  const ETAPAS = { novo:'Novo', contatado:'Contatado', teste:'Testando', cliente:'Cliente', perdido:'Perdido' };
+  let chave = '';
+  let dados = { leads: [], produtos: [] };
+
+  try { chave = localStorage.getItem('funilChave') || ''; } catch {}
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const data = iso => new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+
+  function entrar() {
+    chave = document.getElementById('chave').value.trim();
+    try { localStorage.setItem('funilChave', chave); } catch {}
+    carregar();
+  }
+
+  async function carregar() {
+    if (!chave) return mostrarLogin();
+    try {
+      const r = await fetch(`${API}/funil-painel?k=${encodeURIComponent(chave)}`);
+      const j = await r.json();
+      if (!j.ok) throw new Error('chave');
+      dados = j;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      const sel = document.getElementById('fProduto');
+      const atual = sel.value;
+      sel.innerHTML = '<option value="">Todos os produtos</option>' + j.produtos.map(p => `<option>${esc(p)}</option>`).join('');
+      sel.value = atual;
+      render();
+    } catch {
+      try { localStorage.removeItem('funilChave'); } catch {}
+      chave = '';
+      mostrarLogin('Chave errada ou servidor fora do ar.');
+    }
+  }
+
+  function mostrarLogin(msg = '') {
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login').style.display = 'block';
+    document.getElementById('erroLogin').textContent = msg;
+  }
+
+  function filtrados() {
+    const prod = document.getElementById('fProduto').value;
+    const dias = +document.getElementById('fPeriodo').value;
+    const limite = dias ? Date.now() - dias * 86400000 : 0;
+    return dados.leads.filter(l => (!prod || l.produto === prod) && new Date(l.criado_em).getTime() >= limite);
+  }
+
+  function render() {
+    const ls = filtrados();
+    const cont = e => ls.filter(l => l.etapa === e).length;
+
+    document.getElementById('cards').innerHTML = [
+      ['Leads', ls.length, 'var(--texto)'],
+      ...Object.entries(ETAPAS).map(([k, v]) => [v, cont(k), `var(--${k})`]),
+      ['Conversão', pct(cont('cliente'), ls.length), 'var(--cliente)']
+    ].map(([l, n, c]) => `<div class="card"><div class="n" style="color:${c}">${n}</div><div class="l">${l}</div></div>`).join('');
+
+    const porOrigem = {};
+    for (const l of ls) {
+      const o = porOrigem[l.origem || 'direto'] ||= { t: 0, teste: 0, cliente: 0 };
+      o.t++; if (l.etapa === 'teste') o.teste++; if (l.etapa === 'cliente') o.cliente++;
+    }
+    const linhas = Object.entries(porOrigem).sort((a, b) => b[1].t - a[1].t);
+    document.getElementById('origens').innerHTML = linhas.length
+      ? linhas.map(([o, v]) => `<tr><td>${esc(o)}</td><td>${v.t}</td><td>${v.teste}</td><td>${v.cliente}</td><td>${pct(v.cliente, v.t)}</td></tr>`).join('')
+      : '<tr><td colspan="5" class="msg">Nenhum lead no período.</td></tr>';
+
+    const fe = document.getElementById('fEtapa').value;
+    const lista = ls.filter(l => !fe || l.etapa === fe);
+    document.getElementById('lista').innerHTML = lista.length ? lista.map(l => `
+      <div class="lead">
+        <div class="topo">
+          <div><b>${esc(l.nome)}</b>${l.negocio ? ' · ' + esc(l.negocio) : ''}</div>
+          <span class="tag" style="color:var(--${esc(l.etapa)})">${ETAPAS[l.etapa] || esc(l.etapa)}</span>
+        </div>
+        <div class="info">${esc(l.produto)} · ${esc(l.whatsapp)}${l.cidade ? ' · ' + esc(l.cidade) : ''} · ${esc(l.origem)} · ${data(l.criado_em)}</div>
+        <div class="acoes">
+          <button onclick="chamar('${l.id}')">💬 WhatsApp</button>
+          <select onchange="mudar('${l.id}', this.value)">
+            <option value="">Mudar etapa…</option>
+            <option value="teste">🧪 Testando</option>
+            <option value="cliente">💰 Cliente</option>
+            <option value="perdido">❌ Perdido</option>
+          </select>
+        </div>
+      </div>`).join('') : '<p class="msg">Nenhum lead aqui.</p>';
+  }
+
+  function chamar(id) {
+    const l = dados.leads.find(x => x.id === id);
+    const zap = `https://wa.me/${l.whatsapp}`;
+    fetch(`${API}/funil-etapa?id=${id}&k=${encodeURIComponent(chave)}&etapa=chamar&w=${encodeURIComponent(zap)}`, { mode: 'no-cors' });
+    if (l.etapa === 'novo') l.etapa = 'contatado';
+    render();
+    window.open(zap, '_blank');
+  }
+
+  async function mudar(id, etapa) {
+    if (!etapa) return;
+    await fetch(`${API}/funil-etapa?id=${id}&k=${encodeURIComponent(chave)}&etapa=${etapa}`, { mode: 'no-cors' });
+    const l = dados.leads.find(x => x.id === id);
+    if (l) l.etapa = etapa;
+    render();
+  }
+
+  carregar();
+</script>
+</body>
+</html>
